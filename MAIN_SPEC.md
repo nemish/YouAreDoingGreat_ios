@@ -1,64 +1,68 @@
-You Are Doing Great – iOS App Specification (v1)
+# You Are Doing Great – iOS App Specification (v1)
 
-Last updated: {{DATE}}
-Author: Yara & ChatGPT
+**Last updated:** November 2024
+**Authors:** Yara & ChatGPT
 
-0. Purpose & Core Loop
+---
 
-App Purpose:
+## 0. Purpose & Core Loop
+
+### App Purpose
+
 A lightweight emotional-wellness app where users log small daily wins, receive instant encouragement, and track their progress over time.
 
-Core Loop:
+### Core Loop
 
-User does something (tiny or big).
+1. User does something (tiny or big)
+2. Opens app → taps a button → logs the moment
+3. Immediately receives offline praise (no delay)
+4. AI-enhanced praise arrives a few seconds later (UI updates smoothly)
+5. Over days/weeks, users view progress via Moments list + Journey timeline
 
-Opens app → taps a button → logs the moment.
+### Design Principles
 
-Immediately receives offline praise (no delay).
+- **Minimal friction** – 1–2 taps for main action
+- **Warm, supportive tone** – Zero shame, zero pressure
+- **Beautiful, calm visual atmosphere** – Cosmic gradient, floating stars
+- **Instant feedback** – Always show something positive immediately
+- **Zero pressure** – No streaks, no guilt, no judgment
 
-AI-enhanced praise arrives a few seconds later (UI updates smoothly).
+---
 
-Over days/weeks, users view progress via Moments list + Journey timeline.
+## 1. App Architecture (High-Level)
 
-Design Principles
+### Technical Stack
 
-Minimal friction (1–2 taps for main action).
+| Component | Technology |
+|-----------|------------|
+| **Platform** | iOS 17+ |
+| **UI Framework** | SwiftUI |
+| **Architecture** | MVVM + lightweight reducers per module |
+| **Concurrency** | async/await |
+| **Networking** | URLSession + Codable models |
+| **Local Storage** | SwiftData |
+| **User Settings** | AppStorage / UserDefaults |
+| **Offline Praise** | Local JSON pool |
+| **AI Integration** | Server-side via Node.js API (simple POST endpoint) |
 
-Warm, supportive tone.
+### Design System
 
-Beautiful, calm visual atmosphere (cosmic gradient, floating stars).
+**Colors:**
+- **Primary**: Pink/magenta glow
+- **Background**: Dark cosmos gradient (deep navy → soft blue)
+- **Text**: Off-white
 
-Instant feedback.
+**Typography:**
+- SF Rounded / SF Pro
 
-Zero shame, zero pressure.
+**Haptics:**
+- Light impact for primary taps
+- Medium impact for "moment saved"
+- Light tick for tab switch
 
-1. App Architecture (high-level)
+### Module Structure
 
-Platform: iOS 17+
-UI Framework: SwiftUI
-Architecture Style: MVVM + lightweight reducers per module
-Concurrency: async/await
-Networking: URLSession + decodable models
-Storage:
-
-Local moments storage: SwiftData
-
-User settings: AppStorage / UserDefaults
-
-Offline praise pool: local JSON
-AI Integration: Server-side via Node.js API → simple POST endpoint
-Design System:
-
-Primary color: pink/magenta glow
-
-Background: dark cosmos gradient with slow-moving stars
-
-Typography: SF Rounded / SF Pro
-
-Haptics: light impact on main actions
-
-Modules:
-
+```
 App
 ├── Home
 ├── LogMoment
@@ -67,166 +71,138 @@ App
 ├── Journey
 ├── Paywall
 ├── Settings
-├── Shared (Components / Styles / Helpers)
+└── Shared (Components / Styles / Helpers)
+```
 
-2. Navigation Structure
+---
 
-Use TabView with 3 tabs:
+## 2. Navigation Structure
 
-Home
+### TabView (3 tabs)
 
-Moments
+1. **Home** – Main entry point
+2. **Moments** – Chronological list
+3. **Journey** – Daily summaries timeline
 
-Journey
+### Modals
 
-Plus modals:
+- **Log Moment sheet** – Full-screen modal for logging
+- **Time Picker bottom sheet** – Adjust when moment happened
+- **Paywall** – Subscription screen
+- **Legal pages** – Privacy Policy, Terms (via SafariView)
 
-Log Moment sheet
+---
 
-Time Picker bottom sheet
-
-Paywall
-
-Legal pages via SafariView
-
-3. Screen Specifications
+## 3. Screen Specifications
 
 Below are exact screen definitions including copy, behavior, and interaction.
 
-3.1 Onboarding (minimal v1)
-Screen: Welcome
+### 3.1 Onboarding (Minimal v1)
 
-UI elements:
+**Screen:** Welcome
 
-Title: You Are Doing Great
+**UI Elements:**
+- **Title:** "You Are Doing Great"
+- **Subtitle:** "Log your small wins and get instant encouragement."
+- **CTA Button:** "Get started"
+- **Footer:** "Privacy Policy • Terms of Use"
 
-Subtitle: Log your small wins and get instant encouragement.
+**Behavior:**
+- On tap "Get started" → navigate to Home
 
-CTA Button: Get started
+---
 
-Footer: Privacy Policy • Terms of Use
+### 3.2 Home Screen
 
-Behavior:
+**Purpose:** Starting point, emotional entry.
 
-On tap → go to Home
+**UI:**
+- **Background:** Animated starfield
+- **Center text (breathing animation):** Random supportive phrase
+- **Primary button:** "I Did a Thing"
+- **Subtext:** "Tap to log something you did. Big or small, it counts."
+- **Top-right action:** Settings icon
 
-3.2 Home Screen
+**Behavior:**
+- Tap "I Did a Thing" → present Log Moment screen (modal)
 
-Purpose: Starting point, emotional entry.
+---
 
-UI:
+### 3.3 Log Moment Screen
 
-Background: animated starfield
+**Purpose:** User describes what they did and when.
 
-Center text (breathing): random supportive phrase
+**UI:**
+- **Title:** "Nice — that counts. What did you do?"
+- **Multiline TextEditor** – User input for moment text
+- **Time row:**
+  - Icon: ⏱
+  - Label: "Happened just now"
+  - Button: "Change time"
+- **Bottom CTA:** "Save this moment"
 
-Primary button: I Did a Thing
+**Time Picker Bottom Sheet:**
+- **Title:** "When did it happen?"
+- **Numeric input:** `[ 5 ]`
+- **Picker:** `[ minutes | hours | days ]`
+- **Static text:** "ago"
+- **Buttons:**
+  - Primary: "Done"
+  - Secondary: "Set to just now"
 
-Subtext: Tap to log something you did. Big or small, it counts.
+**On Save:**
+1. Save moment to SwiftData (with client UUID)
+2. Navigate to Praise Screen
 
-Behavior:
+---
 
-Tap → present Log Moment screen
+### 3.4 Praise Screen
 
-Top-right actions:
+**Purpose:** Deliver instant emotional reinforcement.
 
-Settings icon
+**UI Layout:**
+- **Header:** "Moment logged"
+- **Card:** Moment text + time
+- **Offline praise (instant):** e.g., "Nice move, champ."
+- **AI praise:** Replaces offline via fade animation when available
+- **Bottom actions:**
+  - "Done"
+  - "View today's moments"
 
-3.3 Log Moment Screen
+**Edge Cases:**
+- If AI fails: Keep offline praise
+- Optional subtle note: "Couldn't fetch extra encouragement this time."
 
-Purpose: User describes what they did and when.
+---
 
-UI:
+### 3.5 Moments Screen (Tab 2)
 
-Title: Nice — that counts. What did you do?
+**Purpose:** Chronological list of user moments.
 
-Multiline TextEditor
+**UI:**
+- **Title:** "Moments"
+- **Sectioned list:**
+  - Section header: "Today"
+  - Row example:
+    - "Cleaned something quietly bothering me"
+    - "5 min ago · 'You made space for yourself.'"
 
-Time row:
+**Empty State:**
+- Message: "No moments yet… but you're here, so that's one."
+- Button: "Log your first moment"
 
-⏱ Happened just now
-[ Change time ]
+---
 
-Time Bottom Sheet:
+### 3.6 Journey Screen (Tab 3)
 
-Title: When did it happen?
+**Purpose:** Show long-term progress and daily summaries.
 
-Numeric input [ 5 ]
-
-Picker [ minutes | hours | days ]
-
-Static text: ago
-
-Button: Done
-
-Secondary: Set to just now
-
-Bottom CTA: Save this moment
-
-On Save:
-
-Save to SwiftData
-
-Navigate to Praise Screen
-
-3.4 Praise Screen
-
-Purpose: Deliver instant emotional reinforcement.
-
-UI Layout:
-
-Header: Moment logged
-
-Card with moment text + time
-
-Offline praise (instant):
-“Nice move, champ.”
-
-AI praise (replace via fade)
-
-Bottom actions:
-
-Done
-
-View today’s moments
-
-Edge cases:
-
-If AI fails: keep offline praise
-Optional note: Couldn't fetch extra encouragement this time.
-
-3.5 Moments Screen (Tab 2)
-
-Purpose: Chronological list of user moments.
-
-UI:
-
-Title: Moments
-
-Sectioned list:
-
-Today
-• Cleaned something quietly bothering me
-5 min ago · “You made space for yourself.”
-
-Empty state:
-
-No moments yet… but you’re here, so that’s one.
-
-Button: Log your first moment
-
-3.6 Journey Screen (Tab 3)
-
-Purpose: Show long-term progress and daily summaries.
-
-UI:
-
-Title: Your journey
-
-Subtitle: Tiny steps, day by day.
-
-Daily card example:
-
+**UI:**
+- **Title:** "Your journey"
+- **Subtitle:** "Tiny steps, day by day."
+
+**Daily Card Example:**
+```
 Oct 25, 2025 🙂 Calm day
 3 moments logged
 
@@ -235,211 +211,206 @@ Oct 25, 2025 🙂 Calm day
 • Called a friend
 
 Summary:
-“Steady, gentle progress. You took care of small things today.”
+"Steady, gentle progress. You took care of small things today."
+```
 
-Empty state:
-Once you have a few days of moments, you’ll see your journey here.
+**Empty State:**
+- Message: "Once you have a few days of moments, you'll see your journey here."
 
-3.7 Paywall Screen
+---
 
-UI:
+### 3.7 Paywall Screen
 
-Title: You're doing great. Let's keep it going.
+**UI:**
+- **Title:** "You're doing great. Let's keep it going."
+- **Subheader:** "Unlock more praise and deeper insights."
 
-Subheader: Unlock more praise and deeper insights.
+**Benefits:**
+- Unlimited AI encouragement
+- Daily summaries
+- Future features
 
-Benefits:
+**Plans:**
+- **Yearly (recommended):** 7-day free trial, $X.99/year
+- **Monthly:** $Y.99/month
 
-Unlimited AI encouragement
+**CTA:** "Start 7-day free trial"
 
-Daily summaries
+**Legal text:** Small, Apple-compliant disclaimer
 
-Future features
+---
 
-Plans:
+### 3.8 Settings Screen
 
-Yearly (recommended): 7-day free trial, $X.99/year
+**Sections:**
 
-Monthly: $Y.99/month
+**Subscription**
+- Manage Subscription
+- Restore Purchases
 
-CTA: Start 7-day free trial
+**Privacy & Data**
+- Delete my data
+- Privacy Policy
+- Terms of Use
 
-Legal text: Small, Apple-compliant
+**Support**
+- Support URL
+- Contact us
 
-3.8 Settings Screen
+**About**
+- App version
+- Crisis disclaimer
 
-Sections:
+---
 
-Subscription
+## 4. State Management
 
-Manage Subscription
+### AppState Includes
 
-Restore Purchases
+- Current tab
+- Moments array
+- Offline praise pool
+- AI result
+- Paywall eligibility
 
-Privacy & Data
+### ViewModels (One per Module)
 
-Delete my data
+- `HomeViewModel`
+- `LogMomentViewModel`
+- `PraiseViewModel`
+- `MomentsViewModel`
+- `JourneyViewModel`
+- `PaywallViewModel`
+- `SettingsViewModel`
 
-Privacy Policy
+**Pattern:** Use `@MainActor` and `@Observable` (iOS 17+)
 
-Terms of Use
+---
 
-Support
+## 5. Offline & Error Handling
 
-Support URL
+### Offline Praise
 
-Contact us
+- **Always show instantly** – Never wait for network
+- **AI replaces when it arrives** – Smooth fade transition
 
-About
+### Slow AI
 
-App version
+- Keep offline praise visible
+- Show animated subtitle while waiting
 
-Crisis disclaimer
+### Network Error
 
-4. State Management
+- Keep offline praise
+- Show subtle message: "Couldn't fetch extra encouragement this time."
 
-AppState includes:
+---
 
-Current tab
+## 6. Data Models (SwiftData)
 
-Moments array
+### Moment
 
-Offline praise pool
-
-AI result
-
-Paywall eligibility
-
-ViewModels:
-One per module:
-
-HomeViewModel
-
-LogMomentViewModel
-
-PraiseViewModel
-
-MomentsViewModel
-
-JourneyViewModel
-
-PaywallViewModel
-
-SettingsViewModel
-
-Use @MainActor and ObservableObject.
-
-5. Offline & Error Handling
-   Offline Praise
-
-Always show instantly.
-
-AI replaces when arrives.
-
-Slow AI
-
-Keep offline praise and animated subtitle.
-
-Network Error
-
-Subtle message:
-Couldn't fetch extra encouragement this time.
-
-6. Data Models (SwiftData)
-   Moment
-   @Model
-   struct Moment {
-   @Attribute(.unique) var id: UUID
-   var text: String
-   var createdAt: Date // timestamp of logging
-   var loggedAt: Date // user-specified “when it happened”
-   var aiPraise: String?
-   var offlinePraise: String
-   }
-
-DailySummary (optional)
-struct DailySummary {
-var date: Date
-var momentCount: Int
-var summaryText: String?
+```swift
+@Model
+class Moment {
+    @Attribute(.unique) var id: UUID
+    var text: String
+    var submittedAt: Date      // Timestamp of logging
+    var happenedAt: Date       // User-specified "when it happened"
+    var tz: String             // User timezone
+    var timeAgo: Int?          // Seconds between happenedAt and submittedAt
+    var aiPraise: String?      // AI-generated praise (optional)
+    var offlinePraise: String  // Instant offline praise
+    var action: String?        // Normalized action (e.g., "exercise")
+    var tags: [String]         // Extracted tags
+    var isFavorite: Bool       // User-marked favorite
+    var isSynced: Bool         // Local sync status
 }
+```
 
-7. Visual Style Guide
-   Colors
+### DailySummary (Optional)
 
-Background: deep navy → soft blue
+```swift
+struct DailySummary {
+    var date: Date
+    var momentCount: Int
+    var summaryText: String?
+}
+```
 
-Accent: pink/magenta glow
+---
 
-Text: off-white
+## 7. Visual Style Guide
 
-Effects
+### Colors
 
-Starfield animation
+- **Background:** Deep navy → soft blue gradient
+- **Accent:** Pink/magenta glow
+- **Text:** Off-white
 
-Breathing text
+### Effects
 
-Fade transitions (0.2–0.35s)
+- **Starfield animation** – Slow-moving stars in background
+- **Breathing text** – Scale + opacity animation
+- **Fade transitions** – 0.2–0.35s duration
 
-Haptics
+### Haptics
 
-Light impact for primary taps
+- **Light impact** – Primary taps
+- **Medium impact** – "Moment saved" confirmation
+- **Light tick** – Tab switch
 
-Medium for “moment saved”
+---
 
-Light tick for tab switch
+## 8. v1 Scope Checklist
 
-8. v1 Scope Checklist
-   Core
+### Core Features
 
-Home screen
+- [x] Home screen
+- [x] Log Moment + Time Picker
+- [x] Praise screen (offline + AI)
+- [x] Moments list (chronological)
+- [x] Journey timeline (daily summaries)
+- [x] Settings
+- [x] Paywall
+- [x] SwiftData models
+- [x] AI integration
+- [x] Minimal onboarding
 
-Log Moment + Time Picker
+### Extras
 
-Praise screen
+- [x] Offline praise JSON pool
+- [x] Basic analytics
+- [x] Smooth animations
 
-Moments list
+---
 
-Journey timeline
+## 9. Out of Scope (Future Versions)
 
-Settings
+- Themes / tone selection
+- Push notifications
+- Social constellation view
+- Weekly summaries
+- iCloud sync
+- Advanced insights
+- Widgets
+- Apple Watch companion app
 
-Paywall
+---
 
-SwiftData models
+## 10. Required Legal Links
 
-AI integration
+All legal pages opened via SafariView:
 
-Minimal onboarding
+- `/privacy-policy` – Privacy Policy
+- `/terms` – Terms of Use
+- `/support` – Support page
 
-Extras
+---
 
-Offline praise JSON
+## Notes
 
-Basic analytics
-
-Smooth animations
-
-9. Out of Scope (Future Versions)
-
-Themes / tone selection
-
-Notifications
-
-Social constellation view
-
-Weekly summaries
-
-iCloud sync
-
-Advanced insights
-
-10. Required Legal Links
-
-/privacy-policy
-
-/terms
-
-/support
-
-Opened as SafariView.
+- **Tone:** Always warm, supportive, and encouraging. Never judgmental or pressure-inducing.
+- **Performance:** Optimize for instant feedback. User should never wait to see praise.
+- **Privacy:** This is not a crisis intervention app. Include appropriate disclaimers.
+- **Offline-first:** Moments created locally first, synced to server in background for AI enrichment.

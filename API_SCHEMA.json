@@ -1,0 +1,1210 @@
+{
+    "openapi": "3.0.3",
+    "info": {
+        "title": "You Are Doing Great API",
+        "description": "API for managing user moments and user profiles with cursor-based pagination",
+        "version": "1.0.0",
+        "contact": {
+            "name": "API Support",
+            "email": "support@example.com"
+        }
+    },
+    "servers": [
+        {
+            "url": "http://localhost:3000/api/v1",
+            "description": "Production server"
+        }
+    ],
+    "paths": {
+        "/healthcheck": {
+            "get": {
+                "summary": "Health check endpoint",
+                "description": "Simple health check to verify the API is running",
+                "operationId": "healthCheck",
+                "responses": {
+                    "200": {
+                        "description": "API is healthy",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "ok"
+                                        },
+                                        "version": {
+                                            "type": "integer",
+                                            "example": 1
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/user/me": {
+            "get": {
+                "summary": "Get current user profile",
+                "description": "Retrieve the current user's profile information",
+                "operationId": "getCurrentUser",
+                "headers": {
+                    "x-user-id": {
+                        "description": "User ID for authentication",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "User profile retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/UserResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/user/stats": {
+            "get": {
+                "summary": "Get user statistics",
+                "description": "Retrieve statistics about user's moment submissions including streaks and totals",
+                "operationId": "getUserStats",
+                "headers": {
+                    "x-user-id": {
+                        "description": "User ID for authentication",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "User statistics retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/UserStatsResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/user/feedback": {
+            "post": {
+                "summary": "Submit user feedback",
+                "description": "Submit feedback from the user including title and description",
+                "operationId": "submitUserFeedback",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CreateUserFeedbackRequest"
+                            }
+                        }
+                    }
+                },
+                "headers": {
+                    "x-user-id": {
+                        "description": "User ID for authentication",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Feedback submitted successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/CreateUserFeedbackResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request (invalid input)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/timeline": {
+            "get": {
+                "summary": "Get timeline with pagination",
+                "description": "Retrieve user day summaries with cursor-based pagination for infinite scrolling timeline",
+                "operationId": "getTimeline",
+                "parameters": [
+                    {
+                        "name": "cursor",
+                        "in": "query",
+                        "description": "Date cursor for pagination (ISO date)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "date-time",
+                            "example": "2024-01-15T00:00:00Z"
+                        }
+                    },
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "description": "Number of items per page",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 100,
+                            "default": 20,
+                            "example": 20
+                        }
+                    }
+                ],
+                "headers": {
+                    "x-user-id": {
+                        "description": "User ID for authentication",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Successful response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PaginatedTimelineResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/moments": {
+            "get": {
+                "summary": "Get moments with pagination",
+                "description": "Retrieve user moments with cursor-based pagination for infinite scrolling",
+                "operationId": "getMoments",
+                "parameters": [
+                    {
+                        "name": "cursor",
+                        "in": "query",
+                        "description": "Timestamp cursor for pagination",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "date-time",
+                            "example": "2024-01-15T10:30:00Z"
+                        }
+                    },
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "description": "Number of items per page",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 100,
+                            "default": 20,
+                            "example": 20
+                        }
+                    }
+                ],
+                "headers": {
+                    "x-user-id": {
+                        "description": "User ID for authentication",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Successful response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PaginatedMomentsResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "summary": "Create a new moment",
+                "description": "Submit a new moment for the authenticated user",
+                "operationId": "createMoment",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CreateMomentRequest"
+                            }
+                        }
+                    }
+                },
+                "headers": {
+                    "x-user-id": {
+                        "description": "User ID for authentication",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Moment created successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/CreateMomentResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request (e.g., daily limit reached)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/moments/{id}": {
+            "get": {
+                "summary": "Get a specific moment",
+                "description": "Retrieve a specific moment by ID",
+                "operationId": "getMoment",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Moment ID",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "headers": {
+                    "x-user-id": {
+                        "description": "User ID for authentication",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Moment retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/GetMomentResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden - User does not own this moment",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Moment not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "put": {
+                "summary": "Update a moment",
+                "description": "Update a specific moment (currently supports updating favorite status)",
+                "operationId": "updateMoment",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Moment ID",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/UpdateMomentRequest"
+                            }
+                        }
+                    }
+                },
+                "headers": {
+                    "x-user-id": {
+                        "description": "User ID for authentication",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Moment updated successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/UpdateMomentResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden - User does not own this moment",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Moment not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "summary": "Archive a moment",
+                "description": "Soft delete a moment by setting archivedAt timestamp",
+                "operationId": "archiveMoment",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Moment ID",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "headers": {
+                    "x-user-id": {
+                        "description": "User ID for authentication",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Moment archived successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ArchiveMomentResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden - User does not own this moment",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Moment not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "components": {
+        "schemas": {
+            "User": {
+                "type": "object",
+                "required": [
+                    "id",
+                    "userId",
+                    "status"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "description": "Unique identifier for the user",
+                        "example": "user_123"
+                    },
+                    "userId": {
+                        "type": "string",
+                        "description": "External user ID from authentication system",
+                        "example": "auth0|123456789"
+                    },
+                    "status": {
+                        "type": "string",
+                        "enum": [
+                            "newcomer",
+                            "paywall_needed",
+                            "premium"
+                        ],
+                        "description": "User subscription status",
+                        "example": "newcomer"
+                    }
+                }
+            },
+            "Moment": {
+                "type": "object",
+                "required": [
+                    "id",
+                    "text",
+                    "submittedAt",
+                    "happenedAt",
+                    "tz"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "description": "Unique identifier for the moment",
+                        "example": "moment_123"
+                    },
+                    "text": {
+                        "type": "string",
+                        "description": "The moment text content",
+                        "example": "Today was amazing!"
+                    },
+                    "submittedAt": {
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "When the moment was submitted",
+                        "example": "2024-01-15T10:30:00Z"
+                    },
+                    "happenedAt": {
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "When the moment actually happened (calculated as submittedAt - timeAgo)",
+                        "example": "2024-01-15T09:30:00Z"
+                    },
+                    "tz": {
+                        "type": "string",
+                        "description": "Timezone of the user",
+                        "example": "America/New_York"
+                    },
+                    "action": {
+                        "type": "string",
+                        "description": "Normalized action from the moment text",
+                        "example": "exercise"
+                    },
+                    "tags": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "description": "Tags extracted from the moment during normalization",
+                        "example": [
+                            "milestone",
+                            "writing",
+                            "streak"
+                        ]
+                    },
+                    "praise": {
+                        "type": "string",
+                        "description": "Generated praise message for the moment",
+                        "example": "Great job! You're making amazing progress!"
+                    },
+                    "isFavorite": {
+                        "type": "boolean",
+                        "description": "Whether the moment is marked as favorite",
+                        "example": false
+                    },
+                    "timeAgo": {
+                        "type": "integer",
+                        "nullable": true,
+                        "description": "Seconds passed from when the moment actually happened to when it was submitted",
+                        "example": 3600
+                    }
+                }
+            },
+            "CreateMomentRequest": {
+                "type": "object",
+                "required": [
+                    "text"
+                ],
+                "properties": {
+                    "text": {
+                        "type": "string",
+                        "description": "The moment text content",
+                        "minLength": 1,
+                        "maxLength": 1000,
+                        "example": "New moment text"
+                    },
+                    "submittedAt": {
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "When the moment was submitted (optional, defaults to current time)",
+                        "example": "2024-01-15T10:30:00Z"
+                    },
+                    "tz": {
+                        "type": "string",
+                        "description": "Timezone of the user",
+                        "example": "America/New_York"
+                    },
+                    "timeAgo": {
+                        "type": "integer",
+                        "nullable": true,
+                        "description": "Seconds passed from when the moment actually happened to when it was submitted (optional)",
+                        "example": 3600
+                    }
+                }
+            },
+            "CreateMomentResponse": {
+                "type": "object",
+                "required": [
+                    "item"
+                ],
+                "properties": {
+                    "item": {
+                        "$ref": "#/components/schemas/Moment"
+                    }
+                }
+            },
+            "GetMomentResponse": {
+                "type": "object",
+                "required": [
+                    "item"
+                ],
+                "properties": {
+                    "item": {
+                        "$ref": "#/components/schemas/Moment"
+                    }
+                }
+            },
+            "UpdateMomentRequest": {
+                "type": "object",
+                "required": [
+                    "isFavorite"
+                ],
+                "properties": {
+                    "isFavorite": {
+                        "type": "boolean",
+                        "description": "Whether to mark the moment as favorite",
+                        "example": true
+                    }
+                }
+            },
+            "UpdateMomentResponse": {
+                "type": "object",
+                "required": [
+                    "message"
+                ],
+                "properties": {
+                    "message": {
+                        "type": "string",
+                        "description": "Success message",
+                        "example": "Moment updated"
+                    }
+                }
+            },
+            "ArchiveMomentResponse": {
+                "type": "object",
+                "required": [
+                    "message"
+                ],
+                "properties": {
+                    "message": {
+                        "type": "string",
+                        "description": "Success message",
+                        "example": "Moment archived"
+                    }
+                }
+            },
+            "DaySummary": {
+                "type": "object",
+                "required": [
+                    "id",
+                    "date",
+                    "text",
+                    "tags",
+                    "momentsCount",
+                    "timesOfDay",
+                    "createdAt"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "description": "Unique identifier for the day summary",
+                        "example": "summary_123"
+                    },
+                    "date": {
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "The date this summary represents (start of day)",
+                        "example": "2024-01-15T00:00:00Z"
+                    },
+                    "text": {
+                        "type": "string",
+                        "nullable": true,
+                        "description": "AI-generated summary text (null if no moments for this day)",
+                        "example": "You had a productive day with 5 workouts and quality family time!"
+                    },
+                    "tags": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "description": "Top 5 most popular tags from moments on this day",
+                        "example": [
+                            "exercise",
+                            "mindfulness",
+                            "productivity"
+                        ]
+                    },
+                    "momentsCount": {
+                        "type": "integer",
+                        "description": "Total number of moments logged on this day",
+                        "example": 12
+                    },
+                    "timesOfDay": {
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "enum": [
+                                "sunrise",
+                                "cloud-sun",
+                                "sun-medium",
+                                "sunset",
+                                "moon"
+                            ]
+                        },
+                        "description": "Array of time periods when moments were logged (sunrise=5-8am, cloud-sun=8am-12pm, sun-medium=12-5pm, sunset=5-8pm, moon=night)",
+                        "example": [
+                            "cloud-sun",
+                            "sun-medium",
+                            "sunset"
+                        ]
+                    },
+                    "createdAt": {
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "When the summary was created",
+                        "example": "2024-01-16T02:00:00Z"
+                    }
+                }
+            },
+            "PaginatedTimelineResponse": {
+                "type": "object",
+                "required": [
+                    "data",
+                    "hasNextPage"
+                ],
+                "properties": {
+                    "data": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/DaySummary"
+                        },
+                        "description": "Array of day summaries"
+                    },
+                    "nextCursor": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true,
+                        "description": "Date cursor for the next page",
+                        "example": "2024-01-15T00:00:00Z"
+                    },
+                    "hasNextPage": {
+                        "type": "boolean",
+                        "description": "Whether there are more pages available",
+                        "example": true
+                    }
+                }
+            },
+            "PaginatedMomentsResponse": {
+                "type": "object",
+                "required": [
+                    "data",
+                    "hasNextPage"
+                ],
+                "properties": {
+                    "data": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/Moment"
+                        },
+                        "description": "Array of moments"
+                    },
+                    "nextCursor": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true,
+                        "description": "Cursor for the next page",
+                        "example": "2024-01-15T10:30:00Z"
+                    },
+                    "hasNextPage": {
+                        "type": "boolean",
+                        "description": "Whether there are more pages available",
+                        "example": true
+                    }
+                }
+            },
+            "UserResponse": {
+                "type": "object",
+                "required": [
+                    "item"
+                ],
+                "properties": {
+                    "item": {
+                        "$ref": "#/components/schemas/User"
+                    }
+                }
+            },
+            "UserStats": {
+                "type": "object",
+                "required": [
+                    "userId",
+                    "totalMoments",
+                    "momentsToday",
+                    "momentsYesterday",
+                    "currentStreak",
+                    "longestStreak"
+                ],
+                "properties": {
+                    "userId": {
+                        "type": "string",
+                        "description": "External user ID from authentication system",
+                        "example": "auth0|123456789"
+                    },
+                    "totalMoments": {
+                        "type": "integer",
+                        "description": "Total number of moments submitted by the user",
+                        "example": 150
+                    },
+                    "momentsToday": {
+                        "type": "integer",
+                        "description": "Number of moments submitted today",
+                        "example": 2
+                    },
+                    "momentsYesterday": {
+                        "type": "integer",
+                        "description": "Number of moments submitted yesterday",
+                        "example": 3
+                    },
+                    "currentStreak": {
+                        "type": "integer",
+                        "description": "Current consecutive days streak",
+                        "example": 7
+                    },
+                    "longestStreak": {
+                        "type": "integer",
+                        "description": "Longest consecutive days streak ever achieved",
+                        "example": 30
+                    },
+                    "lastMomentDate": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true,
+                        "description": "Timestamp of the last submitted moment",
+                        "example": "2024-01-15T10:30:00Z"
+                    }
+                }
+            },
+            "UserStatsResponse": {
+                "type": "object",
+                "required": [
+                    "item"
+                ],
+                "properties": {
+                    "item": {
+                        "$ref": "#/components/schemas/UserStats"
+                    }
+                }
+            },
+            "UserFeedback": {
+                "type": "object",
+                "required": [
+                    "id",
+                    "title",
+                    "text",
+                    "createdAt"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "description": "Unique identifier for the feedback",
+                        "example": "feedback_123"
+                    },
+                    "title": {
+                        "type": "string",
+                        "description": "Title of the feedback",
+                        "example": "Bug in moment submission"
+                    },
+                    "text": {
+                        "type": "string",
+                        "description": "Detailed feedback text",
+                        "example": "I noticed that when I submit a moment with a very long text..."
+                    },
+                    "createdAt": {
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "When the feedback was submitted",
+                        "example": "2024-01-15T10:30:00Z"
+                    }
+                }
+            },
+            "CreateUserFeedbackRequest": {
+                "type": "object",
+                "required": [
+                    "title",
+                    "text"
+                ],
+                "properties": {
+                    "title": {
+                        "type": "string",
+                        "description": "Title of the feedback",
+                        "minLength": 1,
+                        "maxLength": 200,
+                        "example": "Feature request"
+                    },
+                    "text": {
+                        "type": "string",
+                        "description": "Detailed feedback text",
+                        "minLength": 1,
+                        "maxLength": 5000,
+                        "example": "It would be great if the app had..."
+                    }
+                }
+            },
+            "CreateUserFeedbackResponse": {
+                "type": "object",
+                "required": [
+                    "item"
+                ],
+                "properties": {
+                    "item": {
+                        "$ref": "#/components/schemas/UserFeedback"
+                    }
+                }
+            },
+            "ErrorResponse": {
+                "type": "object",
+                "required": [
+                    "error"
+                ],
+                "properties": {
+                    "error": {
+                        "type": "object",
+                        "required": [
+                            "code",
+                            "message"
+                        ],
+                        "properties": {
+                            "code": {
+                                "type": "string",
+                                "enum": [
+                                    "UNAUTHORIZED",
+                                    "RESTRICTED_ACCESS",
+                                    "INTERNAL_SERVER_ERROR",
+                                    "DAILY_LIMIT_REACHED",
+                                    "INVALID_CURSOR",
+                                    "MOMENT_NOT_FOUND",
+                                    "FORBIDDEN",
+                                    "INVALID_REQUEST"
+                                ],
+                                "description": "Machine-readable error code",
+                                "example": "DAILY_LIMIT_REACHED"
+                            },
+                            "message": {
+                                "type": "string",
+                                "description": "Human-readable error message",
+                                "example": "You've reached your daily limit of 10 moments. Upgrade to premium for 50 moments per day!"
+                            }
+                        }
+                    },
+                    "meta": {
+                        "type": "object",
+                        "description": "Optional additional metadata about the error",
+                        "additionalProperties": true,
+                        "example": {
+                            "limit": 10,
+                            "isPremium": false
+                        }
+                    }
+                }
+            }
+        },
+        "securitySchemes": {
+            "userAuth": {
+                "type": "apiKey",
+                "in": "header",
+                "name": "x-user-id",
+                "description": "User ID for authentication"
+            }
+        }
+    }
+}
