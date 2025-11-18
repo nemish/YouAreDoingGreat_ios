@@ -9,9 +9,23 @@ import SwiftUI
 
 @main
 struct YouAreDoingGreatApp: App {
+    @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
+
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            if hasCompletedOnboarding {
+                ContentView()
+                    .preferredColorScheme(.dark) // Force dark mode for v1
+            } else {
+                WelcomeView {
+                    completeOnboarding()
+                }
+                .preferredColorScheme(.dark) // Force dark mode for v1
+            }
         }
+    }
+
+    private func completeOnboarding() {
+        hasCompletedOnboarding = true
     }
 }

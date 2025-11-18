@@ -318,10 +318,62 @@ class Moment {
 - Calculates `timeAgo` in seconds and `happenedAt` date
 
 ### Visual Design
-- **Colors**: Deep navy → soft blue gradient background, pink/magenta accents
-- **Animations**: Starfield animation, breathing text (scale + opacity), fade transitions (0.2-0.35s)
-- **Haptics**: Light impact for primary taps, medium for "moment saved", light tick for tab switch
-- **Typography**: SF Rounded / SF Pro
+
+#### Color Palette
+
+**All colors are defined in `Assets.xcassets` with light/dark mode variants.**
+
+Access in code: `Color("Primary")` or via Color extensions.
+
+**Primary Colors:**
+- **Primary** - Warm amber/gold accent (Light: #E59500, Dark: #FFB84C)
+  - Used for: Primary buttons, highlights, key actions
+- **Secondary** - Soft purple/lavender (Light: #8A63D2, Dark: #A88BFA)
+  - Used for: Supporting elements, secondary actions
+
+**Background Colors:**
+- **Background** - Main background (Light: #FAFAFC, Dark: #0F111C deep navy)
+  - Used for: Main screen background, base layer
+- **BackgroundSecondary** - Cards and elevated surfaces (Light: #FFFFFF, Dark: #191C2A)
+  - Used for: Cards, modals, elevated content
+- **BackgroundTertiary** - Subtle elevations (Light: #F2F2F7, Dark: #232634)
+  - Used for: Input fields, subtle separations
+
+**Text Colors:**
+- **TextPrimary** - Main text (Light: #1C1C1E, Dark: #F2F2F7)
+  - Used for: Headlines, body text, primary content
+- **TextSecondary** - Subtitles and captions (Light: #636366, Dark: #98989D)
+  - Used for: Timestamps, descriptions, secondary info
+- **TextTertiary** - Placeholders and disabled text (Light: #AEAEB2, Dark: #636366)
+  - Used for: Placeholders, disabled states
+
+**Special Purpose:**
+- **Star** - Starfield animation (Light: Purple 30% opacity, Dark: White 80% opacity)
+  - Used for: Animated background stars
+- **Success** - Positive feedback (Light: #34C759, Dark: #30D158)
+  - Used for: Success states, moments saved confirmation
+- **Error** - Error states (Light: #FF3B30, Dark: #FF453A)
+  - Used for: Errors, destructive actions
+- **Warning** - Important info (Light: #FF9500, Dark: #FF9F0A)
+  - Used for: Warnings, important alerts
+
+**Gradients (defined in code):**
+- **CosmicGradient** - Background gradient using BackgroundTertiary → Background
+- **ButtonGradient** - Primary button gradient using Primary color variations
+
+#### Animations
+- **Starfield animation** - Slow-moving stars in background
+- **Breathing text** - Scale + opacity animation
+- **Fade transitions** - 0.2–0.35s duration
+
+#### Haptics
+- **Light impact** - Primary taps
+- **Medium impact** - "Moment saved" confirmation
+- **Light tick** - Tab switch
+
+#### Typography
+- **SF Rounded** - Primary font for warmth
+- **SF Pro** - System font for UI elements
 
 ### Error Handling
 - Network failures: Keep offline praise, show subtle error message
@@ -1523,3 +1575,4 @@ final class MockMomentRepository: MomentRepositoryProtocol {
 - **Privacy**: Include crisis disclaimer in Settings; this is not a crisis intervention app
 - **Offline-First**: Always create locally first, sync in background
 - **Client UUIDs**: Backend accepts client-provided UUIDs in POST requests
+- **Dark Mode Only (v1)**: App enforces dark mode via `.preferredColorScheme(.dark)` in `YouAreDoingGreatApp.swift`. All colors in `Assets.xcassets` have both light/dark variants defined for future light mode support, but currently only dark mode is active. To add light mode later: remove the `.preferredColorScheme(.dark)` modifier and adjust light mode color values as needed.

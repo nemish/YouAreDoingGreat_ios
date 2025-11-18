@@ -47,10 +47,11 @@ A lightweight emotional-wellness app where users log small daily wins, receive i
 
 ### Design System
 
-**Colors:**
-- **Primary**: Pink/magenta glow
-- **Background**: Dark cosmos gradient (deep navy → soft blue)
-- **Text**: Off-white
+**Colors:** (Defined in `Assets.xcassets`)
+- **Primary**: Warm amber/gold accent (#E59500 light, #FFB84C dark)
+- **Secondary**: Soft purple/lavender (#8A63D2 light, #A88BFA dark)
+- **Background**: Cosmic gradient - Deep navy (#0F111C) in dark mode
+- **Text**: Off-white (#F2F2F7) in dark mode, near-black (#1C1C1E) in light mode
 
 **Typography:**
 - SF Rounded / SF Pro
@@ -344,15 +345,34 @@ struct DailySummary {
 
 ### Colors
 
-- **Background:** Deep navy → soft blue gradient
-- **Accent:** Pink/magenta glow
-- **Text:** Off-white
+**All colors defined in `Assets.xcassets` with light/dark mode support.**
+
+**Primary Palette:**
+- **Primary:** Warm amber/gold accent (#E59500 → #FFB84C)
+- **Secondary:** Soft purple/lavender (#8A63D2 → #A88BFA)
+
+**Backgrounds:**
+- **Background:** Almost white → Deep navy (#FAFAFC → #0F111C)
+- **BackgroundSecondary:** White → Lighter navy (#FFFFFF → #191C2A)
+- **BackgroundTertiary:** Light gray → Medium navy (#F2F2F7 → #232634)
+
+**Text:**
+- **TextPrimary:** Near-black → Off-white (#1C1C1E → #F2F2F7)
+- **TextSecondary:** Medium gray → Light gray (#636366 → #98989D)
+- **TextTertiary:** Light gray → Dark gray (#AEAEB2 → #636366)
+
+**Semantic:**
+- **Success:** Green (#34C759 → #30D158)
+- **Error:** Red (#FF3B30 → #FF453A)
+- **Warning:** Orange (#FF9500 → #FF9F0A)
+- **Star:** Purple 30% → White 80% (for starfield)
 
 ### Effects
 
 - **Starfield animation** – Slow-moving stars in background
 - **Breathing text** – Scale + opacity animation
 - **Fade transitions** – 0.2–0.35s duration
+- **CosmicGradient** – Background gradient (BackgroundTertiary → Background)
 
 ### Haptics
 
@@ -414,3 +434,4 @@ All legal pages opened via SafariView:
 - **Performance:** Optimize for instant feedback. User should never wait to see praise.
 - **Privacy:** This is not a crisis intervention app. Include appropriate disclaimers.
 - **Offline-first:** Moments created locally first, synced to server in background for AI enrichment.
+- **Dark Mode Only (v1):** App currently supports dark mode only. Light mode infrastructure exists in asset catalog but is not active. App enforces dark mode via `.preferredColorScheme(.dark)`. Light mode can be added later by removing this modifier and adjusting color values.
