@@ -1,8 +1,5 @@
 # You Are Doing Great – iOS App Specification (v1)
 
-**Last updated:** November 2024
-**Authors:** Yara & ChatGPT
-
 ---
 
 ## 0. Purpose & Core Loop
@@ -22,6 +19,7 @@ A lightweight emotional-wellness app where users log small daily wins, receive i
 ### Design Principles
 
 - **Minimal friction** – 1–2 taps for main action
+- **Optional richness** – Main log works with zero extra input, but users can add feelings, notes, or photos when they want
 - **Warm, supportive tone** – Zero shame, zero pressure
 - **Beautiful, calm visual atmosphere** – Cosmic gradient, floating stars
 - **Instant feedback** – Always show something positive immediately
@@ -33,30 +31,33 @@ A lightweight emotional-wellness app where users log small daily wins, receive i
 
 ### Technical Stack
 
-| Component | Technology |
-|-----------|------------|
-| **Platform** | iOS 17+ |
-| **UI Framework** | SwiftUI |
-| **Architecture** | MVVM + lightweight reducers per module |
-| **Concurrency** | async/await |
-| **Networking** | URLSession + Codable models |
-| **Local Storage** | SwiftData |
-| **User Settings** | AppStorage / UserDefaults |
-| **Offline Praise** | Local JSON pool |
+| Component          | Technology                                         |
+| ------------------ | -------------------------------------------------- |
+| **Platform**       | iOS 17+                                            |
+| **UI Framework**   | SwiftUI                                            |
+| **Architecture**   | MVVM + lightweight reducers per module             |
+| **Concurrency**    | async/await                                        |
+| **Networking**     | URLSession + Codable models                        |
+| **Local Storage**  | SwiftData                                          |
+| **User Settings**  | AppStorage / UserDefaults                          |
+| **Offline Praise** | Local JSON pool                                    |
 | **AI Integration** | Server-side via Node.js API (simple POST endpoint) |
 
 ### Design System
 
 **Colors:** (Defined in `Assets.xcassets`)
+
 - **Primary**: Warm amber/gold accent (#E59500 light, #FFB84C dark)
 - **Secondary**: Soft purple/lavender (#8A63D2 light, #A88BFA dark)
 - **Background**: Cosmic gradient - Deep navy (#0F111C) in dark mode
 - **Text**: Off-white (#F2F2F7) in dark mode, near-black (#1C1C1E) in light mode
 
 **Typography:**
+
 - SF Rounded / SF Pro
 
 **Haptics:**
+
 - Light impact for primary taps
 - Medium impact for "moment saved"
 - Light tick for tab switch
@@ -103,13 +104,35 @@ Below are exact screen definitions including copy, behavior, and interaction.
 **Screen:** Welcome
 
 **UI Elements:**
-- **Title:** "You Are Doing Great"
-- **Subtitle:** "Log your small wins and get instant encouragement."
-- **CTA Button:** "Get started"
-- **Footer:** "Privacy Policy • Terms of Use"
+
+- **Tiny intro text (fades in above title):** "Hey. Glad you're here."
+- **Hero title:** "You're doing better than you think."
+- **Sub-headline (three short lines):** "This app helps you notice the small wins you usually ignore… and then feel a bit better about being a human disaster."
+- **Feature punchlines:** stacked bullets with light humor  
+  • "Log something you did."  
+  • "Get a little praise."  
+  • "Watch yourself slowly become less miserable."
+- **Warm reassurance block:** "Don’t worry, no toxic positivity. Just tiny steps and a little honesty."
+- **CTA Button:** "Alright, let's do this"
+- **Footer:** "Privacy Policy • Terms"
+- **Visual treatment:** Starfield / gradient background mirroring Home, gentle motion on stars, copy fades sequentially (intro → title → sub-headline → punches)
 
 **Behavior:**
+
 - On tap "Get started" → navigate to Home
+
+**First-launch sequence requirements:**
+
+1. Welcome screen → user taps “Alright, let’s do this.”
+2. Home screen loads and shows the single-use hint beneath the main CTA.
+3. First tap on “I Did a Thing” auto-populates the log text with `"I installed this app. A tiny step, but it counts."`
+4. User saves the moment, lands on Praise, and `hasCompletedFirstLog` flips to true so the hint never appears again (unless reinstall / data reset).
+
+**Testing checklist:**
+
+- Hint renders only on the first-ever Home display and disappears permanently after the first successful moment log.
+- Pre-filled copy appears exactly once and is fully editable; subsequent logs open empty.
+- Relaunches and cold starts respect the stored `hasCompletedFirstLog` flag so returning users never see the hint again.
 
 ---
 
@@ -118,6 +141,7 @@ Below are exact screen definitions including copy, behavior, and interaction.
 **Purpose:** Starting point, emotional entry.
 
 **UI:**
+
 - **Background:** Animated starfield
 - **Center text (breathing animation):** Random supportive phrase
 - **Primary button:** "I Did a Thing"
@@ -125,7 +149,10 @@ Below are exact screen definitions including copy, behavior, and interaction.
 - **Top-right action:** Settings icon
 
 **Behavior:**
-- Tap "I Did a Thing" → present Log Moment screen (modal)
+
+- First-launch hint: when `hasCompletedFirstLog == false`, render a single-use helper line under the primary button: “Hey… installing the app counts too. Wanna log that tiny win?” (appears only until the first successful log is saved)
+- Tap "I Did a Thing" → present Log Moment screen (modal); if `hasCompletedFirstLog == false`, pre-fill text field with `"I installed this app. A tiny step, but it counts."` (user can edit/clear freely, only occurs on that first tap)
+- Persist first-log completion via `@AppStorage("hasCompletedFirstLog") var hasCompletedFirstLog: Bool = false`; set to `true` immediately after the first moment save succeeds so the hint never reappears unless the app is reinstalled
 
 ---
 
@@ -134,8 +161,11 @@ Below are exact screen definitions including copy, behavior, and interaction.
 **Purpose:** User describes what they did and when.
 
 **UI:**
+
 - **Title:** "Nice — that counts. What did you do?"
-- **Multiline TextEditor** – User input for moment text
+- **Multiline TextEditor** – User input for moment text (optional; if left blank we store a private placeholder locally)
+- **First moment pre-fill:** when invoked from Home while `hasCompletedFirstLog == false`, show the default copy `"I installed this app. A tiny step, but it counts."` inside the TextEditor; this only happens once
+- **Optional enrichments:** lightweight fields to capture mood (picker), freeform note, and 0–n photo attachments; all hidden/collapsed by default so a user can just tap save with no extra steps
 - **Time row:**
   - Icon: ⏱
   - Label: "Happened just now"
@@ -143,6 +173,7 @@ Below are exact screen definitions including copy, behavior, and interaction.
 - **Bottom CTA:** "Save this moment"
 
 **Time Picker Bottom Sheet:**
+
 - **Title:** "When did it happen?"
 - **Numeric input:** `[ 5 ]`
 - **Picker:** `[ minutes | hours | days ]`
@@ -152,7 +183,10 @@ Below are exact screen definitions including copy, behavior, and interaction.
   - Secondary: "Set to just now"
 
 **On Save:**
+
 1. Save moment to SwiftData (with client UUID)
+   - Persist optional metadata (mood tag, note text, photo references) when present; store null/empty otherwise with no prompts
+   - If `hasCompletedFirstLog == false`, set it to `true` immediately after a successful save (this also permanently hides the Home hint)
 2. Navigate to Praise Screen
 
 ---
@@ -162,6 +196,7 @@ Below are exact screen definitions including copy, behavior, and interaction.
 **Purpose:** Deliver instant emotional reinforcement.
 
 **UI Layout:**
+
 - **Header:** "Moment logged"
 - **Card:** Moment text + time
 - **Offline praise (instant):** e.g., "Nice move, champ."
@@ -171,6 +206,7 @@ Below are exact screen definitions including copy, behavior, and interaction.
   - "View today's moments"
 
 **Edge Cases:**
+
 - If AI fails: Keep offline praise
 - Optional subtle note: "Couldn't fetch extra encouragement this time."
 
@@ -181,6 +217,7 @@ Below are exact screen definitions including copy, behavior, and interaction.
 **Purpose:** Chronological list of user moments.
 
 **UI:**
+
 - **Title:** "Moments"
 - **Sectioned list:**
   - Section header: "Today"
@@ -189,6 +226,7 @@ Below are exact screen definitions including copy, behavior, and interaction.
     - "5 min ago · 'You made space for yourself.'"
 
 **Empty State:**
+
 - Message: "No moments yet… but you're here, so that's one."
 - Button: "Log your first moment"
 
@@ -199,10 +237,12 @@ Below are exact screen definitions including copy, behavior, and interaction.
 **Purpose:** Show long-term progress and daily summaries.
 
 **UI:**
+
 - **Title:** "Your journey"
 - **Subtitle:** "Tiny steps, day by day."
 
 **Daily Card Example:**
+
 ```
 Oct 25, 2025 🙂 Calm day
 3 moments logged
@@ -216,6 +256,7 @@ Summary:
 ```
 
 **Empty State:**
+
 - Message: "Once you have a few days of moments, you'll see your journey here."
 
 ---
@@ -223,15 +264,18 @@ Summary:
 ### 3.7 Paywall Screen
 
 **UI:**
+
 - **Title:** "You're doing great. Let's keep it going."
 - **Subheader:** "Unlock more praise and deeper insights."
 
 **Benefits:**
+
 - Unlimited AI encouragement
 - Daily summaries
 - Future features
 
 **Plans:**
+
 - **Yearly (recommended):** 7-day free trial, $X.99/year
 - **Monthly:** $Y.99/month
 
@@ -246,19 +290,23 @@ Summary:
 **Sections:**
 
 **Subscription**
+
 - Manage Subscription
 - Restore Purchases
 
 **Privacy & Data**
+
 - Delete my data
 - Privacy Policy
 - Terms of Use
 
 **Support**
+
 - Support URL
 - Contact us
 
 **About**
+
 - App version
 - Crisis disclaimer
 
@@ -348,20 +396,24 @@ struct DailySummary {
 **All colors defined in `Assets.xcassets` with light/dark mode support.**
 
 **Primary Palette:**
+
 - **Primary:** Warm amber/gold accent (#E59500 → #FFB84C)
 - **Secondary:** Soft purple/lavender (#8A63D2 → #A88BFA)
 
 **Backgrounds:**
+
 - **Background:** Almost white → Deep navy (#FAFAFC → #0F111C)
 - **BackgroundSecondary:** White → Lighter navy (#FFFFFF → #191C2A)
 - **BackgroundTertiary:** Light gray → Medium navy (#F2F2F7 → #232634)
 
 **Text:**
+
 - **TextPrimary:** Near-black → Off-white (#1C1C1E → #F2F2F7)
 - **TextSecondary:** Medium gray → Light gray (#636366 → #98989D)
 - **TextTertiary:** Light gray → Dark gray (#AEAEB2 → #636366)
 
 **Semantic:**
+
 - **Success:** Green (#34C759 → #30D158)
 - **Error:** Red (#FF3B30 → #FF453A)
 - **Warning:** Orange (#FF9500 → #FF9F0A)
