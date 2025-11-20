@@ -54,7 +54,12 @@ A lightweight emotional-wellness app where users log small daily wins, receive i
 
 **Typography:**
 
-- SF Rounded / SF Pro
+- **GloriaHallelujah** - Handwritten font for titles and headings
+- **Comfortaa** - Rounded font for body text and UI elements
+
+Custom fonts defined in `Font+Extensions.swift` with semantic styles:
+- Titles: `.appLargeTitle`, `.appTitle`, `.appTitle2`, `.appTitle3`
+- Body: `.appHeadline`, `.appBody`, `.appCallout`, `.appSubheadline`, `.appFootnote`, `.appCaption`
 
 **Haptics:**
 
@@ -421,7 +426,10 @@ struct DailySummary {
 
 ### Effects
 
-- **Starfield animation** – Slow-moving stars in background
+- **Starfield animation** – 500 static stars with group animations:
+  - Stars vary in size (0.8-3.0px) and opacity (0.3-0.8) for depth
+  - Entire layer animates: drift (20s), rotation ±30° (60s), scale 1.0-1.1 (25s)
+  - Two fog/nebula radial gradients (top-trailing, bottom-leading) with slow drift
 - **Breathing text** – Scale + opacity animation
 - **Fade transitions** – 0.2–0.35s duration
 - **CosmicGradient** – Background gradient (BackgroundTertiary → Background)

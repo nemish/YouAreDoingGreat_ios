@@ -126,7 +126,8 @@ YouAreDoingGreat/
 │   └── Extensions/
 │       ├── Date+Extensions.swift
 │       ├── View+Extensions.swift
-│       └── Color+Theme.swift
+│       ├── Color+Extensions.swift
+│       └── Font+Extensions.swift
 │
 ├── Features/
 │   ├── Home/
@@ -204,6 +205,9 @@ YouAreDoingGreat/
 │
 └── Resources/
     ├── Assets.xcassets
+    ├── Fonts/
+    │   ├── Comfortaa-VariableFont_wght.ttf
+    │   └── GloriaHallelujah-Regular.ttf
     ├── OfflinePraise.json            # Local praise pool
     └── Localizable.strings
 ```
@@ -372,8 +376,19 @@ Access in code: `Color("Primary")` or via Color extensions.
 - **Light tick** - Tab switch
 
 #### Typography
-- **SF Rounded** - Primary font for warmth
-- **SF Pro** - System font for UI elements
+
+**Custom Fonts (defined in `Font+Extensions.swift`):**
+- **GloriaHallelujah** - Handwritten font for titles and headings
+  - `appLargeTitle` (40pt), `appTitle` (32pt), `appTitle2` (26pt), `appTitle3` (22pt)
+- **Comfortaa** - Rounded font for body text and general UI
+  - `appHeadline` (17pt semibold), `appBody` (17pt), `appCallout` (16pt)
+  - `appSubheadline` (15pt), `appFootnote` (13pt), `appCaption` (12pt)
+
+Fonts registered in `Info.plist` under `UIAppFonts`:
+- `Comfortaa-VariableFont_wght.ttf`
+- `GloriaHallelujah-Regular.ttf`
+
+Usage: `Text("Hello").font(.appBody)` or `Text("Title").font(.appLargeTitle)`
 
 ### Error Handling
 - Network failures: Keep offline praise, show subtle error message
