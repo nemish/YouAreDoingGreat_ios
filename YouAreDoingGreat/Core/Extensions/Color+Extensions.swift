@@ -28,10 +28,6 @@ extension Color {
 
     // MARK: Text Colors
 
-    /// Main text
-    /// Light: #1C1C1E, Dark: #F2F2F7
-    static let appTextPrimary = Color("TextPrimary")
-
     /// Subtitles and captions
     /// Light: #636366, Dark: #98989D
     static let appTextSecondary = Color("TextSecondary")

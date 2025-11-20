@@ -221,11 +221,11 @@ extension View {
     VStack {
         Text("You Are Doing Great")
             .font(.largeTitle.weight(.bold))
-            .foregroundStyle(Color.appTextPrimary)
+            .foregroundStyle(.textPrimary)
 
         Text("Beautiful cosmic atmosphere")
             .font(.body)
-            .foregroundStyle(Color.appTextSecondary)
+            .foregroundStyle(.textSecondary)
     }
     .starfieldBackground()
     .preferredColorScheme(.dark)

@@ -58,7 +58,7 @@ struct WelcomeView: View {
 
     private var introText: some View {
         Text("Hey. Glad you're here.")
-            .font(.system(.body, design: .rounded))
+            .font(.appBody)
             .foregroundStyle(Color.appTextSecondary)
             .opacity(showIntro ? 1 : 0)
             .padding(.bottom, 16)
@@ -67,9 +67,9 @@ struct WelcomeView: View {
     // MARK: - Hero Title
 
     private var heroTitle: some View {
-        Text("You're doing better\nthan you think.")
-            .font(.system(size: 40, weight: .bold, design: .rounded))
-            .foregroundStyle(Color.appTextPrimary)
+        Text("You're doing better\nthan you think")
+            .font(.appTitle)
+            .foregroundStyle(Color.textHighlightOnePrimary)
             .multilineTextAlignment(.center)
             .scaleEffect(breathingScale)
             .opacity(showTitle ? breathingOpacity : 0)
@@ -81,12 +81,12 @@ struct WelcomeView: View {
     private var subHeadline: some View {
         VStack(spacing: 8) {
             Text("This app helps you notice the small wins you usually ignore…")
-                .font(.system(.body, design: .rounded))
+                .font(.appBody)
                 .foregroundStyle(Color.appTextSecondary)
                 .multilineTextAlignment(.center)
 
             Text("and then feel a bit better about being a human disaster.")
-                .font(.system(.body, design: .rounded))
+                .font(.appBody)
                 .foregroundStyle(Color.appTextSecondary)
                 .multilineTextAlignment(.center)
         }
@@ -110,12 +110,12 @@ struct WelcomeView: View {
     private func featureBullet(_ text: String) -> some View {
         HStack(alignment: .top, spacing: 12) {
             Text("•")
-                .font(.system(.body, design: .rounded))
+                .font(.appBody)
                 .foregroundStyle(Color.primary)
 
             Text(text)
-                .font(.system(.body, design: .rounded))
-                .foregroundStyle(Color.appTextPrimary)
+                .font(.appBody)
+                .foregroundStyle(Color.textPrimary)
         }
     }
 
@@ -123,7 +123,7 @@ struct WelcomeView: View {
 
     private var reassuranceBlock: some View {
         Text("Don't worry, no toxic positivity. Just tiny steps and a little honesty.")
-            .font(.system(.callout, design: .rounded))
+            .font(.appCallout)
             .foregroundStyle(Color.appTextSecondary)
             .multilineTextAlignment(.center)
             .padding(.horizontal, 16)
@@ -147,19 +147,19 @@ struct WelcomeView: View {
                 openPrivacyPolicy()
             } label: {
                 Text("Privacy Policy")
-                    .font(.system(.footnote, design: .rounded))
+                    .font(.appFootnote)
                     .foregroundStyle(Color.appTextTertiary)
             }
 
             Text("•")
-                .font(.system(.footnote, design: .rounded))
+                .font(.appFootnote)
                 .foregroundStyle(Color.appTextTertiary)
 
             Button {
                 openTerms()
             } label: {
                 Text("Terms")
-                    .font(.system(.footnote, design: .rounded))
+                    .font(.appFootnote)
                     .foregroundStyle(Color.appTextTertiary)
             }
         }

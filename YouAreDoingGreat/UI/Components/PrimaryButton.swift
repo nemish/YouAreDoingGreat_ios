@@ -13,8 +13,7 @@ struct PrimaryButton: View {
     var body: some View {
         Button(action: handleTap) {
             Text(title)
-                .font(.system(.headline, design: .rounded))
-                .fontWeight(.semibold)
+                .font(.appHeadline)
                 .foregroundStyle(.white)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 16)
