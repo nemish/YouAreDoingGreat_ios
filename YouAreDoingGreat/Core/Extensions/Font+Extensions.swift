@@ -77,6 +77,10 @@ extension Font {
         .comfortaa(13)
     }
 
+    static var appFootnoteWriting: Font {
+        .gloriaHallelujah(13)
+    }
+
     /// Caption style (Comfortaa)
     static var appCaption: Font {
         .comfortaa(12)

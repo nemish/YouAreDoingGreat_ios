@@ -12,42 +12,32 @@ struct WelcomeView: View {
     @State private var showTitle = false
     @State private var showSubHeadline = false
     @State private var showFeatures = false
+    @State private var showButton = false
+    @State private var showFooter = false
 
     var onGetStarted: () -> Void
 
     var body: some View {
-        ScrollView {
-            VStack(spacing: 0) {
-                Spacer()
-                    .frame(height: 60)
+        VStack(spacing: 0) {
+            Spacer()
+                .frame(height: 100)
 
-                // Intro text
-                introText
+            introText
 
-                // Hero title with breathing animation
-                heroTitle
+            heroTitle
 
-                // Sub-headline
-                subHeadline
+            subHeadline
 
-                // Feature bullets
-                featureBullets
+            Spacer()
 
-                // Reassurance block
-                reassuranceBlock
+            // CTA Button
+            ctaButton
 
-                Spacer()
-                    .frame(height: 40)
-
-                // CTA Button
-                ctaButton
-
-                // Footer with legal links
-                footerSection
-            }
-            .padding(.horizontal, 32)
-            .padding(.bottom, 40)
+            // Footer with legal links
+            footerSection
         }
+        .padding(.horizontal, 32)
+        .padding(.bottom, 40)
         .starfieldBackground()
         .onAppear {
             startAnimations()
@@ -85,9 +75,9 @@ struct WelcomeView: View {
                 .foregroundStyle(Color.appTextSecondary)
                 .multilineTextAlignment(.center)
 
-            Text("and then feel a bit better about being a human disaster.")
+            Text("and feel a bit better")
                 .font(.appBody)
-                .foregroundStyle(Color.appTextSecondary)
+                .foregroundStyle(.textPrimary)
                 .multilineTextAlignment(.center)
         }
         .opacity(showSubHeadline ? 1 : 0)
@@ -95,40 +85,6 @@ struct WelcomeView: View {
         .padding(.bottom, 32)
     }
 
-    // MARK: - Feature Bullets
-
-    private var featureBullets: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            featureBullet("Log something you did.")
-            featureBullet("Get a little praise.")
-            featureBullet("Watch yourself slowly become less miserable.")
-        }
-        .opacity(showFeatures ? 1 : 0)
-        .padding(.bottom, 32)
-    }
-
-    private func featureBullet(_ text: String) -> some View {
-        HStack(alignment: .top, spacing: 12) {
-            Text("•")
-                .font(.appBody)
-                .foregroundStyle(Color.primary)
-
-            Text(text)
-                .font(.appBody)
-                .foregroundStyle(Color.textPrimary)
-        }
-    }
-
-    // MARK: - Reassurance Block
-
-    private var reassuranceBlock: some View {
-        Text("Don't worry, no toxic positivity. Just tiny steps and a little honesty.")
-            .font(.appCallout)
-            .foregroundStyle(Color.appTextSecondary)
-            .multilineTextAlignment(.center)
-            .padding(.horizontal, 16)
-            .padding(.bottom, 40)
-    }
 
     // MARK: - CTA Button
 
@@ -136,6 +92,7 @@ struct WelcomeView: View {
         PrimaryButton(title: "Alright, let's do this") {
             onGetStarted()
         }
+        .opacity(showButton ? 1 : 0)
         .padding(.bottom, 32)
     }
 
@@ -163,6 +120,7 @@ struct WelcomeView: View {
                     .foregroundStyle(Color.appTextTertiary)
             }
         }
+        .opacity(showFooter ? 1 : 0)
     }
 
     // MARK: - Private Methods
@@ -183,6 +141,14 @@ struct WelcomeView: View {
 
         withAnimation(.easeIn(duration: 0.6).delay(1.8)) {
             showFeatures = true
+        }
+
+        withAnimation(.easeIn(duration: 0.6).delay(2.3)) {
+            showButton = true
+        }
+
+        withAnimation(.easeIn(duration: 0.6).delay(2.8)) {
+            showFooter = true
         }
 
         // Breathing animation for title

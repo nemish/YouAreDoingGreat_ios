@@ -6,6 +6,7 @@ import SwiftUI
 struct PrimaryButton: View {
     let title: String
     let action: () -> Void
+    var showGlow: Bool = false
 
     // Haptic feedback
     private let impactFeedback = UIImpactFeedbackGenerator(style: .light)
@@ -15,6 +16,7 @@ struct PrimaryButton: View {
             Text(title)
                 .font(.appHeadline)
                 .foregroundStyle(.white)
+                .shadow(color: .black.opacity(0.3), radius: 2, x: 0, y: 1)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 16)
                 .background(
@@ -26,6 +28,12 @@ struct PrimaryButton: View {
                     radius: 12,
                     x: 0,
                     y: 6
+                )
+                .shadow(
+                    color: showGlow ? .white.opacity(0.15) : .clear,
+                    radius: 8,
+                    x: 0,
+                    y: 0
                 )
         }
         .buttonStyle(ScaleButtonStyle())

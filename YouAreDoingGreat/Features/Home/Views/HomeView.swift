@@ -51,7 +51,7 @@ struct HomeView: View {
                     // Breathing supportive phrase
                     Text(currentPhrase)
                         .font(.appTitle)
-                        .foregroundStyle(Color.appTextPrimary)
+                        .foregroundStyle(.textPrimary)
                         .multilineTextAlignment(.center)
                         .scaleEffect(breathingScale)
                         .opacity(breathingOpacity)
@@ -62,16 +62,10 @@ struct HomeView: View {
                             showLogMoment = true
                         }
 
-                        // Subtext
-                        Text("Tap to log something you did. Big or small, it counts.")
-                            .font(.appCallout)
-                            .foregroundStyle(Color.appTextSecondary)
-                            .multilineTextAlignment(.center)
-
                         // First-launch hint
                         if !hasCompletedFirstLog {
                             Text("Hey… installing the app counts too. Wanna log that tiny win?")
-                                .font(.appFootnote)
+                                .font(.appFootnoteWriting)
                                 .foregroundStyle(Color.primary)
                                 .multilineTextAlignment(.center)
                                 .padding(.top, 8)
@@ -121,6 +115,7 @@ struct HomeView: View {
 
 #Preview("Home View") {
     HomeView()
+        .preferredColorScheme(.dark)
 }
 
 #Preview("Home View - First Launch") {
@@ -128,4 +123,5 @@ struct HomeView: View {
         .onAppear {
             UserDefaults.standard.set(false, forKey: "hasCompletedFirstLog")
         }
+        .preferredColorScheme(.dark)
 }

@@ -111,16 +111,11 @@ Below are exact screen definitions including copy, behavior, and interaction.
 **UI Elements:**
 
 - **Tiny intro text (fades in above title):** "Hey. Glad you're here."
-- **Hero title:** "You're doing better than you think."
-- **Sub-headline (three short lines):** "This app helps you notice the small wins you usually ignore… and then feel a bit better about being a human disaster."
-- **Feature punchlines:** stacked bullets with light humor  
-  • "Log something you did."  
-  • "Get a little praise."  
-  • "Watch yourself slowly become less miserable."
-- **Warm reassurance block:** "Don’t worry, no toxic positivity. Just tiny steps and a little honesty."
+- **Hero title:** "You're doing better than you think"
+- **Sub-headline:** "This app helps you notice the small wins you usually ignore… and feel a bit better"
 - **CTA Button:** "Alright, let's do this"
 - **Footer:** "Privacy Policy • Terms"
-- **Visual treatment:** Starfield / gradient background mirroring Home, gentle motion on stars, copy fades sequentially (intro → title → sub-headline → punches)
+- **Visual treatment:** Starfield / gradient background mirroring Home, gentle motion on stars, copy fades sequentially (intro → title → sub-headline)
 
 **Behavior:**
 
