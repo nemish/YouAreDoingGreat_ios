@@ -8,17 +8,39 @@
 import SwiftUI
 
 struct ContentView: View {
+    @State private var selectedTab = 0
+
     var body: some View {
-        VStack {
-            Image(systemName: "globe")
-                .imageScale(.large)
-                .foregroundStyle(.tint)
-            Text("Hello, world!")
+        TabView(selection: $selectedTab) {
+            HomeView()
+                .tabItem {
+                    Label("Home", systemImage: "house.fill")
+                }
+                .tag(0)
+
+            // TODO: MomentsListView
+            Text("Moments")
+                .font(.appTitle)
+                .starfieldBackground()
+                .tabItem {
+                    Label("Moments", systemImage: "list.bullet")
+                }
+                .tag(1)
+
+            // TODO: JourneyView
+            Text("Journey")
+                .font(.appTitle)
+                .starfieldBackground()
+                .tabItem {
+                    Label("Journey", systemImage: "chart.line.uptrend.xyaxis")
+                }
+                .tag(2)
         }
-        .padding()
+        .tint(Color.primary)
     }
 }
 
 #Preview {
     ContentView()
+        .preferredColorScheme(.dark)
 }
