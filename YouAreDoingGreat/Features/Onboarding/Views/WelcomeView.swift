@@ -70,7 +70,7 @@ struct WelcomeView: View {
 
     private var subHeadline: some View {
         VStack(spacing: 8) {
-            Text("This app helps you notice the small wins you usually ignore…")
+            Text("I help you notice the small wins you usually ignore…")
                 .font(.appBody)
                 .foregroundStyle(Color.appTextSecondary)
                 .multilineTextAlignment(.center)
