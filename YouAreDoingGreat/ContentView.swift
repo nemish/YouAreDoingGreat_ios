@@ -36,7 +36,7 @@ struct ContentView: View {
                 }
                 .tag(2)
         }
-        .tint(Color.primary)
+        .tint(Color.appPrimary)
     }
 }
 

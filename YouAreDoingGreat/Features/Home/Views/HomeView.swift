@@ -38,7 +38,7 @@ struct HomeView: View {
                     } label: {
                         Image(systemName: "gearshape")
                             .font(.system(size: 22))
-                            .foregroundStyle(Color.appTextSecondary)
+                            .foregroundStyle(Color.textSecondary)
                     }
                 }
                 .padding(.horizontal, 24)
@@ -66,7 +66,7 @@ struct HomeView: View {
                         if !hasCompletedFirstLog {
                             Text("Hey… installing the app counts too. Wanna log that tiny win?")
                                 .font(.appFootnoteWriting)
-                                .foregroundStyle(Color.primary)
+                                .foregroundStyle(Color.appPrimary)
                                 .multilineTextAlignment(.center)
                                 .padding(.top, 8)
                         }

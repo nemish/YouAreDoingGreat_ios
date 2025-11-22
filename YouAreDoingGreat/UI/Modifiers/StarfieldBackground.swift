@@ -46,7 +46,7 @@ struct StarfieldBackground: ViewModifier {
                     ForEach(0..<stars.count, id: \.self) { index in
                         let star = stars[index]
                         Circle()
-                            .fill(Color.starfield)
+                            .fill(Color.star)
                             .frame(width: star.size, height: star.size)
                             .opacity(star.opacity)
                             .position(
@@ -79,7 +79,7 @@ struct StarfieldBackground: ViewModifier {
             // Fog 1 - Purple tint
             RadialGradient(
                 gradient: Gradient(colors: [
-                    Color.secondary.opacity(0.15),
+                    Color.appSecondary.opacity(0.15),
                     Color.clear
                 ]),
                 center: .topTrailing,
@@ -92,7 +92,7 @@ struct StarfieldBackground: ViewModifier {
             // Fog 2 - Softer purple
             RadialGradient(
                 gradient: Gradient(colors: [
-                    Color.secondary.opacity(0.1),
+                    Color.appSecondary.opacity(0.1),
                     Color.clear
                 ]),
                 center: .bottomLeading,

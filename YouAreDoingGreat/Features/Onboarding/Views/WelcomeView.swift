@@ -49,7 +49,7 @@ struct WelcomeView: View {
     private var introText: some View {
         Text("Hey. Glad you're here.")
             .font(.appBody)
-            .foregroundStyle(Color.appTextSecondary)
+            .foregroundStyle(Color.textSecondary)
             .opacity(showIntro ? 1 : 0)
             .padding(.bottom, 16)
     }
@@ -72,7 +72,7 @@ struct WelcomeView: View {
         VStack(spacing: 8) {
             Text("I help you notice the small wins you usually ignore…")
                 .font(.appBody)
-                .foregroundStyle(Color.appTextSecondary)
+                .foregroundStyle(Color.textSecondary)
                 .multilineTextAlignment(.center)
 
             Text("and feel a bit better")
@@ -87,9 +87,8 @@ struct WelcomeView: View {
 
 
     // MARK: - CTA Button
-
     private var ctaButton: some View {
-        PrimaryButton(title: "Alright, let's do this") {
+        PrimaryButton(title: "Alright, let's do this", showGlow: true) {
             onGetStarted()
         }
         .opacity(showButton ? 1 : 0)
@@ -105,19 +104,19 @@ struct WelcomeView: View {
             } label: {
                 Text("Privacy Policy")
                     .font(.appFootnote)
-                    .foregroundStyle(Color.appTextTertiary)
+                    .foregroundStyle(Color.textTertiary)
             }
 
             Text("•")
                 .font(.appFootnote)
-                .foregroundStyle(Color.appTextTertiary)
+                .foregroundStyle(Color.textTertiary)
 
             Button {
                 openTerms()
             } label: {
                 Text("Terms")
                     .font(.appFootnote)
-                    .foregroundStyle(Color.appTextTertiary)
+                    .foregroundStyle(Color.textTertiary)
             }
         }
         .opacity(showFooter ? 1 : 0)

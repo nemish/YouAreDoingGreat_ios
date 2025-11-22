@@ -5,8 +5,8 @@ import SwiftUI
 
 struct PrimaryButton: View {
     let title: String
-    let action: () -> Void
     var showGlow: Bool = false
+    let action: () -> Void
 
     // Haptic feedback
     private let impactFeedback = UIImpactFeedbackGenerator(style: .light)
@@ -24,7 +24,7 @@ struct PrimaryButton: View {
                 )
                 .clipShape(RoundedRectangle(cornerRadius: 16))
                 .shadow(
-                    color: Color.primary.opacity(0.3),
+                    color: Color.appPrimary.opacity(0.3),
                     radius: 12,
                     x: 0,
                     y: 6
