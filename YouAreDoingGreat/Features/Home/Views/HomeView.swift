@@ -93,27 +93,32 @@ struct HomeView: View {
                 .padding(.bottom, 40)
             }
         }
-        .starfieldBackground()
+        .starfieldBackground(isPaused: showLogMoment || showSettings)
         .onAppear {
             selectRandomPhrase()
             startBreathingAnimation()
         }
         .sheet(isPresented: $showLogMoment) {
             // TODO: LogMomentView
-            Text("Log Moment Screen")
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .background(
-                    RadialGradient(
-                        gradient: Gradient(colors: [
-                            .backgroundContrastSecondary,
-                            .backgroundContrast
-                        ]),
-                        center: .center,
-                        startRadius: 0,
-                        endRadius: 200
-                    )
+            ZStack {
+                // Top accent glow
+                RadialGradient(
+                    gradient: Gradient(colors: [
+                        .backgroundContrast,
+                        .backgroundContrastSecondary
+                    ]),
+                    center: .top,
+                    startRadius: 0,
+                    endRadius: 800
                 )
-                .presentationDetents([.large])
+                .ignoresSafeArea()
+
+                // Content
+                Text("Log Moment Screen")
+                    .font(.appTitle)
+                    .foregroundStyle(.textPrimary)
+            }
+            .presentationDetents([.large])
         }
         .sheet(isPresented: $showSettings) {
             // TODO: SettingsView

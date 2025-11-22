@@ -1,82 +1,134 @@
 import SwiftUI
 
-// MARK: - Starfield Background ViewModifier
-// Dark mode only for v1
+// MARK: - Shared Star Data
+// Generated once at app launch, reused across all starfield instances
 
-struct StarfieldBackground: ViewModifier {
-    // Star data structure
-    private struct Star {
+private enum StarfieldData {
+    struct Star {
         let x: CGFloat
         let y: CGFloat
         let size: CGFloat
         let opacity: Double
     }
 
-    @State private var stars: [Star] = []
-    @State private var offsetX: CGFloat = 0
-    @State private var offsetY: CGFloat = 0
-    @State private var rotation: Double = 0
-    @State private var scale: CGFloat = 1.0
+    static let shared: [Star] = {
+        var stars: [Star] = []
+        let expandedRange: CGFloat = 1.5
 
-    // Fog/nebula positions
-    @State private var fog1Offset: CGSize = .zero
-    @State private var fog2Offset: CGSize = .zero
+        for _ in 0..<2500 {
+            let x = CGFloat.random(in: 0...expandedRange)
+            let y = CGFloat.random(in: 0...expandedRange)
+
+            let sizeRoll = Int.random(in: 0..<100)
+            let size: CGFloat
+            if sizeRoll < 70 {
+                size = CGFloat.random(in: 0.8...1.2)
+            } else if sizeRoll < 90 {
+                size = CGFloat.random(in: 1.2...2.0)
+            } else {
+                size = CGFloat.random(in: 2.0...3.0)
+            }
+
+            let opacity = Double.random(in: 0.3...0.8)
+            stars.append(Star(x: x, y: y, size: size, opacity: opacity))
+        }
+
+        return stars
+    }()
+
+    static let startTime = Date()
+}
+
+// MARK: - Starfield Background ViewModifier
+// Dark mode only for v1
+
+struct StarfieldBackground: ViewModifier {
+    var isPaused: Bool = false
+
+    @State private var pausedTime: TimeInterval = 0
+    @State private var timeOffset: TimeInterval = 0
+
+    // Easing function for smooth animation
+    private func easeInOut(_ t: Double) -> Double {
+        t < 0.5 ? 2 * t * t : 1 - pow(-2 * t + 2, 2) / 2
+    }
+
+    // Calculate animation progress (0 to 1, back to 0)
+    private func animationProgress(elapsed: TimeInterval, duration: Double) -> Double {
+        let cycle = elapsed.truncatingRemainder(dividingBy: duration * 2)
+        let normalized = cycle / duration
+        if normalized < 1 {
+            return easeInOut(normalized)
+        } else {
+            return easeInOut(2 - normalized)
+        }
+    }
 
     func body(content: Content) -> some View {
-        ZStack {
-            // Cosmic gradient background
-            LinearGradient.cosmic
-                .ignoresSafeArea()
+        TimelineView(.animation(paused: isPaused)) { timeline in
+            let elapsed = isPaused ? pausedTime : timeline.date.timeIntervalSince(StarfieldData.startTime) + timeOffset
 
-            // Fog/nebula layers (radial gradients)
-            fogLayer
+            // Calculate animated values
+            let driftProgress = animationProgress(elapsed: elapsed, duration: 20)
+            let rotationProgress = animationProgress(elapsed: elapsed, duration: 60)
+            let scaleProgress = animationProgress(elapsed: elapsed, duration: 25)
+            let fog1Progress = animationProgress(elapsed: elapsed, duration: 30)
+            let fog2Progress = animationProgress(elapsed: elapsed, duration: 35)
 
-            // Static starfield layer with group animation
-            GeometryReader { geometry in
-                let expandedSize = calculateExpandedSize(for: geometry.size)
-                // Stars are generated in range 0 to 1.5, map to expanded size
-                let expandedRange: CGFloat = 1.5
-                // Center the expanded starfield over the original geometry
-                let centerOffset = CGSize(
-                    width: (expandedSize.width - geometry.size.width) / 2,
-                    height: (expandedSize.height - geometry.size.height) / 2
-                )
-                
-                ZStack {
-                    ForEach(0..<stars.count, id: \.self) { index in
-                        let star = stars[index]
-                        Circle()
-                            .fill(Color.star)
-                            .frame(width: star.size, height: star.size)
-                            .opacity(star.opacity)
-                            .position(
-                                x: star.x / expandedRange * expandedSize.width - centerOffset.width,
-                                y: star.y / expandedRange * expandedSize.height - centerOffset.height
-                            )
+            ZStack {
+                // Cosmic gradient background
+                LinearGradient.cosmic
+                    .ignoresSafeArea()
+
+                // Fog/nebula layers (radial gradients)
+                fogLayer(fog1Progress: fog1Progress, fog2Progress: fog2Progress)
+
+                // Static starfield layer with group animation
+                GeometryReader { geometry in
+                    let expandedSize = calculateExpandedSize(for: geometry.size)
+                    let expandedRange: CGFloat = 1.5
+                    let centerOffset = CGSize(
+                        width: (expandedSize.width - geometry.size.width) / 2,
+                        height: (expandedSize.height - geometry.size.height) / 2
+                    )
+
+                    ZStack {
+                        ForEach(0..<StarfieldData.shared.count, id: \.self) { index in
+                            let star = StarfieldData.shared[index]
+                            Circle()
+                                .fill(Color.star)
+                                .frame(width: star.size, height: star.size)
+                                .opacity(star.opacity)
+                                .position(
+                                    x: star.x / expandedRange * expandedSize.width - centerOffset.width,
+                                    y: star.y / expandedRange * expandedSize.height - centerOffset.height
+                                )
+                        }
                     }
+                    .offset(x: 8 * driftProgress, y: -5 * driftProgress)
+                    .rotationEffect(.degrees(30 * rotationProgress))
+                    .scaleEffect(1.0 + 0.1 * scaleProgress)
+                    .drawingGroup()
                 }
-                .offset(x: offsetX, y: offsetY)
-                .rotationEffect(.degrees(rotation))
-                .scaleEffect(scale)
-                .drawingGroup()
-            }
-            .ignoresSafeArea()
-            .allowsHitTesting(false)
+                .ignoresSafeArea()
+                .allowsHitTesting(false)
 
-            // Content on top
-            content
-        }
-        .onAppear {
-            if stars.isEmpty {
-                generateStars()
+                // Content on top
+                content
             }
-            startAnimations()
+        }
+        .onChange(of: isPaused) { _, paused in
+            if paused {
+                pausedTime = Date().timeIntervalSince(StarfieldData.startTime) + timeOffset
+            } else {
+                timeOffset = pausedTime - Date().timeIntervalSince(StarfieldData.startTime)
+            }
         }
     }
 
     // MARK: - Fog Layer
 
-    private var fogLayer: some View {
+    private func fogLayer(fog1Progress: Double, fog2Progress: Double) -> some View {
         ZStack {
             // Fog 1 - Purple tint
             RadialGradient(
@@ -88,7 +140,7 @@ struct StarfieldBackground: ViewModifier {
                 startRadius: 10,
                 endRadius: 300
             )
-            .offset(fog1Offset)
+            .offset(x: 50 * fog1Progress, y: -50 * fog1Progress)
             .ignoresSafeArea()
 
             // Fog 2 - Softer purple
@@ -101,7 +153,7 @@ struct StarfieldBackground: ViewModifier {
                 startRadius: 20,
                 endRadius: 250
             )
-            .offset(fog2Offset)
+            .offset(x: -50 * fog2Progress, y: 50 * fog2Progress)
             .ignoresSafeArea()
         }
     }
@@ -128,92 +180,14 @@ struct StarfieldBackground: ViewModifier {
         )
     }
 
-    // MARK: - Generate Stars
-
-    private func generateStars() {
-        var newStars: [Star] = []
-
-        // Generate stars in expanded normalized range to cover rotated/scaled area
-        // Using range 0 to 1.5 provides 50% padding to ensure coverage when rotated
-        let expandedRange: CGFloat = 1.5
-
-        // Generate 100 static stars with varied properties
-        for _ in 0..<2500 {
-            // Generate stars in expanded area (normalized, but extended range)
-            let x = CGFloat.random(in: 0...expandedRange)
-            let y = CGFloat.random(in: 0...expandedRange)
-
-            // Varied sizes: mostly tiny, some small, few medium
-            let sizeRoll = Int.random(in: 0..<100)
-            let size: CGFloat
-            if sizeRoll < 70 {
-                size = CGFloat.random(in: 0.8...1.2) // tiny
-            } else if sizeRoll < 90 {
-                size = CGFloat.random(in: 1.2...2.0) // small
-            } else {
-                size = CGFloat.random(in: 2.0...3.0) // medium
-            }
-
-            // Varied opacity for depth
-            let opacity = Double.random(in: 0.3...0.8)
-
-            newStars.append(Star(x: x, y: y, size: size, opacity: opacity))
-        }
-
-        stars = newStars
-    }
-
-    // MARK: - Animations
-
-    private func startAnimations() {
-        // Slow drift animation for star layer
-        withAnimation(
-            .easeInOut(duration: 20)
-            .repeatForever(autoreverses: true)
-        ) {
-            offsetX = 8
-            offsetY = -5
-        }
-
-        // Very slow rotation
-        withAnimation(
-            .linear(duration: 60)
-            .repeatForever(autoreverses: true)
-        ) {
-            rotation = 30
-        }
-
-        // Subtle zoom in/out
-        withAnimation(
-            .easeInOut(duration: 25)
-            .repeatForever(autoreverses: true)
-        ) {
-            scale = 1.1
-        }
-
-        // Fog animations
-        withAnimation(
-            .easeInOut(duration: 30)
-            .repeatForever(autoreverses: true)
-        ) {
-            fog1Offset = CGSize(width: 50, height: -50)
-        }
-
-        withAnimation(
-            .easeInOut(duration: 35)
-            .repeatForever(autoreverses: true)
-        ) {
-            fog2Offset = CGSize(width: -50, height: 50)
-        }
-    }
 }
 
 // MARK: - View Extension
 
 extension View {
     /// Applies cosmic gradient background with calm animated starfield and fog
-    func starfieldBackground() -> some View {
-        modifier(StarfieldBackground())
+    func starfieldBackground(isPaused: Bool = false) -> some View {
+        modifier(StarfieldBackground(isPaused: isPaused))
     }
 }
 
