@@ -136,7 +136,7 @@ struct StarfieldBackground: ViewModifier {
         let expandedRange: CGFloat = 1.5
 
         // Generate 100 static stars with varied properties
-        for _ in 0..<500 {
+        for _ in 0..<2500 {
             // Generate stars in expanded area (normalized, but extended range)
             let x = CGFloat.random(in: 0...expandedRange)
             let y = CGFloat.random(in: 0...expandedRange)

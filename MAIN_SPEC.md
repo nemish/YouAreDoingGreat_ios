@@ -143,9 +143,8 @@ Below are exact screen definitions including copy, behavior, and interaction.
 **UI:**
 
 - **Background:** Animated starfield
-- **Center text (breathing animation):** Random supportive phrase
+- **Center text (breathing animation):** Random phrase from pool of 20 humorous/self-deprecating messages. Tap to cycle to next phrase with animation and haptic feedback.
 - **Primary button:** "I Did a Thing"
-- **Subtext:** "Tap to log something you did. Big or small, it counts."
 - **Top-right action:** Settings icon
 
 **Behavior:**
