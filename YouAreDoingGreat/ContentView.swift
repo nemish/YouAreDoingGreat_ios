@@ -10,6 +10,9 @@ import SwiftUI
 struct ContentView: View {
     @State private var selectedTab = 0
 
+    // Haptic feedback for tab switch
+    private let tabFeedback = UIImpactFeedbackGenerator(style: .light)
+
     var body: some View {
         TabView(selection: $selectedTab) {
             HomeView()
@@ -21,7 +24,8 @@ struct ContentView: View {
             // TODO: MomentsListView
             Text("Moments")
                 .font(.appTitle)
-                .starfieldBackground()
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background(LinearGradient.cosmic.ignoresSafeArea())
                 .tabItem {
                     Label("Moments", systemImage: "list.bullet")
                 }
@@ -30,13 +34,18 @@ struct ContentView: View {
             // TODO: JourneyView
             Text("Journey")
                 .font(.appTitle)
-                .starfieldBackground()
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background(LinearGradient.cosmic.ignoresSafeArea())
                 .tabItem {
                     Label("Journey", systemImage: "chart.line.uptrend.xyaxis")
                 }
                 .tag(2)
         }
         .tint(Color.appPrimary)
+        .onChange(of: selectedTab) { _, _ in
+            tabFeedback.impactOccurred()
+        }
+        .animation(.easeInOut(duration: 0.2), value: selectedTab)
     }
 }
 

@@ -7,20 +7,21 @@ extension Font {
 
     /// Primary font for body text and general UI
     static func comfortaa(_ size: CGFloat, weight: Font.Weight = .regular) -> Font {
-        let fontName: String
-        switch weight {
-        case .light:
-            fontName = "Comfortaa-Light"
-        case .medium:
-            fontName = "Comfortaa-Medium"
-        case .semibold:
-            fontName = "Comfortaa-SemiBold"
-        case .bold:
-            fontName = "Comfortaa-Bold"
-        default:
-            fontName = "Comfortaa-Regular"
-        }
-        return .custom(fontName, size: size)
+        return .custom("Comfortaa", size: size)
+//        let fontName: String
+//        switch weight {
+//        case .light:
+//            fontName = "Comfortaa-Light"
+//        case .medium:
+//            fontName = "Comfortaa-Medium"
+//        case .semibold:
+//            fontName = "Comfortaa-SemiBold"
+//        case .bold:
+//            fontName = "Comfortaa-Bold"
+//        default:
+//            fontName = "Comfortaa-Regular"
+//        }
+//        return .custom(fontName, size: size)
     }
 
     // MARK: - Gloria Hallelujah (Titles)

@@ -15,6 +15,7 @@ struct PrimaryButton: View {
         Button(action: handleTap) {
             Text(title)
                 .font(.appHeadline)
+                .fontWeight(.bold)
                 .foregroundStyle(.white)
                 .shadow(color: .black.opacity(0.3), radius: 2, x: 0, y: 1)
                 .frame(maxWidth: .infinity)

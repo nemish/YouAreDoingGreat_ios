@@ -101,11 +101,25 @@ struct HomeView: View {
         .sheet(isPresented: $showLogMoment) {
             // TODO: LogMomentView
             Text("Log Moment Screen")
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background(
+                    RadialGradient(
+                        gradient: Gradient(colors: [
+                            .backgroundContrastSecondary,
+                            .backgroundContrast
+                        ]),
+                        center: .center,
+                        startRadius: 0,
+                        endRadius: 200
+                    )
+                )
                 .presentationDetents([.large])
         }
         .sheet(isPresented: $showSettings) {
             // TODO: SettingsView
             Text("Settings Screen")
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background(.backgroundContrast)
                 .presentationDetents([.large])
         }
     }
@@ -120,7 +134,7 @@ struct HomeView: View {
                         .font(.system(size: 16))
                         .foregroundStyle(.textPrimary)
                     
-                    Text("Hey… installing the app counts too. Wanna log that tiny win?")
+                    Text("Hey… installing the app counts too. Let's log that tiny win?")
                         .font(.appFootnoteWriting)
                         .foregroundStyle(.textPrimary)
                         .multilineTextAlignment(.leading)

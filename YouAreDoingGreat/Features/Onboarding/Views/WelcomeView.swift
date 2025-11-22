@@ -78,6 +78,7 @@ struct WelcomeView: View {
             Text("and feel a bit better")
                 .font(.appBody)
                 .foregroundStyle(.textPrimary)
+                .fontWeight(.bold)
                 .multilineTextAlignment(.center)
         }
         .opacity(showSubHeadline ? 1 : 0)

@@ -58,8 +58,10 @@ struct StarfieldBackground: ViewModifier {
                 .offset(x: offsetX, y: offsetY)
                 .rotationEffect(.degrees(rotation))
                 .scaleEffect(scale)
+                .drawingGroup()
             }
             .ignoresSafeArea()
+            .allowsHitTesting(false)
 
             // Content on top
             content
