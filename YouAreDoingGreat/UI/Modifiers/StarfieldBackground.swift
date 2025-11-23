@@ -15,7 +15,7 @@ private enum StarfieldData {
         var stars: [Star] = []
         let expandedRange: CGFloat = 1.5
 
-        for _ in 0..<2500 {
+        for _ in 0..<2000 {
             let x = CGFloat.random(in: 0...expandedRange)
             let y = CGFloat.random(in: 0...expandedRange)
 
@@ -37,6 +37,39 @@ private enum StarfieldData {
     }()
 
     static let startTime = Date()
+
+    // Pre-rendered starfield image (rendered once at launch)
+    @MainActor
+    static let renderedImage: Image? = {
+        let expandedRange: CGFloat = 1.5
+        let imageSize = CGSize(width: 1600, height: 1200) // Larger for better quality
+
+        let canvas = Canvas { context, size in
+            for star in shared {
+                let x = star.x / expandedRange * size.width
+                let y = star.y / expandedRange * size.height
+
+                var starContext = context
+                starContext.opacity = star.opacity
+                starContext.fill(
+                    Circle().path(in: CGRect(
+                        x: x - star.size / 2,
+                        y: y - star.size / 2,
+                        width: star.size,
+                        height: star.size
+                    )),
+                    with: .color(.white)
+                )
+            }
+        }
+        .frame(width: imageSize.width, height: imageSize.height)
+
+        let renderer = ImageRenderer(content: canvas)
+        renderer.scale = 1.0
+
+        guard let cgImage = renderer.cgImage else { return nil }
+        return Image(decorative: cgImage, scale: 1.0)
+    }()
 }
 
 // MARK: - Starfield Background ViewModifier
@@ -45,6 +78,7 @@ private enum StarfieldData {
 struct StarfieldBackground: ViewModifier {
     var isPaused: Bool = false
 
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var pausedTime: TimeInterval = 0
     @State private var timeOffset: TimeInterval = 0
 
@@ -65,57 +99,55 @@ struct StarfieldBackground: ViewModifier {
     }
 
     func body(content: Content) -> some View {
-        TimelineView(.animation(paused: isPaused)) { timeline in
-            let elapsed = isPaused ? pausedTime : timeline.date.timeIntervalSince(StarfieldData.startTime) + timeOffset
+        ZStack {
+            // Background layers
+            GeometryReader { geometry in
+                let expandedSize = calculateExpandedSize(for: geometry.size)
+                let centerOffsetX = (geometry.size.width - expandedSize.width) / 2
+                let centerOffsetY = (geometry.size.height - expandedSize.height) / 2
 
-            // Calculate animated values
-            let driftProgress = animationProgress(elapsed: elapsed, duration: 20)
-            let rotationProgress = animationProgress(elapsed: elapsed, duration: 60)
-            let scaleProgress = animationProgress(elapsed: elapsed, duration: 25)
-            let fog1Progress = animationProgress(elapsed: elapsed, duration: 30)
-            let fog2Progress = animationProgress(elapsed: elapsed, duration: 35)
+                ZStack {
+                    // Cosmic gradient background
+                    LinearGradient.cosmic
 
-            ZStack {
-                // Cosmic gradient background
-                LinearGradient.cosmic
-                    .ignoresSafeArea()
+                    // Animated transforms applied to pre-rendered starfield bitmap
+                    TimelineView(.animation(paused: isPaused || reduceMotion)) { timeline in
+                        let elapsed = (isPaused || reduceMotion) ? pausedTime : timeline.date.timeIntervalSince(StarfieldData.startTime) + timeOffset
 
-                // Fog/nebula layers (radial gradients)
-                fogLayer(fog1Progress: fog1Progress, fog2Progress: fog2Progress)
+                        // Calculate animated values (static when reduce motion is enabled)
+                        let driftProgress = reduceMotion ? 0 : animationProgress(elapsed: elapsed, duration: 40)
+                        let rotationProgress = reduceMotion ? 0 : animationProgress(elapsed: elapsed, duration: 60)
+                        let scaleProgress = reduceMotion ? 0 : animationProgress(elapsed: elapsed, duration: 50)
+                        let fog1Progress = reduceMotion ? 0 : animationProgress(elapsed: elapsed, duration: 20)
+                        let fog2Progress = reduceMotion ? 0 : animationProgress(elapsed: elapsed, duration: 20)
 
-                // Static starfield layer with group animation
-                GeometryReader { geometry in
-                    let expandedSize = calculateExpandedSize(for: geometry.size)
-                    let expandedRange: CGFloat = 1.5
-                    let centerOffset = CGSize(
-                        width: (expandedSize.width - geometry.size.width) / 2,
-                        height: (expandedSize.height - geometry.size.height) / 2
-                    )
-
-                    ZStack {
-                        ForEach(0..<StarfieldData.shared.count, id: \.self) { index in
-                            let star = StarfieldData.shared[index]
-                            Circle()
-                                .fill(Color.star)
-                                .frame(width: star.size, height: star.size)
-                                .opacity(star.opacity)
-                                .position(
-                                    x: star.x / expandedRange * expandedSize.width - centerOffset.width,
-                                    y: star.y / expandedRange * expandedSize.height - centerOffset.height
-                                )
+                        ZStack {
+                            // Use pre-rendered bitmap - no per-frame star iteration
+                            if let starfieldImage = StarfieldData.renderedImage {
+                                starfieldImage
+                                    .resizable()
+                                    .frame(width: expandedSize.width, height: expandedSize.height)
+                                    .offset(
+                                        x: centerOffsetX + CGFloat(8 * driftProgress),
+                                        y: centerOffsetY - CGFloat(5 * driftProgress)
+                                    )
+                                    .rotationEffect(.degrees(30 * rotationProgress), anchor: .center)
+                                    .scaleEffect(1.0 + 0.1 * scaleProgress, anchor: .center)
+                            }
+                        }
+                        .frame(width: geometry.size.width, height: geometry.size.height)
+                        .clipped()
+                        .overlay {
+                            // Fog/nebula layers on top (not transformed)
+                            fogLayer(fog1Progress: fog1Progress, fog2Progress: fog2Progress)
                         }
                     }
-                    .offset(x: 8 * driftProgress, y: -5 * driftProgress)
-                    .rotationEffect(.degrees(30 * rotationProgress))
-                    .scaleEffect(1.0 + 0.1 * scaleProgress)
-                    .drawingGroup()
                 }
-                .ignoresSafeArea()
-                .allowsHitTesting(false)
-
-                // Content on top
-                content
             }
+            .ignoresSafeArea()
+
+            // Content on top
+            content
         }
         .onChange(of: isPaused) { _, paused in
             if paused {
@@ -141,7 +173,6 @@ struct StarfieldBackground: ViewModifier {
                 endRadius: 300
             )
             .offset(x: 50 * fog1Progress, y: -50 * fog1Progress)
-            .ignoresSafeArea()
 
             // Fog 2 - Softer purple
             RadialGradient(
@@ -154,29 +185,16 @@ struct StarfieldBackground: ViewModifier {
                 endRadius: 250
             )
             .offset(x: -50 * fog2Progress, y: 50 * fog2Progress)
-            .ignoresSafeArea()
         }
     }
 
     // MARK: - Calculate Expanded Size
     
     private func calculateExpandedSize(for size: CGSize) -> CGSize {
-        // Calculate expanded bounds to account for rotation (30°) and scale (1.05)
-        // When rotating a rectangle, the bounding box becomes larger
-        // For 30° rotation: cos(30°) ≈ 0.866, sin(30°) = 0.5
-        // Expanded size ≈ original * (|cos| + |sin|) * maxScale
-        let maxRotation = 30.0
-        let maxScale: CGFloat = 1.05
-        let cosAngle = abs(cos(maxRotation * .pi / 180))
-        let sinAngle = abs(sin(maxRotation * .pi / 180))
-        let expansionFactor = (cosAngle + sinAngle) * maxScale
-        
-        // Add some padding to be safe
-        let safeExpansionFactor: CGFloat = expansionFactor * 1.1
-        
+        // 2x screen height, centered
         return CGSize(
-            width: size.width * safeExpansionFactor,
-            height: size.height * safeExpansionFactor
+            width: size.height * 2,
+            height: size.height * 1.5
         )
     }
 
