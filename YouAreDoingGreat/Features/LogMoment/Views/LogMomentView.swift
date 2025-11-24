@@ -11,6 +11,10 @@ struct LogMomentView: View {
     // Haptic feedback
     private let mediumFeedback = UIImpactFeedbackGenerator(style: .medium)
 
+    // Praise state (inline, not separate sheet)
+    @State private var showPraise = false
+    @State private var praiseViewModel: PraiseViewModel?
+
     // Callbacks
     var onSave: (() -> Void)?
 
@@ -26,32 +30,23 @@ struct LogMomentView: View {
                 backgroundGradient
                     .ignoresSafeArea()
 
-                // Content
-                ScrollView {
-                    VStack(spacing: 24) {
-                        // Title
-                        titleSection
-
-                        // Text input
-                        momentTextInput
-
-                        // Time selector
-                        timeSelector
-
-                        Spacer(minLength: 100)
-                    }
-                    .padding(.horizontal, 24)
-                    .padding(.top, 24)
-                }
-
-                // Bottom CTA
-                VStack {
-                    Spacer()
-                    saveButton
-                        .padding(.horizontal, 24)
-                        .padding(.bottom, 40)
+                if showPraise, let praiseVM = praiseViewModel {
+                    // Praise content (replaces log form)
+                    praiseContent(viewModel: praiseVM)
+                        .transition(.asymmetric(
+                            insertion: .opacity.combined(with: .scale(scale: 0.95)).combined(with: .offset(y: 20)),
+                            removal: .opacity.combined(with: .scale(scale: 1.05))
+                        ))
+                } else {
+                    // Log moment form
+                    logFormContent
+                        .transition(.asymmetric(
+                            insertion: .opacity.combined(with: .offset(y: -20)),
+                            removal: .opacity.combined(with: .scale(scale: 0.95)).combined(with: .offset(y: -30))
+                        ))
                 }
             }
+            .animation(.spring(duration: 0.4, bounce: 0.15), value: showPraise)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
@@ -78,6 +73,47 @@ struct LogMomentView: View {
                 .presentationDetents([.medium])
                 .presentationDragIndicator(.visible)
             }
+        }
+    }
+
+    // MARK: - Log Form Content
+
+    private var logFormContent: some View {
+        ZStack {
+            // Content
+            ScrollView {
+                VStack(spacing: 24) {
+                    // Title
+                    titleSection
+
+                    // Text input
+                    momentTextInput
+
+                    // Time selector
+                    timeSelector
+
+                    Spacer(minLength: 100)
+                }
+                .padding(.horizontal, 24)
+                .padding(.top, 24)
+            }
+
+            // Bottom CTA
+            VStack {
+                Spacer()
+                saveButton
+                    .padding(.horizontal, 24)
+                    .padding(.bottom, 40)
+            }
+        }
+    }
+
+    // MARK: - Praise Content
+
+    private func praiseContent(viewModel praiseVM: PraiseViewModel) -> some View {
+        PraiseContentView(viewModel: praiseVM) {
+            onSave?()
+            dismiss()
         }
     }
 
@@ -269,8 +305,17 @@ struct LogMomentView: View {
                 let success = await viewModel.submit()
                 if success {
                     mediumFeedback.impactOccurred()
-                    onSave?()
-                    dismiss()
+                    // Create praise view model with submitted data
+                    let text = viewModel.momentText.trimmingCharacters(in: .whitespacesAndNewlines)
+                    let momentText = text.isEmpty ? "Did something worth noting" : text
+                    praiseViewModel = PraiseViewModel(
+                        momentText: momentText,
+                        timeAgoSeconds: viewModel.timeAgoSeconds
+                    )
+                    // Transition to praise content
+                    withAnimation(.easeInOut(duration: 0.3)) {
+                        showPraise = true
+                    }
                 }
             }
         }
