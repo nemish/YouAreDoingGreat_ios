@@ -11,7 +11,7 @@
     },
     "servers": [
         {
-            "url": "http://localhost:3000/api/v1",
+            "url": "https://1test1.xyz/api/v1",
             "description": "Production server"
         }
     ],

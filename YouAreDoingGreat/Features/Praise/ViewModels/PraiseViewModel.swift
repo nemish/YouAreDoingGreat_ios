@@ -1,4 +1,7 @@
 import SwiftUI
+import OSLog
+
+private let logger = Logger(subsystem: "com.youaredoinggreat", category: "praise")
 
 // MARK: - Praise ViewModel
 
@@ -9,16 +12,28 @@ final class PraiseViewModel {
     let momentText: String
     let happenedAt: Date
     let timeAgoSeconds: Int?
+    let clientId: UUID
+    let submittedAt: Date
+    let timezone: String
 
     // Praise state
     var offlinePraise: String
     var aiPraise: String?
+    var tags: [String] = []
     var isLoadingAIPraise: Bool = false
+    var syncError: String?
 
     // Animation state
     var showContent: Bool = false
     var showPraise: Bool = false
+    var showTags: Bool = false
     var showButton: Bool = false
+
+    // Polling state
+    private var pollingTask: Task<Void, Never>?
+    private var pollCount: Int = 0
+    private let maxPolls: Int = 10
+    private let pollInterval: UInt64 = 2_000_000_000 // 2 seconds
 
     // Computed properties
     var displayedPraise: String {
@@ -50,12 +65,22 @@ final class PraiseViewModel {
         momentText: String,
         happenedAt: Date = Date(),
         timeAgoSeconds: Int? = nil,
-        offlinePraise: String? = nil
+        offlinePraise: String? = nil,
+        clientId: UUID = UUID(),
+        submittedAt: Date = Date(),
+        timezone: String = TimeZone.current.identifier
     ) {
         self.momentText = momentText
         self.happenedAt = happenedAt
         self.timeAgoSeconds = timeAgoSeconds
         self.offlinePraise = offlinePraise ?? Self.randomOfflinePraise()
+        self.clientId = clientId
+        self.submittedAt = submittedAt
+        self.timezone = timezone
+    }
+
+    func cancelPolling() {
+        pollingTask?.cancel()
     }
 
     // MARK: - Animation
@@ -78,20 +103,145 @@ final class PraiseViewModel {
         }
     }
 
-    // MARK: - AI Praise
+    // MARK: - Sync & AI Praise
 
-    func fetchAIPraise() async {
+    func syncMomentAndFetchPraise() async {
         isLoadingAIPraise = true
-        defer { isLoadingAIPraise = false }
 
-        // TODO: Fetch AI praise from server
-        // For now, simulate a delay and keep offline praise
-        try? await Task.sleep(nanoseconds: 2_000_000_000)
+        do {
+            // First, POST the moment to create it on server
+            let response = try await createMomentOnServer()
 
-        // When AI praise arrives, animate the transition
-        // withAnimation(.easeInOut(duration: 0.35)) {
-        //     aiPraise = fetchedPraise
-        // }
+            // Check if praise is already available
+            if let praise = response.praise, !praise.isEmpty {
+                await updateWithServerResponse(response)
+                isLoadingAIPraise = false
+                return
+            }
+
+            // If no praise yet, start polling
+            guard let serverId = response.id else {
+                isLoadingAIPraise = false
+                return
+            }
+
+            await pollForPraise(serverId: serverId)
+
+        } catch {
+            logger.error("Failed to sync moment: \(error.localizedDescription)")
+            syncError = error.localizedDescription
+            isLoadingAIPraise = false
+        }
+    }
+
+    private func createMomentOnServer() async throws -> MomentResponse {
+        // TODO: Replace with actual API client
+        // For now, use URLSession directly
+
+        guard let url = URL(string: "https://1test1.xyz/api/v1/moments") else {
+            throw URLError(.badURL)
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        // TODO: Get actual user ID from auth service
+        request.setValue("test-user-id", forHTTPHeaderField: "x-user-id")
+
+        let body = CreateMomentRequest(
+            clientId: clientId.uuidString,
+            text: momentText,
+            submittedAt: submittedAt,
+            tz: timezone,
+            timeAgo: timeAgoSeconds
+        )
+
+        request.httpBody = try JSONEncoder().encode(body)
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+
+        guard let httpResponse = response as? HTTPURLResponse,
+              (200...299).contains(httpResponse.statusCode) else {
+            throw URLError(.badServerResponse)
+        }
+
+        let decoded = try JSONDecoder().decode(CreateMomentResponseWrapper.self, from: data)
+        return decoded.item
+    }
+
+    private func pollForPraise(serverId: String) async {
+        pollingTask = Task {
+            while pollCount < maxPolls && !Task.isCancelled {
+                pollCount += 1
+
+                do {
+                    try await Task.sleep(nanoseconds: pollInterval)
+
+                    let moment = try await fetchMomentFromServer(serverId: serverId)
+
+                    if let praise = moment.praise, !praise.isEmpty {
+                        await updateWithServerResponse(moment)
+                        break
+                    }
+
+                    logger.debug("Poll \(self.pollCount)/\(self.maxPolls): No praise yet")
+
+                } catch {
+                    logger.error("Poll failed: \(error.localizedDescription)")
+                    if pollCount >= maxPolls {
+                        syncError = "Couldn't fetch extra encouragement this time."
+                    }
+                }
+            }
+
+            await MainActor.run {
+                isLoadingAIPraise = false
+            }
+        }
+
+        await pollingTask?.value
+    }
+
+    private func fetchMomentFromServer(serverId: String) async throws -> MomentResponse {
+        guard let url = URL(string: "https://1test1.xyz/api/v1/moments/\(serverId)") else {
+            throw URLError(.badURL)
+        }
+
+        var request = URLRequest(url: url)
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        // TODO: Get actual user ID from auth service
+        request.setValue("test-user-id", forHTTPHeaderField: "x-user-id")
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+
+        guard let httpResponse = response as? HTTPURLResponse,
+              (200...299).contains(httpResponse.statusCode) else {
+            throw URLError(.badServerResponse)
+        }
+
+        let decoded = try JSONDecoder().decode(GetMomentResponseWrapper.self, from: data)
+        return decoded.item
+    }
+
+    private func updateWithServerResponse(_ response: MomentResponse) async {
+        await MainActor.run {
+            if let praise = response.praise, !praise.isEmpty {
+                withAnimation(.easeInOut(duration: 0.35)) {
+                    aiPraise = praise
+                }
+            }
+
+            if let responseTags = response.tags, !responseTags.isEmpty {
+                tags = responseTags
+                // Animate tags appearing after praise
+                Task {
+                    try? await Task.sleep(nanoseconds: 500_000_000)
+                    withAnimation(.easeOut(duration: 0.3)) {
+                        showTags = true
+                    }
+                }
+            }
+        }
     }
 
     // MARK: - Offline Praise Pool
@@ -116,4 +266,49 @@ final class PraiseViewModel {
         ]
         return praises.randomElement() ?? praises[0]
     }
+}
+
+// MARK: - API Models
+
+private struct CreateMomentRequest: Encodable {
+    let clientId: String
+    let text: String
+    let submittedAt: Date
+    let tz: String
+    let timeAgo: Int?
+
+    enum CodingKeys: String, CodingKey {
+        case clientId, text, submittedAt, tz, timeAgo
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(clientId, forKey: .clientId)
+        try container.encode(text, forKey: .text)
+        try container.encode(ISO8601DateFormatter().string(from: submittedAt), forKey: .submittedAt)
+        try container.encode(tz, forKey: .tz)
+        try container.encodeIfPresent(timeAgo, forKey: .timeAgo)
+    }
+}
+
+private struct CreateMomentResponseWrapper: Decodable {
+    let item: MomentResponse
+}
+
+private struct GetMomentResponseWrapper: Decodable {
+    let item: MomentResponse
+}
+
+private struct MomentResponse: Decodable {
+    let id: String?
+    let clientId: String?
+    let text: String
+    let submittedAt: String
+    let happenedAt: String
+    let tz: String
+    let timeAgo: Int?
+    let praise: String?
+    let action: String?
+    let tags: [String]?
+    let isFavorite: Bool?
 }

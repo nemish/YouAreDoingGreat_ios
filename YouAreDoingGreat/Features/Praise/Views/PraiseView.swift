@@ -34,22 +34,64 @@ struct PraiseContentView: View {
                 .opacity(viewModel.showContent ? 1 : 0)
                 .offset(y: viewModel.showContent ? 0 : 20)
 
-                // Praise message
-                Text(viewModel.displayedPraise)
-                    .font(.appHeadline)
-                    .foregroundStyle(.textHighlightOnePrimary)
-                    .multilineTextAlignment(.center)
-                    .lineLimit(3)
-                    .opacity(viewModel.showPraise ? 1 : 0)
-                    .offset(y: viewModel.showPraise ? 0 : 10)
+                // Praise message with loading indicator
+                VStack(spacing: 16) {
+                    // Offline praise text (always shown)
+                    Text(viewModel.offlinePraise)
+                        .font(.appHeadline)
+                        .foregroundStyle(.textHighlightOnePrimary)
+                        .multilineTextAlignment(.center)
+
+                    // Loading indicator for AI praise
+                    if viewModel.isLoadingAIPraise {
+                        HStack(spacing: 8) {
+                            ProgressView()
+                                .progressViewStyle(CircularProgressViewStyle(tint: .textTertiary))
+                                .scaleEffect(0.8)
+                            Text("Generating praise...")
+                                .font(.appCaption)
+                                .foregroundStyle(.textTertiary)
+                        }
+                        .transition(.opacity.combined(with: .scale(scale: 0.9)))
+                    }
+
+                    // AI praise text (shown below offline praise when available)
+                    if let aiPraise = viewModel.aiPraise, !aiPraise.isEmpty {
+                        Text(aiPraise)
+                            .font(.appBody)
+                            .foregroundStyle(.textSecondary)
+                            .multilineTextAlignment(.center)
+                            .transition(.opacity.combined(with: .move(edge: .top)))
+                    }
+
+                    // Error message
+                    if let error = viewModel.syncError, !viewModel.isLoadingAIPraise {
+                        Text(error)
+                            .font(.appCaption)
+                            .foregroundStyle(.textTertiary)
+                            .multilineTextAlignment(.center)
+                            .transition(.opacity)
+                    }
+                }
+                .opacity(viewModel.showPraise ? 1 : 0)
+                .offset(y: viewModel.showPraise ? 0 : 10)
+
+                // Tags section
+                if !viewModel.tags.isEmpty {
+                    tagsSection
+                        .opacity(viewModel.showTags ? 1 : 0)
+                        .offset(y: viewModel.showTags ? 0 : 10)
+                }
             }
             .padding(.horizontal, 32)
+            .animation(.easeInOut(duration: 0.3), value: viewModel.isLoadingAIPraise)
 
             Spacer()
 
             // Done button
             PrimaryButton(title: "Nice") {
                 UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                viewModel.cancelPolling()
                 onDismiss()
             }
             .padding(.horizontal, 32)
@@ -59,6 +101,33 @@ struct PraiseContentView: View {
         }
         .task {
             await viewModel.startEntranceAnimation()
+            // Start syncing and fetching AI praise
+            await viewModel.syncMomentAndFetchPraise()
+        }
+    }
+
+    // MARK: - Tags Section
+
+    private var tagsSection: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                ForEach(Array(viewModel.tags.enumerated()), id: \.offset) { index, tag in
+                    Text("#\(tag.replacingOccurrences(of: "_", with: " "))")
+                        .font(.appCaption)
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 6)
+                        .background(
+                            Capsule()
+                                .fill(Color.appSecondary.opacity(0.6))
+                        )
+                        .opacity(viewModel.showTags ? 1 : 0)
+                        .animation(
+                            .easeOut(duration: 0.3).delay(Double(index) * 0.1),
+                            value: viewModel.showTags
+                        )
+                }
+            }
         }
     }
 

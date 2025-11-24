@@ -321,9 +321,24 @@ struct LogMomentView: View {
                     // Create praise view model with submitted data
                     let text = viewModel.momentText.trimmingCharacters(in: .whitespacesAndNewlines)
                     let momentText = text.isEmpty ? "Did something worth noting" : text
+
+                    // Calculate happenedAt
+                    let submittedAt = Date()
+                    let happenedAt: Date
+                    if let timeAgo = viewModel.timeAgoSeconds {
+                        happenedAt = submittedAt.addingTimeInterval(-Double(timeAgo))
+                    } else {
+                        happenedAt = submittedAt
+                    }
+
                     praiseViewModel = PraiseViewModel(
                         momentText: momentText,
-                        timeAgoSeconds: viewModel.timeAgoSeconds
+                        happenedAt: happenedAt,
+                        timeAgoSeconds: viewModel.timeAgoSeconds,
+                        offlinePraise: nil,
+                        clientId: UUID(),
+                        submittedAt: submittedAt,
+                        timezone: TimeZone.current.identifier
                     )
                     // Transition to praise content
                     withAnimation(.easeInOut(duration: 0.3)) {
