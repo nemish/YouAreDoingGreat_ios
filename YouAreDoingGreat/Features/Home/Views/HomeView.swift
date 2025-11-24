@@ -99,26 +99,15 @@ struct HomeView: View {
             startBreathingAnimation()
         }
         .sheet(isPresented: $showLogMoment) {
-            // TODO: LogMomentView
-            ZStack {
-                // Top accent glow
-                RadialGradient(
-                    gradient: Gradient(colors: [
-                        .backgroundContrast,
-                        .backgroundContrastSecondary
-                    ]),
-                    center: .top,
-                    startRadius: 0,
-                    endRadius: 800
-                )
-                .ignoresSafeArea()
-
-                // Content
-                Text("Log Moment Screen")
-                    .font(.appTitle)
-                    .foregroundStyle(.textPrimary)
+            LogMomentView(isFirstLog: !hasCompletedFirstLog) {
+                // On save callback
+                if !hasCompletedFirstLog {
+                    hasCompletedFirstLog = true
+                }
+                // TODO: Navigate to PraiseView
             }
             .presentationDetents([.large])
+            .presentationDragIndicator(.hidden)
         }
         .sheet(isPresented: $showSettings) {
             // TODO: SettingsView

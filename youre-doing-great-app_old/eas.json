@@ -1,0 +1,44 @@
+{
+  "cli": {
+    "version": ">= 16.6.1",
+    "appVersionSource": "remote"
+  },
+  "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal",
+      "env": {
+        "EXPO_PUBLIC_API_URL": "http://localhost:3000",
+        "EXPO_PUBLIC_ENV": "development"
+      }
+    },
+    "preview-test-rc": {
+      "extends": "development",
+      "developmentClient": false,
+      "autoIncrement": true,
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://1test1.xyz",
+        "EXPO_PUBLIC_ENV": "preview"
+      }
+    },
+    "preview": {
+      "extends": "preview-test-rc"
+    },
+    "ios-simulator": {
+      "extends": "development",
+      "ios": {
+        "simulator": true
+      }
+    },
+    "production": {
+      "autoIncrement": true,
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://api.you-are-doing-great.com",
+        "EXPO_PUBLIC_ENV": "production"
+      }
+    }
+  },
+  "submit": {
+    "production": {}
+  }
+}

@@ -1,5 +1,9 @@
 # CLAUDE.md
 
+Always use context7 when I need code generation, setup or configuration steps, or
+library/API documentation. This means you should automatically use the Context7 MCP
+tools to resolve library id and get library docs without me having to explicitly ask.
+
 ## API Schema Reference
 
 **Always consult `API_SCHEMA.json`** for endpoint details, request/response schemas, and data models.
@@ -9,6 +13,10 @@
 - Pagination: cursor-based
 
 Key endpoints: `/moments` (CRUD), `/timeline`, `/user/stats`, `/user/me`
+
+## Reference Implementation
+
+`youre-doing-great-app_old` (in same parent directory) contains the old React Native implementation. **Reference only** for functionality - never modify files there.
 
 ## Project Overview
 
