@@ -18,6 +18,8 @@ Key endpoints: `/moments` (CRUD), `/timeline`, `/user/stats`, `/user/me`
 
 `youre-doing-great-app_old` (in same parent directory) contains the old React Native implementation. **Reference only** for functionality - never modify files there.
 
+**Important**: The old app uses the `SomeComponent/index.tsx` pattern (component-per-folder). When searching for references to a component, search across **both folders and files**. For example, to find `Paywall`, search for directories named `Paywall/` as well as files named `Paywall.tsx`.
+
 ## Project Overview
 
 **You Are Doing Great** - iOS emotional-wellness app for logging daily wins with instant encouragement.

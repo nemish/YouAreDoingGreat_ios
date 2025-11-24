@@ -8,6 +8,10 @@ struct PraiseContentView: View {
     @Bindable var viewModel: PraiseViewModel
     var onDismiss: () -> Void
 
+    // Paywall state
+    @State private var paywallService = PaywallService.shared
+    @State private var showPaywall = false
+
     var body: some View {
         VStack(spacing: 0) {
             Spacer()
@@ -36,11 +40,14 @@ struct PraiseContentView: View {
 
                 // Praise message with loading indicator
                 VStack(spacing: 16) {
-                    // Offline praise text (always shown)
-                    Text(viewModel.offlinePraise)
-                        .font(.appHeadline)
-                        .foregroundStyle(.textHighlightOnePrimary)
-                        .multilineTextAlignment(.center)
+                    // Offline praise text (always shown) with word-by-word animation
+                    AnimatedTextView(
+                        text: viewModel.offlinePraise,
+                        font: .appHeadline,
+                        foregroundStyle: Color.textHighlightOnePrimary,
+                        multilineTextAlignment: .center,
+                        wordDelay: 0.08
+                    )
 
                     // Loading indicator for AI praise
                     if viewModel.isLoadingAIPraise {
@@ -55,13 +62,16 @@ struct PraiseContentView: View {
                         .transition(.opacity.combined(with: .scale(scale: 0.9)))
                     }
 
-                    // AI praise text (shown below offline praise when available)
+                    // AI praise text (shown below offline praise when available) with word-by-word animation
                     if let aiPraise = viewModel.aiPraise, !aiPraise.isEmpty {
-                        Text(aiPraise)
-                            .font(.appBody)
-                            .foregroundStyle(.textSecondary)
-                            .multilineTextAlignment(.center)
-                            .transition(.opacity.combined(with: .move(edge: .top)))
+                        AnimatedTextView(
+                            text: aiPraise,
+                            font: .appBody,
+                            foregroundStyle: Color.textSecondary,
+                            multilineTextAlignment: .center,
+                            wordDelay: 0.08
+                        )
+                        .transition(.opacity.combined(with: .move(edge: .top)))
                     }
 
                     // Error message
@@ -103,6 +113,19 @@ struct PraiseContentView: View {
             await viewModel.startEntranceAnimation()
             // Start syncing and fetching AI praise
             await viewModel.syncMomentAndFetchPraise()
+        }
+        .onChange(of: paywallService.shouldShowPaywall) { _, shouldShow in
+            showPaywall = shouldShow
+        }
+        .fullScreenCover(isPresented: $showPaywall, onDismiss: {
+            // Always clear the service flag when paywall is dismissed
+            // This handles both programmatic dismissal and interactive gestures
+            paywallService.dismissPaywall()
+        }) {
+            PaywallView {
+                // This closure only runs for programmatic dismissal (button taps)
+                showPaywall = false
+            }
         }
     }
 

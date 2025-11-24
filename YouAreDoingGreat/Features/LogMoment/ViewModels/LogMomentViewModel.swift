@@ -113,24 +113,11 @@ final class LogMomentViewModel {
         isSubmitting = true
         defer { isSubmitting = false }
 
-        // Get timezone
-        let timezone = TimeZone.current.identifier
-
-        // Calculate happenedAt
-        let submittedAt = Date()
-        let happenedAt: Date
-        if let timeAgo = timeAgoSeconds {
-            happenedAt = submittedAt.addingTimeInterval(-Double(timeAgo))
-        } else {
-            happenedAt = submittedAt
-        }
-
-        // Text to save (use placeholder if empty)
-        let textToSave = momentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-            ? "Did something worth noting"
-            : momentText.trimmingCharacters(in: .whitespacesAndNewlines)
-
-        // TODO: Save to SwiftData
+        // TODO: Save to SwiftData with the following:
+        // - timezone: TimeZone.current.identifier
+        // - submittedAt: Date()
+        // - happenedAt: submittedAt.addingTimeInterval(-Double(timeAgoSeconds ?? 0))
+        // - text: momentText.trimmingCharacters or "Did something worth noting"
         // TODO: Select offline praise from JSON pool
         // TODO: Sync to server in background
 

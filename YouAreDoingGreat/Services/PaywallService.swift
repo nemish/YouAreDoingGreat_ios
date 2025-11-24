@@ -1,0 +1,139 @@
+import Foundation
+import Observation
+import OSLog
+
+private let logger = Logger(subsystem: "com.youaredoinggreat", category: "paywall")
+
+// MARK: - Paywall Service
+// Manages daily limit state and determines when to show paywall
+
+@MainActor
+@Observable
+final class PaywallService {
+    // Singleton instance
+    static let shared = PaywallService()
+
+    // Paywall presentation state
+    var shouldShowPaywall: Bool = false
+    var dailyLimitReachedDate: Date?
+
+    // UserDefaults keys
+    private let dailyLimitDateKey = "com.youaredoinggreat.dailyLimitDate"
+
+    private init() {
+        loadState()
+        checkIfNewDay()
+    }
+
+    // MARK: - Public Methods
+
+    /// Check if daily limit has been reached
+    var isDailyLimitReached: Bool {
+        guard let limitDate = dailyLimitReachedDate else {
+            return false
+        }
+
+        // Check if we're still on the same day
+        return isSameDay(limitDate, Date())
+    }
+
+    /// Mark that daily limit has been reached
+    func markDailyLimitReached() {
+        let now = Date()
+        dailyLimitReachedDate = now
+        saveState()
+
+        logger.info("Daily limit reached, paywall activated until next day")
+    }
+
+    /// Check if user should see paywall (called before logging moment)
+    func shouldBlockMomentCreation() -> Bool {
+        checkIfNewDay()
+        return isDailyLimitReached
+    }
+
+    /// Show the paywall
+    func showPaywall() {
+        shouldShowPaywall = true
+    }
+
+    /// Dismiss the paywall
+    func dismissPaywall() {
+        shouldShowPaywall = false
+    }
+
+    /// Reset daily limit (for testing or premium upgrade)
+    func resetDailyLimit() {
+        dailyLimitReachedDate = nil
+        shouldShowPaywall = false
+        saveState()
+        logger.info("Daily limit reset")
+    }
+
+    /// Calculate time until reset (next day at 00:00:01)
+    var timeUntilReset: TimeInterval? {
+        guard let limitDate = dailyLimitReachedDate else {
+            return nil
+        }
+
+        let calendar = Calendar.current
+        guard let startOfNextDay = calendar.date(
+            byAdding: .day,
+            value: 1,
+            to: calendar.startOfDay(for: limitDate)
+        )?.addingTimeInterval(1) else { // Add 1 second to get 00:00:01
+            return nil
+        }
+
+        let now = Date()
+        return startOfNextDay.timeIntervalSince(now)
+    }
+
+    /// Formatted time until reset
+    var timeUntilResetFormatted: String {
+        guard let interval = timeUntilReset, interval > 0 else {
+            return "Soon"
+        }
+
+        let hours = Int(interval) / 3600
+        let minutes = (Int(interval) % 3600) / 60
+
+        if hours > 0 {
+            return "\(hours)h \(minutes)m"
+        } else {
+            return "\(minutes)m"
+        }
+    }
+
+    // MARK: - Private Methods
+
+    private func checkIfNewDay() {
+        guard let limitDate = dailyLimitReachedDate else {
+            return
+        }
+
+        // If it's a new day, reset the limit
+        if !isSameDay(limitDate, Date()) {
+            logger.info("New day detected, resetting daily limit")
+            resetDailyLimit()
+        }
+    }
+
+    private func isSameDay(_ date1: Date, _ date2: Date) -> Bool {
+        let calendar = Calendar.current
+        return calendar.isDate(date1, inSameDayAs: date2)
+    }
+
+    private func saveState() {
+        if let date = dailyLimitReachedDate {
+            UserDefaults.standard.set(date, forKey: dailyLimitDateKey)
+        } else {
+            // Remove the key when date is nil to avoid crash
+            UserDefaults.standard.removeObject(forKey: dailyLimitDateKey)
+        }
+    }
+
+    private func loadState() {
+        dailyLimitReachedDate = UserDefaults.standard.object(forKey: dailyLimitDateKey) as? Date
+    }
+}

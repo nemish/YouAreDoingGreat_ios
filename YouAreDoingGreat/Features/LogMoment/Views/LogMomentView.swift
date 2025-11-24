@@ -15,6 +15,9 @@ struct LogMomentView: View {
     @State private var showPraise = false
     @State private var praiseViewModel: PraiseViewModel?
 
+    // Paywall state
+    @State private var showPaywall = false
+
     // Callbacks
     var onSave: (() -> Void)?
 
@@ -313,6 +316,13 @@ struct LogMomentView: View {
 
     private var saveButton: some View {
         PrimaryButton(title: saveButtonTitle) {
+            // Check if daily limit is reached before proceeding
+            if PaywallService.shared.shouldBlockMomentCreation() {
+                UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                showPaywall = true
+                return
+            }
+
             Task {
                 isTextFieldFocused = false
                 let success = await viewModel.submit()
@@ -349,6 +359,16 @@ struct LogMomentView: View {
         }
         .disabled(viewModel.isSubmitting)
         .opacity(viewModel.isSubmitting ? 0.7 : 1)
+        .fullScreenCover(isPresented: $showPaywall, onDismiss: {
+            // Always clear the service flag when paywall is dismissed
+            // This handles both programmatic dismissal and interactive gestures
+            PaywallService.shared.dismissPaywall()
+        }) {
+            PaywallView {
+                // This closure only runs for programmatic dismissal (button taps)
+                showPaywall = false
+            }
+        }
     }
 }
 

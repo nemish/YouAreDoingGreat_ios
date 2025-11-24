@@ -32,8 +32,8 @@ final class PraiseViewModel {
     // Polling state
     private var pollingTask: Task<Void, Never>?
     private var pollCount: Int = 0
-    private let maxPolls: Int = 10
-    private let pollInterval: UInt64 = 2_000_000_000 // 2 seconds
+    private let maxPolls: Int = AppConfig.maxPraisePolls
+    private let pollInterval: UInt64 = UInt64(AppConfig.praisePollingInterval * 1_000_000_000)
 
     // Computed properties
     var displayedPraise: String {
@@ -127,6 +127,8 @@ final class PraiseViewModel {
 
             await pollForPraise(serverId: serverId)
 
+        } catch let error as MomentError {
+            handleMomentError(error)
         } catch {
             logger.error("Failed to sync moment: \(error.localizedDescription)")
             syncError = error.localizedDescription
@@ -134,11 +136,23 @@ final class PraiseViewModel {
         }
     }
 
+    private func handleMomentError(_ error: MomentError) {
+        if error.isDailyLimitError {
+            logger.warning("Daily limit reached, showing paywall")
+            PaywallService.shared.markDailyLimitReached()
+            PaywallService.shared.showPaywall()
+        } else {
+            logger.error("Moment error: \(error.localizedDescription)")
+            syncError = error.localizedDescription
+        }
+        isLoadingAIPraise = false
+    }
+
     private func createMomentOnServer() async throws -> MomentResponse {
         // TODO: Replace with actual API client
         // For now, use URLSession directly
 
-        guard let url = URL(string: "https://1test1.xyz/api/v1/moments") else {
+        guard let url = AppConfig.momentsURL else {
             throw URLError(.badURL)
         }
 
@@ -146,7 +160,7 @@ final class PraiseViewModel {
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         // TODO: Get actual user ID from auth service
-        request.setValue("test-user-id", forHTTPHeaderField: "x-user-id")
+        request.setValue(AppConfig.developmentUserId, forHTTPHeaderField: AppConfig.userIdHeaderKey)
 
         let body = CreateMomentRequest(
             clientId: clientId.uuidString,
@@ -160,13 +174,37 @@ final class PraiseViewModel {
 
         let (data, response) = try await URLSession.shared.data(for: request)
 
-        guard let httpResponse = response as? HTTPURLResponse,
-              (200...299).contains(httpResponse.statusCode) else {
-            throw URLError(.badServerResponse)
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw MomentError.invalidResponse
         }
 
-        let decoded = try JSONDecoder().decode(CreateMomentResponseWrapper.self, from: data)
-        return decoded.item
+        // Handle error responses
+        if httpResponse.statusCode == 400 {
+            // Try to parse error response
+            if let errorResponse = try? JSONDecoder().decode(APIErrorResponse.self, from: data) {
+                if errorResponse.error.code == .dailyLimitReached {
+                    throw MomentError.dailyLimitReached(message: errorResponse.error.message)
+                } else {
+                    throw MomentError.serverError(message: errorResponse.error.message)
+                }
+            }
+            throw MomentError.invalidResponse
+        }
+
+        guard (200...299).contains(httpResponse.statusCode) else {
+            // Try to parse error response for other status codes
+            if let errorResponse = try? JSONDecoder().decode(APIErrorResponse.self, from: data) {
+                throw MomentError.serverError(message: errorResponse.error.message)
+            }
+            throw MomentError.invalidResponse
+        }
+
+        do {
+            let decoded = try JSONDecoder().decode(CreateMomentResponseWrapper.self, from: data)
+            return decoded.item
+        } catch {
+            throw MomentError.decodingError(error)
+        }
     }
 
     private func pollForPraise(serverId: String) async {
@@ -203,14 +241,14 @@ final class PraiseViewModel {
     }
 
     private func fetchMomentFromServer(serverId: String) async throws -> MomentResponse {
-        guard let url = URL(string: "https://1test1.xyz/api/v1/moments/\(serverId)") else {
+        guard let url = AppConfig.momentURL(id: serverId) else {
             throw URLError(.badURL)
         }
 
         var request = URLRequest(url: url)
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         // TODO: Get actual user ID from auth service
-        request.setValue("test-user-id", forHTTPHeaderField: "x-user-id")
+        request.setValue(AppConfig.developmentUserId, forHTTPHeaderField: AppConfig.userIdHeaderKey)
 
         let (data, response) = try await URLSession.shared.data(for: request)
 
