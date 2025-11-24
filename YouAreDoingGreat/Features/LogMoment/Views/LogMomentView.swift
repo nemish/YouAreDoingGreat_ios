@@ -182,26 +182,39 @@ struct LogMomentView: View {
 
     private var momentTextInput: some View {
         VStack(alignment: .leading, spacing: 8) {
-            TextEditor(text: $viewModel.momentText)
-                .font(.appBody)
-                .foregroundStyle(.textPrimary)
-                .scrollContentBackground(.hidden)
-                .frame(minHeight: 120)
-                .padding(16)
-                .background(
-                    RoundedRectangle(cornerRadius: 16)
-                        .fill(Color.white.opacity(0.03))
-                )
-                .overlay(
-                    RoundedRectangle(cornerRadius: 16)
-                        .stroke(
-                            Color.white.opacity(0.15),
-                            lineWidth: 1
-                        )
-                )
-                .focused($isTextFieldFocused)
-                .disabled(viewModel.isSubmitting)
-                .opacity(viewModel.isSubmitting ? 0.5 : 1)
+            ZStack(alignment: .topLeading) {
+                // Placeholder text
+                if viewModel.momentText.isEmpty {
+                    Text(viewModel.placeholderText)
+                        .font(.appBody)
+                        .foregroundStyle(.textTertiary)
+                        .padding(16)
+                        .padding(.top, 8)
+                        .allowsHitTesting(false)
+                }
+
+                // Text editor
+                TextEditor(text: $viewModel.momentText)
+                    .font(.appBody)
+                    .foregroundStyle(.textPrimary)
+                    .scrollContentBackground(.hidden)
+                    .frame(minHeight: 120)
+                    .padding(16)
+                    .focused($isTextFieldFocused)
+            }
+            .background(
+                RoundedRectangle(cornerRadius: 16)
+                    .fill(Color.white.opacity(0.03))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 16)
+                    .stroke(
+                        Color.white.opacity(0.15),
+                        lineWidth: 1
+                    )
+            )
+            .disabled(viewModel.isSubmitting)
+            .opacity(viewModel.isSubmitting ? 0.5 : 1)
 
             // Character count
             HStack {

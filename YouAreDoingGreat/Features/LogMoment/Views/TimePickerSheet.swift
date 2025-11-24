@@ -24,7 +24,7 @@ struct TimePickerSheet: View {
             VStack(spacing: 16) {
                 // Title
                 Text("When did it happen?")
-                    .font(.appTitle3)
+                    .font(.appHeadline)
                     .foregroundStyle(.textPrimary)
                     .padding(.top, 16)
 

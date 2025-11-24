@@ -361,7 +361,8 @@ Summary:
 ```swift
 @Model
 class Moment {
-    @Attribute(.unique) var id: UUID
+    @Attribute(.unique) var id: UUID       // Client-generated UUID
+    var serverId: String?                   // Server-assigned ID (after sync)
     var text: String
     var submittedAt: Date      // Timestamp of logging
     var happenedAt: Date       // User-specified "when it happened"
@@ -373,8 +374,17 @@ class Moment {
     var tags: [String]         // Extracted tags
     var isFavorite: Bool       // User-marked favorite
     var isSynced: Bool         // Local sync status
+    var syncError: String?     // Last sync error message
 }
 ```
+
+### Offline-First Sync Pattern
+
+1. **Create locally**: Generate client UUID, show offline praise instantly
+2. **POST to server**: Send `clientId` (the client UUID) with moment data
+3. **Server responds**: Returns server-generated `id` plus echoed `clientId`
+4. **Update locally**: Store `serverId`, mark as synced, update with AI praise
+5. **Retry on failure**: Exponential backoff for failed syncs
 
 ### DailySummary (Optional)
 
