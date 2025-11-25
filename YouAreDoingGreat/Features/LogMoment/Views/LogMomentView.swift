@@ -330,7 +330,7 @@ struct LogMomentView: View {
                     mediumFeedback.impactOccurred()
                     // Create praise view model with submitted data
                     let text = viewModel.momentText.trimmingCharacters(in: .whitespacesAndNewlines)
-                    let momentText = text.isEmpty ? "Did something worth noting" : text
+                    let momentText = text.isEmpty ? "Secret" : text
 
                     // Calculate happenedAt
                     let submittedAt = Date()

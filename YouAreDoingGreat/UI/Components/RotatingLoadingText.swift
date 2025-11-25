@@ -10,7 +10,7 @@ struct RotatingLoadingText: View {
 
     // Loading phrases inspired by the old app
     private let loadingPhrases = [
-        "Loading...",
+        "Gathering light...",
         "Thinking...",
         "One sec...",
         "Almost...",
@@ -24,7 +24,6 @@ struct RotatingLoadingText: View {
         "Tiny spark...",
         "Softly now...",
         "Turning pages...",
-        "Gathering light...",
         "On it...",
         "Tuning in...",
         "Quiet magic...",

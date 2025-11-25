@@ -117,7 +117,7 @@ final class LogMomentViewModel {
         // - timezone: TimeZone.current.identifier
         // - submittedAt: Date()
         // - happenedAt: submittedAt.addingTimeInterval(-Double(timeAgoSeconds ?? 0))
-        // - text: momentText.trimmingCharacters or "Did something worth noting"
+        // - text: momentText.trimmingCharacters or "Secret"
         // TODO: Select offline praise from JSON pool
         // TODO: Sync to server in background
 

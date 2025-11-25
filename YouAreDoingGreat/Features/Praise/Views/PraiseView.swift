@@ -41,9 +41,9 @@ struct PraiseContentView<ViewModel: PraiseViewModelProtocol>: View {
             // Main content area
             VStack(spacing: 32) {
                 // Celebration icon
-                celebrationIcon
-                    .opacity(viewModel.showContent ? 1 : 0)
-                    .scaleEffect(viewModel.showContent ? 1 : 0.5)
+//                celebrationIcon
+//                    .opacity(viewModel.showContent ? 1 : 0)
+//                    .scaleEffect(viewModel.showContent ? 1 : 0.5)
 
                 // Moment text display
                 VStack(spacing: 12) {
@@ -74,7 +74,10 @@ struct PraiseContentView<ViewModel: PraiseViewModelProtocol>: View {
                     // Loading indicator for AI praise
                     if viewModel.isLoadingAIPraise {
                         MomentSyncLoadingView()
-                            .transition(.opacity.combined(with: .scale(scale: 0.9)))
+                            .transition(.asymmetric(
+                                insertion: .opacity.combined(with: .scale(scale: 0.8)),
+                                removal: .opacity.combined(with: .scale(scale: 0.8))
+                            ))
                     }
 
                     // AI praise text (shown below offline praise when available) with word-by-word animation
@@ -86,7 +89,10 @@ struct PraiseContentView<ViewModel: PraiseViewModelProtocol>: View {
                             multilineTextAlignment: .center,
                             wordDelay: 0.08
                         )
-                        .transition(.opacity.combined(with: .move(edge: .top)))
+                        .transition(.asymmetric(
+                            insertion: .opacity.combined(with: .scale(scale: 0.9).combined(with: .move(edge: .top))),
+                            removal: .opacity.combined(with: .scale(scale: 0.9))
+                        ))
                     }
 
                     // Error message
@@ -100,6 +106,8 @@ struct PraiseContentView<ViewModel: PraiseViewModelProtocol>: View {
                 }
                 .opacity(viewModel.showPraise ? 1 : 0)
                 .offset(y: viewModel.showPraise ? 0 : 10)
+                .animation(.easeInOut(duration: 0.5), value: viewModel.isLoadingAIPraise)
+                .animation(.easeInOut(duration: 0.5), value: viewModel.aiPraise)
 
                 // Tags section
                 if !viewModel.tags.isEmpty {
@@ -109,7 +117,6 @@ struct PraiseContentView<ViewModel: PraiseViewModelProtocol>: View {
                 }
             }
             .padding(.horizontal, 32)
-            .animation(.easeInOut(duration: 0.3), value: viewModel.isLoadingAIPraise)
 
             Spacer()
 
@@ -136,6 +143,10 @@ struct PraiseContentView<ViewModel: PraiseViewModelProtocol>: View {
             // Always clear the service flag when paywall is dismissed
             // This handles both programmatic dismissal and interactive gestures
             paywallService.dismissPaywall()
+
+            // Navigate back to home view
+            viewModel.cancelPolling()
+            onDismiss()
         }) {
             PaywallView {
                 // This closure only runs for programmatic dismissal (button taps)
@@ -171,34 +182,34 @@ struct PraiseContentView<ViewModel: PraiseViewModelProtocol>: View {
 
     // MARK: - Celebration Icon
 
-    private var celebrationIcon: some View {
-        ZStack {
-            // Outer glow
-            Circle()
-                .fill(Color.appPrimary.opacity(0.2))
-                .frame(width: 80, height: 80)
-                .blur(radius: 20)
-
-            // Main circle
-            Circle()
-                .fill(
-                    LinearGradient(
-                        colors: [
-                            Color.appPrimary,
-                            Color.appPrimary.opacity(0.8)
-                        ],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                )
-                .frame(width: 64, height: 64)
-
-            // Star icon - celebratory, not task-completion
-            Image(systemName: "sparkles")
-                .font(.system(size: 26, weight: .bold))
-                .foregroundStyle(.white)
-        }
-    }
+//    private var celebrationIcon: some View {
+//        ZStack {
+//            // Outer glow
+//            Circle()
+//                .fill(Color.appPrimary.opacity(0.2))
+//                .frame(width: 80, height: 80)
+//                .blur(radius: 20)
+//
+//            // Main circle
+//            Circle()
+//                .fill(
+//                    LinearGradient(
+//                        colors: [
+//                            Color.appPrimary,
+//                            Color.appPrimary.opacity(0.8)
+//                        ],
+//                        startPoint: .topLeading,
+//                        endPoint: .bottomTrailing
+//                    )
+//                )
+//                .frame(width: 64, height: 64)
+//
+//            // Star icon - celebratory, not task-completion
+//            Image(systemName: "sparkles")
+//                .font(.system(size: 26, weight: .bold))
+//                .foregroundStyle(.white)
+//        }
+//    }
 }
 
 // MARK: - Preview
