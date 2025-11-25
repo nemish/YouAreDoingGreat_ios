@@ -1,11 +1,33 @@
 import SwiftUI
 
+// MARK: - Praise View Model Protocol
+// Defines the contract for both real and mock view models
+
+protocol PraiseViewModelProtocol: AnyObject, Observable {
+    var momentText: String { get }
+    var timeAgoSeconds: Int? { get }
+    var offlinePraise: String { get }
+    var aiPraise: String? { get set }
+    var tags: [String] { get set }
+    var isLoadingAIPraise: Bool { get set }
+    var syncError: String? { get set }
+    var showContent: Bool { get set }
+    var showPraise: Bool { get set }
+    var showTags: Bool { get set }
+    var showButton: Bool { get set }
+    var timeDisplayText: String { get }
+
+    func cancelPolling()
+    func startEntranceAnimation() async
+    func syncMomentAndFetchPraise() async
+}
+
 // MARK: - Praise Content View
 // Inline praise content to be used within LogMomentView
 // Dark mode only for v1
 
-struct PraiseContentView: View {
-    @Bindable var viewModel: PraiseViewModel
+struct PraiseContentView<ViewModel: PraiseViewModelProtocol>: View {
+    @Bindable var viewModel: ViewModel
     var onDismiss: () -> Void
 
     // Paywall state
@@ -51,15 +73,8 @@ struct PraiseContentView: View {
 
                     // Loading indicator for AI praise
                     if viewModel.isLoadingAIPraise {
-                        HStack(spacing: 8) {
-                            ProgressView()
-                                .progressViewStyle(CircularProgressViewStyle(tint: .textTertiary))
-                                .scaleEffect(0.8)
-                            Text("Generating praise...")
-                                .font(.appCaption)
-                                .foregroundStyle(.textTertiary)
-                        }
-                        .transition(.opacity.combined(with: .scale(scale: 0.9)))
+                        MomentSyncLoadingView()
+                            .transition(.opacity.combined(with: .scale(scale: 0.9)))
                     }
 
                     // AI praise text (shown below offline praise when available) with word-by-word animation
@@ -188,20 +203,23 @@ struct PraiseContentView: View {
 
 // MARK: - Preview
 
-#Preview("Praise Content") {
+#Preview("Praise Content - Static") {
     ZStack {
         LinearGradient.cosmic
             .ignoresSafeArea()
 
         PraiseContentView(
             viewModel: {
-                let vm = PraiseViewModel(
+                let vm = MockPraiseViewModel(
                     momentText: "I finally cleaned my desk after three weeks",
                     timeAgoSeconds: nil
                 )
                 vm.showContent = true
                 vm.showPraise = true
                 vm.showButton = true
+                vm.aiPraise = "That's awesome! Taking care of your space is taking care of yourself. A clean desk can really help clear your mind too."
+                vm.tags = ["self_care", "productivity", "wins"]
+                vm.showTags = true
                 return vm
             }()
         ) {
@@ -209,4 +227,110 @@ struct PraiseContentView: View {
         }
     }
     .preferredColorScheme(.dark)
+}
+
+#Preview("Praise Content - Loading") {
+    ZStack {
+        LinearGradient.cosmic
+            .ignoresSafeArea()
+
+        PraiseContentView(
+            viewModel: {
+                let vm = MockPraiseViewModel(
+                    momentText: "I called my mom today",
+                    timeAgoSeconds: 3600
+                )
+                vm.showContent = true
+                vm.showPraise = true
+                vm.showButton = true
+                vm.isLoadingAIPraise = true
+                return vm
+            }()
+        ) {
+            print("Dismissed")
+        }
+    }
+    .preferredColorScheme(.dark)
+}
+
+// MARK: - Mock ViewModel for Previews
+
+@MainActor
+@Observable
+private final class MockPraiseViewModel: PraiseViewModelProtocol {
+    // Moment data
+    let momentText: String
+    let happenedAt: Date
+    let timeAgoSeconds: Int?
+    let clientId: UUID
+    let submittedAt: Date
+    let timezone: String
+
+    // Praise state
+    var offlinePraise: String
+    var aiPraise: String?
+    var tags: [String] = []
+    var isLoadingAIPraise: Bool = false
+    var syncError: String?
+
+    // Animation state
+    var showContent: Bool = false
+    var showPraise: Bool = false
+    var showTags: Bool = false
+    var showButton: Bool = false
+
+    var displayedPraise: String {
+        aiPraise ?? offlinePraise
+    }
+
+    var isShowingAIPraise: Bool {
+        aiPraise != nil
+    }
+
+    var timeDisplayText: String {
+        guard let seconds = timeAgoSeconds, seconds > 0 else {
+            return "Just now"
+        }
+
+        if seconds < 3600 {
+            let minutes = seconds / 60
+            return "\(minutes) minute\(minutes == 1 ? "" : "s") ago"
+        } else if seconds < 86400 {
+            let hours = seconds / 3600
+            return "\(hours) hour\(hours == 1 ? "" : "s") ago"
+        } else {
+            let days = seconds / 86400
+            return "\(days) day\(days == 1 ? "" : "s") ago"
+        }
+    }
+
+    init(
+        momentText: String,
+        happenedAt: Date = Date(),
+        timeAgoSeconds: Int? = nil,
+        offlinePraise: String? = nil,
+        clientId: UUID = UUID(),
+        submittedAt: Date = Date(),
+        timezone: String = TimeZone.current.identifier
+    ) {
+        self.momentText = momentText
+        self.happenedAt = happenedAt
+        self.timeAgoSeconds = timeAgoSeconds
+        self.offlinePraise = offlinePraise ?? "That's it. Small stuff adds up."
+        self.clientId = clientId
+        self.submittedAt = submittedAt
+        self.timezone = timezone
+    }
+
+    func cancelPolling() {
+        // No-op for mock
+    }
+
+    func startEntranceAnimation() async {
+        // No-op for mock - state is set manually
+    }
+
+    func syncMomentAndFetchPraise() async {
+        // No-op for mock - state is set manually
+    }
 }

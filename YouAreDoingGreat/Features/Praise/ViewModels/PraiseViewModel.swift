@@ -7,7 +7,7 @@ private let logger = Logger(subsystem: "com.youaredoinggreat", category: "praise
 
 @MainActor
 @Observable
-final class PraiseViewModel {
+final class PraiseViewModel: PraiseViewModelProtocol {
     // Moment data
     let momentText: String
     let happenedAt: Date
