@@ -159,8 +159,8 @@ final class PraiseViewModel: PraiseViewModelProtocol {
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        // TODO: Get actual user ID from auth service
-        request.setValue(AppConfig.developmentUserId, forHTTPHeaderField: AppConfig.userIdHeaderKey)
+        // Add anonymous user ID header
+        request.setValue(UserIDProvider.shared.userID, forHTTPHeaderField: AppConfig.userIdHeaderKey)
 
         let body = CreateMomentRequest(
             clientId: clientId.uuidString,
@@ -247,8 +247,8 @@ final class PraiseViewModel: PraiseViewModelProtocol {
 
         var request = URLRequest(url: url)
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        // TODO: Get actual user ID from auth service
-        request.setValue(AppConfig.developmentUserId, forHTTPHeaderField: AppConfig.userIdHeaderKey)
+        // Add anonymous user ID header
+        request.setValue(UserIDProvider.shared.userID, forHTTPHeaderField: AppConfig.userIdHeaderKey)
 
         let (data, response) = try await URLSession.shared.data(for: request)
 

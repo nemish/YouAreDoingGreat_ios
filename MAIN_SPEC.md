@@ -83,7 +83,116 @@ App
 
 ---
 
-## 2. Navigation Structure
+## 2. Anonymous User Identity System
+
+### Overview
+
+The app uses **anonymous user IDs** to provide a seamless, privacy-first experience without requiring sign-up or authentication. Every user gets a persistent UUID that serves as their identity across the app, API, and subscription system.
+
+### Implementation Details
+
+**1. UUID Generation & Persistence**
+
+- Generate a random UUID on **first app launch**
+- Persist to **Keychain** (preferred) or UserDefaults for durability across app reinstalls
+- UUID format: Standard UUID v4 (e.g., `550e8400-e29b-41d4-a716-446655440000`)
+
+**2. UserID Provider Service**
+
+Create a lightweight `UserIDProvider` service accessible throughout the app:
+
+```swift
+@Observable
+final class UserIDProvider {
+    static let shared = UserIDProvider()
+    private(set) var userID: String
+
+    private init() {
+        // Load from Keychain, or generate and save if first launch
+        self.userID = KeychainManager.getUserID() ?? {
+            let newID = UUID().uuidString
+            KeychainManager.saveUserID(newID)
+            return newID
+        }()
+    }
+}
+```
+
+**3. API Integration**
+
+- **All API requests** must include the `x-user-id` header
+- Header value: The persistent UUID from `UserIDProvider.shared.userID`
+- Backend treats this as the primary identity, lazily creating user records as needed
+
+Example URLRequest setup:
+```swift
+request.setValue(UserIDProvider.shared.userID, forHTTPHeaderField: "x-user-id")
+```
+
+**4. Backend Behavior**
+
+- Server receives `x-user-id` header
+- If user record doesn't exist → create new user with this UUID
+- If user record exists → fetch/update data for this UUID
+- All moments, stats, and preferences are stored under this anonymous identity
+
+**5. RevenueCat Integration**
+
+- Use the **same UUID** as RevenueCat's `appUserID`
+- This links subscription purchases to the anonymous identity
+- Call `Purchases.configure(withAPIKey:appUserID:)` with the UUID
+
+```swift
+Purchases.configure(
+    withAPIKey: "your_key",
+    appUserID: UserIDProvider.shared.userID
+)
+```
+
+**6. Future Authentication Migration**
+
+When introducing real authentication (email/OAuth):
+
+1. User signs in with credentials
+2. Backend merges anonymous user data into authenticated account
+3. Update stored UUID to match authenticated user ID
+4. Update RevenueCat: `Purchases.shared.logIn(newUserID)`
+5. All existing moments and purchases carry over seamlessly
+
+### Security & Privacy Considerations
+
+- **No personal data** stored in the UUID itself
+- UUID stored in **Keychain** for secure, persistent storage
+- Users remain completely anonymous until they choose to authenticate
+- GDPR/CCPA compliant - no tracking without explicit consent
+- UUID is **not** shared with third parties
+
+### Edge Cases
+
+**App Reinstall:**
+- If Keychain data persists: User keeps same identity
+- If Keychain cleared: New UUID generated, fresh start (intentional privacy feature)
+
+**Device Transfer:**
+- Without authentication: New device = new identity
+- With future authentication: Sign in to restore data
+
+**Multiple Devices:**
+- Each device has separate anonymous identity initially
+- Future authentication enables cross-device sync
+
+### Implementation Checklist
+
+- [ ] Create `KeychainManager` utility for secure UUID storage
+- [ ] Implement `UserIDProvider` singleton service
+- [ ] Add `x-user-id` header to all API requests
+- [ ] Configure RevenueCat with the same UUID
+- [ ] Add unit tests for UUID generation and persistence
+- [ ] Document migration strategy for future authentication
+
+---
+
+## 3. Navigation Structure
 
 ### TabView (3 tabs)
 
@@ -100,11 +209,11 @@ App
 
 ---
 
-## 3. Screen Specifications
+## 4. Screen Specifications
 
 Below are exact screen definitions including copy, behavior, and interaction.
 
-### 3.1 Onboarding (Minimal v1)
+### 4.1 Onboarding (Minimal v1)
 
 **Screen:** Welcome
 
@@ -136,7 +245,7 @@ Below are exact screen definitions including copy, behavior, and interaction.
 
 ---
 
-### 3.2 Home Screen
+### 4.2 Home Screen
 
 **Purpose:** Starting point, emotional entry.
 
@@ -155,7 +264,7 @@ Below are exact screen definitions including copy, behavior, and interaction.
 
 ---
 
-### 3.3 Log Moment Screen
+### 4.3 Log Moment Screen
 
 **Purpose:** User describes what they did and when.
 
@@ -190,7 +299,7 @@ Below are exact screen definitions including copy, behavior, and interaction.
 
 ---
 
-### 3.4 Praise Screen
+### 4.4 Praise Screen
 
 **Purpose:** Deliver instant emotional reinforcement.
 
@@ -211,7 +320,7 @@ Below are exact screen definitions including copy, behavior, and interaction.
 
 ---
 
-### 3.5 Moments Screen (Tab 2)
+### 4.5 Moments Screen (Tab 2)
 
 **Purpose:** Chronological list of user moments.
 
@@ -231,7 +340,7 @@ Below are exact screen definitions including copy, behavior, and interaction.
 
 ---
 
-### 3.6 Journey Screen (Tab 3)
+### 4.6 Journey Screen (Tab 3)
 
 **Purpose:** Show long-term progress and daily summaries.
 
@@ -260,7 +369,7 @@ Summary:
 
 ---
 
-### 3.7 Paywall Screen
+### 4.7 Paywall Screen
 
 **UI:**
 
@@ -284,7 +393,7 @@ Summary:
 
 ---
 
-### 3.8 Settings Screen
+### 4.8 Settings Screen
 
 **Sections:**
 
@@ -311,7 +420,7 @@ Summary:
 
 ---
 
-## 4. State Management
+## 5. State Management
 
 ### AppState Includes
 
@@ -335,7 +444,7 @@ Summary:
 
 ---
 
-## 5. Offline & Error Handling
+## 6. Offline & Error Handling
 
 ### Offline Praise
 
@@ -354,7 +463,7 @@ Summary:
 
 ---
 
-## 6. Data Models (SwiftData)
+## 7. Data Models (SwiftData)
 
 ### Moment
 
@@ -398,7 +507,7 @@ struct DailySummary {
 
 ---
 
-## 7. Visual Style Guide
+## 8. Visual Style Guide
 
 ### Colors
 
@@ -446,7 +555,7 @@ struct DailySummary {
 
 ---
 
-## 8. v1 Scope Checklist
+## 9. v1 Scope Checklist
 
 ### Core Features
 
@@ -469,7 +578,7 @@ struct DailySummary {
 
 ---
 
-## 9. Out of Scope (Future Versions)
+## 10. Out of Scope (Future Versions)
 
 - Themes / tone selection
 - Push notifications
@@ -482,7 +591,7 @@ struct DailySummary {
 
 ---
 
-## 10. Required Legal Links
+## 11. Required Legal Links
 
 All legal pages opened via SafariView:
 
