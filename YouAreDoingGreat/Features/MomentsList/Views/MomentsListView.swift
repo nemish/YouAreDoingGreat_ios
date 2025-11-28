@@ -105,10 +105,11 @@ struct MomentsListView: View {
 
     private var loadingView: some View {
         VStack(spacing: 16) {
-            MomentSyncLoadingView()
             Text("Loading your moments...")
                 .font(.appBody)
                 .foregroundStyle(.textSecondary)
+            ProgressView()
+                .scaleEffect(1.2)
         }
     }
 
