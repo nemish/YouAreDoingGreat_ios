@@ -54,8 +54,18 @@ final class DefaultAPIClient: APIClient {
 
         logger.debug("API Response: \(httpResponse.statusCode)")
 
+        // Handle 304 Not Modified - data should be from cache
+        if httpResponse.statusCode == 304 {
+            // For 304, URLSession returns cached data automatically
+            // If data is empty, it means cache wasn't properly set up
+            if data.isEmpty {
+                logger.error("304 response but no cached data available")
+                throw MomentError.invalidResponse
+            }
+        }
+
         // Handle error status codes
-        guard (200...299).contains(httpResponse.statusCode) else {
+        guard (200...299).contains(httpResponse.statusCode) || httpResponse.statusCode == 304 else {
             // Try to parse error response
             if let errorResponse = try? jsonDecoder.decode(APIErrorResponse.self, from: data) {
                 if errorResponse.error.code == .dailyLimitReached {
@@ -68,6 +78,11 @@ final class DefaultAPIClient: APIClient {
         }
 
         // Decode successful response
+        if let responseBody = String(data: data, encoding: .utf8) {
+            logger.info("API Response Body: \(responseBody)")
+        } else {
+            logger.info("API Response Body is non-UTF8 data (\(data.count) bytes)")
+        }
         do {
             let decoded = try jsonDecoder.decode(T.self, from: data)
             return decoded

@@ -27,6 +27,9 @@ enum APIEndpoint {
     case moment(id: String)
     case updateMoment(id: String)
     case deleteMoment(id: String)
+    case userProfile
+    case userStats
+    case submitFeedback
 
     var path: String {
         switch self {
@@ -48,6 +51,15 @@ enum APIEndpoint {
 
         case .deleteMoment(let id):
             return "\(AppConfig.apiBaseURL)/moments/\(id)"
+
+        case .userProfile:
+            return "\(AppConfig.apiBaseURL)/user/me"
+
+        case .userStats:
+            return "\(AppConfig.apiBaseURL)/user/stats"
+
+        case .submitFeedback:
+            return "\(AppConfig.apiBaseURL)/user/feedback"
         }
     }
 

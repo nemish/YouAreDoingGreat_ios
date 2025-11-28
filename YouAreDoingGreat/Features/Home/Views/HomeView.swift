@@ -13,7 +13,7 @@ struct HomeView: View {
 
     // Navigation state
     @State private var showLogMoment = false
-    @State private var showSettings = false
+    @State private var showProfile = false
 
     // Title phrases - tap to cycle
     private let titlePhrases = [
@@ -46,58 +46,59 @@ struct HomeView: View {
     private let lightFeedback = UIImpactFeedbackGenerator(style: .light)
 
     var body: some View {
-        ZStack {
-            // Content
-            VStack(spacing: 0) {
-                // Settings button
-                HStack {
+        NavigationStack {
+            ZStack {
+                // Content
+                VStack(spacing: 0) {
                     Spacer()
+
+                    // Title phrase - tap to cycle
+                    Text(currentPhrase)
+                        .font(.appTitle3)
+                        .foregroundStyle(.textHighlightOnePrimary)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 32)
+                        .scaleEffect(breathingScale)
+                        .opacity(breathingOpacity)
+                        .onTapGesture {
+                            cycleToNextPhrase()
+                        }
+
+                    Spacer()
+
+                    // Primary action button
+                    VStack(spacing: 16) {
+                        PrimaryButton(title: "I Did a Thing") {
+                            showLogMoment = true
+                        }
+
+                        // First-launch hint
+                        if !hasCompletedFirstLog {
+                            firstLogHint
+                        }
+                    }
+                    .padding(.horizontal, 32)
+                    .padding(.bottom, 40)
+                }
+            }
+            .starfieldBackground(isPaused: showLogMoment || showProfile)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
                     Button {
-                        showSettings = true
+                        showProfile = true
                     } label: {
-                        Image(systemName: "gearshape")
-                            .font(.system(size: 22))
+                        Image(systemName: "person")
+                            .font(.system(size: 20))
                             .foregroundStyle(.textSecondary)
                     }
                 }
-                .padding(.horizontal, 24)
-                .padding(.top, 16)
-
-                Spacer()
-
-                // Title phrase - tap to cycle
-                Text(currentPhrase)
-                    .font(.appTitle3)
-                    .foregroundStyle(.textHighlightOnePrimary)
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, 32)
-                    .scaleEffect(breathingScale)
-                    .opacity(breathingOpacity)
-                    .onTapGesture {
-                        cycleToNextPhrase()
-                    }
-
-                Spacer()
-
-                // Primary action button
-                VStack(spacing: 16) {
-                    PrimaryButton(title: "I Did a Thing") {
-                        showLogMoment = true
-                    }
-
-                    // First-launch hint
-                    if !hasCompletedFirstLog {
-                        firstLogHint
-                    }
-                }
-                .padding(.horizontal, 32)
-                .padding(.bottom, 40)
             }
-        }
-        .starfieldBackground(isPaused: showLogMoment || showSettings)
-        .onAppear {
-            selectRandomPhrase()
-            startBreathingAnimation()
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbarBackground(.hidden, for: .navigationBar)
+            .onAppear {
+                selectRandomPhrase()
+                startBreathingAnimation()
+            }
         }
         .sheet(isPresented: $showLogMoment) {
             LogMomentView(isFirstLog: !hasCompletedFirstLog, selectedTab: $selectedTab) {
@@ -109,12 +110,12 @@ struct HomeView: View {
             .presentationDetents([.large])
             .presentationDragIndicator(.hidden)
         }
-        .sheet(isPresented: $showSettings) {
-            // TODO: SettingsView
-            Text("Settings Screen")
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .background(.backgroundContrast)
-                .presentationDetents([.large])
+        .fullScreenCover(isPresented: $showProfile) {
+            ProfileView(
+                viewModel: ProfileViewModel(
+                    userService: UserService(apiClient: DefaultAPIClient())
+                )
+            )
         }
     }
     
