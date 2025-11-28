@@ -88,6 +88,21 @@ final class DefaultAPIClient: APIClient {
             return decoded
         } catch {
             logger.error("Failed to decode response: \(error.localizedDescription)")
+            logger.error("Decoding error details: \(error)")
+            if let decodingError = error as? DecodingError {
+                switch decodingError {
+                case .keyNotFound(let key, let context):
+                    logger.error("Key '\(key.stringValue)' not found: \(context.debugDescription)")
+                case .typeMismatch(let type, let context):
+                    logger.error("Type '\(type)' mismatch: \(context.debugDescription)")
+                case .valueNotFound(let type, let context):
+                    logger.error("Value '\(type)' not found: \(context.debugDescription)")
+                case .dataCorrupted(let context):
+                    logger.error("Data corrupted: \(context.debugDescription)")
+                @unknown default:
+                    logger.error("Unknown decoding error")
+                }
+            }
             throw MomentError.decodingError(error)
         }
     }

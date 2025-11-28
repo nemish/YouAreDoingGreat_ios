@@ -50,5 +50,5 @@ struct UserFeedback: Decodable {
     let id: String
     let title: String
     let text: String
-    let createdAt: String
+    let createdAt: String?
 }
