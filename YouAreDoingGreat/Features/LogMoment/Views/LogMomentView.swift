@@ -5,6 +5,7 @@ import SwiftUI
 
 struct LogMomentView: View {
     @Environment(\.dismiss) private var dismiss
+    @Binding var selectedTab: Int
     @State private var viewModel: LogMomentViewModel
     @FocusState private var isTextFieldFocused: Bool
 
@@ -21,8 +22,9 @@ struct LogMomentView: View {
     // Callbacks
     var onSave: (() -> Void)?
 
-    init(isFirstLog: Bool = false, onSave: (() -> Void)? = nil) {
+    init(isFirstLog: Bool = false, selectedTab: Binding<Int>, onSave: (() -> Void)? = nil) {
         _viewModel = State(initialValue: LogMomentViewModel(isFirstLog: isFirstLog))
+        _selectedTab = selectedTab
         self.onSave = onSave
     }
 
@@ -114,7 +116,7 @@ struct LogMomentView: View {
     // MARK: - Praise Content
 
     private func praiseContent(viewModel praiseVM: PraiseViewModel) -> some View {
-        PraiseContentView(viewModel: praiseVM) {
+        PraiseContentView(viewModel: praiseVM, selectedTab: $selectedTab) {
             onSave?()
             dismiss()
         }
@@ -375,11 +377,11 @@ struct LogMomentView: View {
 // MARK: - Preview
 
 #Preview("Log Moment") {
-    LogMomentView()
+    LogMomentView(selectedTab: .constant(0))
         .preferredColorScheme(.dark)
 }
 
 #Preview("Log Moment - First Log") {
-    LogMomentView(isFirstLog: true)
+    LogMomentView(isFirstLog: true, selectedTab: .constant(0))
         .preferredColorScheme(.dark)
 }

@@ -4,6 +4,7 @@ import SwiftUI
 // Dark mode only for v1
 
 struct HomeView: View {
+    @Binding var selectedTab: Int
     @AppStorage("hasCompletedFirstLog") private var hasCompletedFirstLog = false
 
     // Breathing animation state
@@ -99,12 +100,11 @@ struct HomeView: View {
             startBreathingAnimation()
         }
         .sheet(isPresented: $showLogMoment) {
-            LogMomentView(isFirstLog: !hasCompletedFirstLog) {
+            LogMomentView(isFirstLog: !hasCompletedFirstLog, selectedTab: $selectedTab) {
                 // On save callback
                 if !hasCompletedFirstLog {
                     hasCompletedFirstLog = true
                 }
-                // TODO: Navigate to PraiseView
             }
             .presentationDetents([.large])
             .presentationDragIndicator(.hidden)
@@ -170,12 +170,12 @@ struct HomeView: View {
 // MARK: - Preview
 
 #Preview("Home View") {
-    HomeView()
+    HomeView(selectedTab: .constant(0))
         .preferredColorScheme(.dark)
 }
 
 #Preview("Home View - First Launch") {
-    HomeView()
+    HomeView(selectedTab: .constant(0))
         .onAppear {
             UserDefaults.standard.set(false, forKey: "hasCompletedFirstLog")
         }

@@ -6,17 +6,73 @@ import SwiftUI
 
 struct AnimatedBlobOrb: View {
     @State private var startTime: Date = Date()
+    @State private var pulseScale: CGFloat = 1.0
+    @State private var rippleScale: CGFloat = 1.0
+    @State private var rippleOpacity: Double = 0.0
 
     var body: some View {
-        TimelineView(.animation) { timeline in
-            let elapsed = timeline.date.timeIntervalSince(startTime)
-            let animationPhase = CGFloat(elapsed.truncatingRemainder(dividingBy: 1000))
+        ZStack {
+            // Main animated orb
+            TimelineView(.animation) { timeline in
+                let elapsed = timeline.date.timeIntervalSince(startTime)
+                let animationPhase = CGFloat(elapsed.truncatingRemainder(dividingBy: 1000))
 
-            meshGradientOrb(phase: animationPhase)
+                meshGradientOrb(phase: animationPhase)
+            }
+            .scaleEffect(pulseScale)
+
+            // Expanding ripple circle
+            Circle()
+                .fill(
+                    RadialGradient(
+                        colors: [
+                            Color.white.opacity(0.3),
+                            Color.appPrimary.opacity(0.2),
+                            Color.clear
+                        ],
+                        center: .center,
+                        startRadius: 0,
+                        endRadius: 100
+                    )
+                )
+                .frame(width: 100, height: 100)
+                .scaleEffect(rippleScale)
+                .opacity(rippleOpacity)
         }
         .onAppear {
             startTime = Date()
         }
+        .onTapGesture {
+            triggerPulse()
+        }
+    }
+
+    // MARK: - Pulse Animation
+
+    private func triggerPulse() {
+        // Blob pulse: scale up then back to normal
+        withAnimation(.spring(duration: 0.6, bounce: 0.3)) {
+            pulseScale = 1.30
+        }
+
+        // Return to normal
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            withAnimation(.spring(duration: 0.5, bounce: 0.4)) {
+                pulseScale = 1.0
+            }
+        }
+
+        // Ripple animation: expand and fade out
+        rippleScale = 1.0
+        rippleOpacity = 1.0
+
+        withAnimation(.easeOut(duration: 1.0)) {
+            rippleScale = 3.0
+            rippleOpacity = 0.0
+        }
+
+        // Add haptic feedback
+        UIImpactFeedbackGenerator(style: .light).impactOccurred()
     }
 
     // MARK: - Mesh Gradient Orb

@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import SwiftData
 
 @main
 struct YouAreDoingGreatApp: App {
@@ -13,19 +14,35 @@ struct YouAreDoingGreatApp: App {
 
     var body: some Scene {
         WindowGroup {
-            if hasCompletedOnboarding {
-                ContentView()
+            ZStack {
+                if hasCompletedOnboarding {
+                    ContentView()
+                        .preferredColorScheme(.dark) // Force dark mode for v1
+                        .transition(.asymmetric(
+                            insertion: .opacity.combined(with: .scale(scale: 0.95)),
+                            removal: .opacity
+                        ))
+                        .zIndex(1)
+                } else {
+                    WelcomeView {
+                        completeOnboarding()
+                    }
                     .preferredColorScheme(.dark) // Force dark mode for v1
-            } else {
-                WelcomeView {
-                    completeOnboarding()
+                    .transition(.asymmetric(
+                        insertion: .opacity,
+                        removal: .opacity.combined(with: .scale(scale: 1.05))
+                    ))
+                    .zIndex(0)
                 }
-                .preferredColorScheme(.dark) // Force dark mode for v1
             }
+            .animation(.easeInOut(duration: 0.6), value: hasCompletedOnboarding)
         }
+        .modelContainer(for: Moment.self)
     }
 
     private func completeOnboarding() {
-        hasCompletedOnboarding = true
+        withAnimation {
+            hasCompletedOnboarding = true
+        }
     }
 }

@@ -28,6 +28,7 @@ protocol PraiseViewModelProtocol: AnyObject, Observable {
 
 struct PraiseContentView<ViewModel: PraiseViewModelProtocol>: View {
     @Bindable var viewModel: ViewModel
+    @Binding var selectedTab: Int
     var onDismiss: () -> Void
 
     // Paywall state
@@ -124,6 +125,7 @@ struct PraiseContentView<ViewModel: PraiseViewModelProtocol>: View {
             PrimaryButton(title: "Nice") {
                 UIImpactFeedbackGenerator(style: .light).impactOccurred()
                 viewModel.cancelPolling()
+                selectedTab = 1 // Navigate to Moments tab
                 onDismiss()
             }
             .padding(.horizontal, 32)
@@ -180,36 +182,6 @@ struct PraiseContentView<ViewModel: PraiseViewModelProtocol>: View {
         }
     }
 
-    // MARK: - Celebration Icon
-
-//    private var celebrationIcon: some View {
-//        ZStack {
-//            // Outer glow
-//            Circle()
-//                .fill(Color.appPrimary.opacity(0.2))
-//                .frame(width: 80, height: 80)
-//                .blur(radius: 20)
-//
-//            // Main circle
-//            Circle()
-//                .fill(
-//                    LinearGradient(
-//                        colors: [
-//                            Color.appPrimary,
-//                            Color.appPrimary.opacity(0.8)
-//                        ],
-//                        startPoint: .topLeading,
-//                        endPoint: .bottomTrailing
-//                    )
-//                )
-//                .frame(width: 64, height: 64)
-//
-//            // Star icon - celebratory, not task-completion
-//            Image(systemName: "sparkles")
-//                .font(.system(size: 26, weight: .bold))
-//                .foregroundStyle(.white)
-//        }
-//    }
 }
 
 // MARK: - Preview
@@ -232,7 +204,8 @@ struct PraiseContentView<ViewModel: PraiseViewModelProtocol>: View {
                 vm.tags = ["self_care", "productivity", "wins"]
                 vm.showTags = true
                 return vm
-            }()
+            }(),
+            selectedTab: .constant(0)
         ) {
             print("Dismissed")
         }
@@ -256,7 +229,8 @@ struct PraiseContentView<ViewModel: PraiseViewModelProtocol>: View {
                 vm.showButton = true
                 vm.isLoadingAIPraise = true
                 return vm
-            }()
+            }(),
+            selectedTab: .constant(0)
         ) {
             print("Dismissed")
         }
