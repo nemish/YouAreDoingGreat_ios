@@ -39,7 +39,7 @@ struct MomentDTO: Decodable {
 }
 
 struct UpdateMomentResponse: Decodable {
-    let item: MomentDTO
+    let message: String
 }
 
 struct DeleteMomentResponse: Decodable {

@@ -28,6 +28,58 @@ final class MomentService {
         self.repository = repository
     }
 
+    // MARK: - Private Methods
+
+    /// Sync a single moment DTO to local storage
+    private func syncMoment(_ dto: MomentDTO) async throws -> Moment {
+        // Check if moment already exists by serverId or clientId
+        var existingMoment: Moment?
+
+        if let serverId = dto.id {
+            existingMoment = try await repository.fetch(serverId: serverId)
+            logger.debug("Found existing moment by serverId: \(serverId)")
+        }
+
+        if existingMoment == nil, let clientIdString = dto.clientId, let clientId = UUID(uuidString: clientIdString) {
+            existingMoment = try await repository.fetch(clientId: clientId)
+            logger.debug("Found existing moment by clientId: \(clientIdString)")
+        }
+
+        let moment: Moment
+        if let existing = existingMoment {
+            // Update existing moment
+            existing.serverId = dto.id
+            existing.praise = dto.praise
+            existing.action = dto.action
+            existing.tags = dto.tags ?? []
+            existing.isFavorite = dto.isFavorite ?? false
+            existing.isSynced = true
+            try await repository.update(existing)
+            moment = existing
+            logger.info("✅ Updated moment \(existing.clientId.uuidString) - praise: \(dto.praise ?? "nil"), tags: \(dto.tags?.count ?? 0)")
+        } else {
+            // Create new moment from server data
+            let newMoment = dto.toMoment()
+
+            // IMPORTANT: Preserve clientId from server if available
+            if let clientIdString = dto.clientId, let clientId = UUID(uuidString: clientIdString) {
+                newMoment.clientId = clientId
+            }
+
+            newMoment.serverId = dto.id
+            newMoment.praise = dto.praise
+            newMoment.action = dto.action
+            newMoment.tags = dto.tags ?? []
+            newMoment.isFavorite = dto.isFavorite ?? false
+            newMoment.isSynced = true
+            try await repository.save(newMoment)
+            moment = newMoment
+            logger.info("✅ Saved new moment \(newMoment.clientId.uuidString) - praise: \(dto.praise ?? "nil"), tags: \(dto.tags?.count ?? 0)")
+        }
+
+        return moment
+    }
+
     // MARK: - Public Methods
 
     /// Load initial moments (local first, then sync from server)
@@ -65,39 +117,7 @@ final class MomentService {
 
         // Save or update all fetched moments
         for dto in response.data {
-            // Check if moment already exists by serverId or clientId
-            var existingMoment: Moment?
-
-            if let serverId = dto.id {
-                existingMoment = try await repository.fetch(serverId: serverId)
-            }
-
-            if existingMoment == nil, let clientIdString = dto.clientId, let clientId = UUID(uuidString: clientIdString) {
-                existingMoment = try await repository.fetch(clientId: clientId)
-            }
-
-            if let moment = existingMoment {
-                // Update existing moment
-                moment.serverId = dto.id
-                moment.praise = dto.praise
-                moment.action = dto.action
-                moment.tags = dto.tags ?? []
-                moment.isFavorite = dto.isFavorite ?? false
-                moment.isSynced = true
-                try await repository.update(moment)
-                logger.debug("Updated existing moment with serverId: \(dto.id ?? "nil")")
-            } else {
-                // Create new moment
-                let moment = dto.toMoment()
-                moment.serverId = dto.id
-                moment.praise = dto.praise
-                moment.action = dto.action
-                moment.tags = dto.tags ?? []
-                moment.isFavorite = dto.isFavorite ?? false
-                moment.isSynced = true
-                try await repository.save(moment)
-                logger.debug("Saved new moment with serverId: \(dto.id ?? "nil")")
-            }
+            _ = try await syncMoment(dto)
         }
 
         // Update pagination state
@@ -125,43 +145,7 @@ final class MomentService {
         var moments: [Moment] = []
 
         for dto in response.data {
-            // Check if moment already exists by serverId or clientId
-            var existingMoment: Moment?
-
-            if let serverId = dto.id {
-                existingMoment = try await repository.fetch(serverId: serverId)
-            }
-
-            if existingMoment == nil, let clientIdString = dto.clientId, let clientId = UUID(uuidString: clientIdString) {
-                existingMoment = try await repository.fetch(clientId: clientId)
-            }
-
-            let moment: Moment
-            if let existing = existingMoment {
-                // Update existing moment
-                existing.serverId = dto.id
-                existing.praise = dto.praise
-                existing.action = dto.action
-                existing.tags = dto.tags ?? []
-                existing.isFavorite = dto.isFavorite ?? false
-                existing.isSynced = true
-                try await repository.update(existing)
-                moment = existing
-                logger.debug("Updated existing moment with serverId: \(dto.id ?? "nil")")
-            } else {
-                // Create new moment
-                let newMoment = dto.toMoment()
-                newMoment.serverId = dto.id
-                newMoment.praise = dto.praise
-                newMoment.action = dto.action
-                newMoment.tags = dto.tags ?? []
-                newMoment.isFavorite = dto.isFavorite ?? false
-                newMoment.isSynced = true
-                try await repository.save(newMoment)
-                moment = newMoment
-                logger.debug("Saved new moment with serverId: \(dto.id ?? "nil")")
-            }
-
+            let moment = try await syncMoment(dto)
             moments.append(moment)
         }
 

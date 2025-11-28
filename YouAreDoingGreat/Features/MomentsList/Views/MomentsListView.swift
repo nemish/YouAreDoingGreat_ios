@@ -19,9 +19,6 @@ struct MomentsListView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                // Background
-//                backgroundView
-//                    .ignoresSafeArea()
                 LinearGradient.cosmic
                     .ignoresSafeArea()
 
@@ -42,12 +39,23 @@ struct MomentsListView: View {
             .refreshable {
                 await viewModel.refresh()
             }
-            .confirmationDialog(
-                "Moment Actions",
-                isPresented: $viewModel.showActionSheet,
-                presenting: viewModel.selectedMoment
-            ) { moment in
-                actionButtons(for: moment)
+            .sheet(isPresented: $viewModel.showMomentDetail) {
+                if let moment = viewModel.selectedMomentForDetail {
+                    MomentDetailSheet(
+                        viewModel: MomentDetailViewModel(
+                            moment: moment,
+                            onFavoriteToggle: { m in
+                                await viewModel.toggleFavorite(m)
+                            },
+                            onDelete: { m in
+                                await viewModel.deleteMoment(m)
+                            }
+                        ),
+                        moment: moment
+                    )
+                    .presentationDetents([.large])
+                    .presentationDragIndicator(.visible)
+                }
             }
             .alert("Error", isPresented: $viewModel.showError) {
                 Button("OK") { }
@@ -57,26 +65,6 @@ struct MomentsListView: View {
         }
     }
 
-    // MARK: - Background
-
-//    private var backgroundView: some View {
-//        ZStack {
-//            // Base cosmic gradient
-//            LinearGradient.cosmic
-//
-//            // Pattern overlay
-//            GeometryReader { geometry in
-//                Image("bg6")
-//                    .resizable()
-//                    .scaledToFill()
-//                    .frame(width: geometry.size.width, height: geometry.size.height)
-//                    .clipped()
-//            }
-//            .blendMode(.overlay)
-//            .opacity(0.4)
-//        }
-//    }
-
     // MARK: - Moments List
 
     private var momentsList: some View {
@@ -84,9 +72,9 @@ struct MomentsListView: View {
             LazyVStack(spacing: 12) {
                 ForEach(viewModel.moments) { moment in
                     MomentCard(moment: moment)
-                        .onLongPressGesture(minimumDuration: 0.5) {
+                        .onTapGesture {
                             mediumFeedback.impactOccurred()
-                            viewModel.showActions(for: moment)
+                            viewModel.showDetail(for: moment)
                         }
                         .transition(.opacity.combined(with: .scale(scale: 0.95)))
                 }
@@ -170,27 +158,6 @@ struct MomentsListView: View {
             Spacer()
         }
         .padding(.vertical, 16)
-    }
-
-    private func actionButtons(for moment: Moment) -> some View {
-        Group {
-            Button {
-                Task { await viewModel.toggleFavorite(moment) }
-            } label: {
-                Label(
-                    moment.isFavorite ? "Unfavorite" : "Favorite",
-                    systemImage: moment.isFavorite ? "star.slash" : "star.fill"
-                )
-            }
-
-            Button(role: .destructive) {
-                Task { await viewModel.deleteMoment(moment) }
-            } label: {
-                Label("Delete", systemImage: "trash")
-            }
-
-            Button("Cancel", role: .cancel) { }
-        }
     }
 
     // MARK: - Navigation Bar Configuration

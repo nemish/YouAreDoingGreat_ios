@@ -35,8 +35,9 @@ final class MomentsListViewModel {
 
     // MARK: - Actions
 
-    var selectedMoment: Moment?
-    var showActionSheet: Bool = false
+    // Detail sheet state
+    var selectedMomentForDetail: Moment?
+    var showMomentDetail: Bool = false
 
     // MARK: - Initialization
 
@@ -147,9 +148,9 @@ final class MomentsListViewModel {
         }
     }
 
-    func showActions(for moment: Moment) {
-        selectedMoment = moment
-        showActionSheet = true
+    func showDetail(for moment: Moment) {
+        selectedMomentForDetail = moment
+        showMomentDetail = true
     }
 
     // MARK: - Private Methods
