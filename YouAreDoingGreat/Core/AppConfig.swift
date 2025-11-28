@@ -59,6 +59,17 @@ enum AppConfig {
     /// Enable offline mode testing
     static let offlineModeEnabled = false
 
+    // MARK: - Development Mode
+
+    /// Returns true if running in DEBUG build configuration
+    static var isDebugBuild: Bool {
+        #if DEBUG
+        return true
+        #else
+        return false
+        #endif
+    }
+
     // MARK: - App Constants
 
     /// Maximum number of retries for failed sync operations

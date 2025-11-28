@@ -5,6 +5,7 @@ import SwiftUI
 
 struct HomeView: View {
     @Binding var selectedTab: Int
+    @Environment(\.modelContext) private var modelContext
     @AppStorage("hasCompletedFirstLog") private var hasCompletedFirstLog = false
 
     // Breathing animation state
@@ -113,7 +114,8 @@ struct HomeView: View {
         .fullScreenCover(isPresented: $showProfile) {
             ProfileView(
                 viewModel: ProfileViewModel(
-                    userService: UserService(apiClient: DefaultAPIClient())
+                    userService: UserService(apiClient: DefaultAPIClient()),
+                    momentRepository: SwiftDataMomentRepository(modelContext: modelContext)
                 )
             )
         }

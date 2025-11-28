@@ -10,6 +10,7 @@ final class ProfileViewModel {
     // MARK: - Dependencies
 
     private let userService: UserService
+    private let momentRepository: MomentRepository?
     private let paywallService = PaywallService.shared
 
     // MARK: - State
@@ -26,6 +27,10 @@ final class ProfileViewModel {
     var isSubmittingFeedback = false
     var showFeedbackSheet = false
     var feedbackSuccess = false
+
+    // Developer actions
+    var showClearDatabaseConfirmation = false
+    var isClearingDatabase = false
 
     // MARK: - Computed Properties
 
@@ -48,8 +53,9 @@ final class ProfileViewModel {
 
     // MARK: - Initialization
 
-    init(userService: UserService) {
+    init(userService: UserService, momentRepository: MomentRepository? = nil) {
         self.userService = userService
+        self.momentRepository = momentRepository
     }
 
     // MARK: - Public Methods
@@ -104,6 +110,21 @@ final class ProfileViewModel {
 
     func showPaywall() {
         paywallService.shouldShowPaywall = true
+    }
+
+    // MARK: - Developer Actions
+
+    func clearLocalDatabase() async {
+        guard let repository = momentRepository else { return }
+
+        isClearingDatabase = true
+        do {
+            try await repository.deleteAll()
+            // Success - database cleared
+        } catch {
+            handleError(error)
+        }
+        isClearingDatabase = false
     }
 
     // MARK: - Private Methods

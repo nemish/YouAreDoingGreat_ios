@@ -74,4 +74,18 @@ final class SwiftDataMomentRepository: MomentRepository {
         let moments = try modelContext.fetch(descriptor)
         return moments.first
     }
+
+    func deleteAll() async throws {
+        let descriptor = FetchDescriptor<Moment>()
+        let allMoments = try modelContext.fetch(descriptor)
+
+        logger.info("Deleting all \(allMoments.count) moments from local database")
+
+        for moment in allMoments {
+            modelContext.delete(moment)
+        }
+
+        try modelContext.save()
+        logger.info("Successfully cleared local database")
+    }
 }

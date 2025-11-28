@@ -26,4 +26,7 @@ protocol MomentRepository {
 
     /// Find a moment by its server ID
     func fetch(serverId: String) async throws -> Moment?
+
+    /// Delete all moments (for testing/dev purposes)
+    func deleteAll() async throws
 }

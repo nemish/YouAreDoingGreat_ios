@@ -40,6 +40,9 @@ struct ProfileView: View {
                         // Help & Support Section
                         helpSection
 
+                        // Developer Section (DEBUG only)
+                        developerSection
+
                         // Legal Links
                         legalSection
 
@@ -78,6 +81,18 @@ struct ProfileView: View {
                 Button("OK") { }
             } message: {
                 Text(viewModel.error ?? "An error occurred")
+            }
+            .confirmationDialog(
+                "Clear Local Database?",
+                isPresented: $viewModel.showClearDatabaseConfirmation,
+                titleVisibility: .visible
+            ) {
+                Button("Clear All Moments", role: .destructive) {
+                    Task { await viewModel.clearLocalDatabase() }
+                }
+                Button("Cancel", role: .cancel) { }
+            } message: {
+                Text("This will delete all moments from local storage. This action cannot be undone.")
             }
         }
     }
@@ -203,6 +218,32 @@ struct ProfileView: View {
                 )
             }
             .buttonStyle(.plain)
+        }
+    }
+
+    // MARK: - Developer Section
+
+    @ViewBuilder
+    private var developerSection: some View {
+        if AppConfig.isDebugBuild {
+            VStack(alignment: .leading, spacing: 16) {
+                Text("Developer")
+                    .font(.appHeadline)
+                    .foregroundStyle(.textSecondary)
+
+                Button {
+                    viewModel.showClearDatabaseConfirmation = true
+                } label: {
+                    settingsRow(
+                        icon: "trash.fill",
+                        title: "Clear Local Database",
+                        subtitle: "Delete all moments from local storage"
+                    )
+                }
+                .buttonStyle(.plain)
+                .disabled(viewModel.isClearingDatabase)
+                .opacity(viewModel.isClearingDatabase ? 0.5 : 1.0)
+            }
         }
     }
 
