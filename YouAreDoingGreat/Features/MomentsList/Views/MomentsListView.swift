@@ -20,7 +20,9 @@ struct MomentsListView: View {
         NavigationStack {
             ZStack {
                 // Background
-                backgroundView
+//                backgroundView
+//                    .ignoresSafeArea()
+                LinearGradient.cosmic
                     .ignoresSafeArea()
 
                 // Content
@@ -57,23 +59,23 @@ struct MomentsListView: View {
 
     // MARK: - Background
 
-    private var backgroundView: some View {
-        ZStack {
-            // Base cosmic gradient
-            LinearGradient.cosmic
-
-            // Pattern overlay
-            GeometryReader { geometry in
-                Image("bg6")
-                    .resizable()
-                    .scaledToFill()
-                    .frame(width: geometry.size.width, height: geometry.size.height)
-                    .clipped()
-            }
-            .blendMode(.overlay)
-            .opacity(0.4)
-        }
-    }
+//    private var backgroundView: some View {
+//        ZStack {
+//            // Base cosmic gradient
+//            LinearGradient.cosmic
+//
+//            // Pattern overlay
+//            GeometryReader { geometry in
+//                Image("bg6")
+//                    .resizable()
+//                    .scaledToFill()
+//                    .frame(width: geometry.size.width, height: geometry.size.height)
+//                    .clipped()
+//            }
+//            .blendMode(.overlay)
+//            .opacity(0.4)
+//        }
+//    }
 
     // MARK: - Moments List
 
