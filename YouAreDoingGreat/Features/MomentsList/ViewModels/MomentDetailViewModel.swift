@@ -59,6 +59,10 @@ final class MomentDetailViewModel: PraiseViewModelProtocol {
         return formatter.localizedString(for: moment.happenedAt, relativeTo: Date())
     }
 
+    var clientId: UUID {
+        moment.clientId
+    }
+
     // MARK: - Initialization
 
     init(

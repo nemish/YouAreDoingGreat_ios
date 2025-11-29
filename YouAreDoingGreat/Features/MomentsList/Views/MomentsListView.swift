@@ -7,6 +7,7 @@ import SwiftData
 struct MomentsListView: View {
     @Environment(\.modelContext) private var modelContext
     @State private var viewModel: MomentsListViewModel
+    @State private var highlightService = HighlightService.shared
 
     init(viewModel: MomentsListViewModel) {
         _viewModel = State(initialValue: viewModel)
@@ -68,11 +69,14 @@ struct MomentsListView: View {
         ScrollView {
             LazyVStack(spacing: 12) {
                 ForEach(viewModel.moments) { moment in
-                    MomentCard(moment: moment)
-                        .onTapGesture {
-                            viewModel.showDetail(for: moment)
-                        }
-                        .transition(.opacity.combined(with: .scale(scale: 0.95)))
+                    MomentCard(
+                        moment: moment,
+                        isHighlighted: highlightService.highlightedMomentId == moment.clientId
+                    )
+                    .onTapGesture {
+                        viewModel.showDetail(for: moment)
+                    }
+                    .transition(.opacity.combined(with: .scale(scale: 0.95)))
                 }
 
                 if viewModel.canLoadMore {
@@ -264,6 +268,71 @@ struct MomentsListView: View {
     let service = MomentService(apiClient: apiClient, repository: repository)
     let viewModel = MomentsListViewModel(momentService: service, repository: repository)
     viewModel.isInitialLoading = true
+
+    return MomentsListView(viewModel: viewModel)
+        .preferredColorScheme(.dark)
+        .modelContainer(container)
+}
+
+#Preview("Moments List - Highlighted Moment") {
+    let config = ModelConfiguration(isStoredInMemoryOnly: true)
+    let container = try! ModelContainer(for: Moment.self, configurations: config)
+    let context = container.mainContext
+
+    let calendar = Calendar.current
+    let now = Date()
+
+    // Create moments at different times of day
+    let earlyMorningDate = calendar.date(bySettingHour: 6, minute: 30, second: 0, of: now)!
+    let morningDate = calendar.date(bySettingHour: 10, minute: 0, second: 0, of: now)!
+    let afternoonDate = calendar.date(bySettingHour: 14, minute: 30, second: 0, of: now)!
+
+    let moment1 = Moment(
+        text: "Started my morning with a walk in the park",
+        submittedAt: earlyMorningDate,
+        happenedAt: earlyMorningDate,
+        timezone: TimeZone.current.identifier,
+        timeAgo: 0,
+        offlinePraise: "Nice. You're making moves."
+    )
+    moment1.tags = ["self-care", "morning"]
+    moment1.isSynced = true
+
+    // This is the newly created moment that will be highlighted
+    let newMoment = Moment(
+        text: "Just finished an important work presentation! Feeling accomplished.",
+        submittedAt: morningDate,
+        happenedAt: morningDate,
+        timezone: TimeZone.current.identifier,
+        timeAgo: 0,
+        offlinePraise: "That's it. Small stuff adds up."
+    )
+    newMoment.tags = ["work", "achievement"]
+    newMoment.isSynced = true
+
+    let moment3 = Moment(
+        text: "Had a healthy lunch instead of fast food",
+        submittedAt: afternoonDate,
+        happenedAt: afternoonDate,
+        timezone: TimeZone.current.identifier,
+        timeAgo: 0,
+        offlinePraise: "Look at you showing up."
+    )
+    moment3.tags = ["health", "wins"]
+    moment3.isSynced = true
+
+    context.insert(moment1)
+    context.insert(newMoment)
+    context.insert(moment3)
+
+    let repository = SwiftDataMomentRepository(modelContext: context)
+    let apiClient = DefaultAPIClient()
+    let service = MomentService(apiClient: apiClient, repository: repository)
+    let viewModel = MomentsListViewModel(momentService: service, repository: repository)
+
+    // Set the highlighted moment to simulate coming from PraiseView
+    let highlightService = HighlightService.shared
+    highlightService.highlightedMomentId = newMoment.clientId
 
     return MomentsListView(viewModel: viewModel)
         .preferredColorScheme(.dark)

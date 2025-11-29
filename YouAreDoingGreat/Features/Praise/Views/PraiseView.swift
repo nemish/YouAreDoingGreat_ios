@@ -16,6 +16,7 @@ protocol PraiseViewModelProtocol: AnyObject, Observable {
     var showTags: Bool { get set }
     var showButton: Bool { get set }
     var timeDisplayText: String { get }
+    var clientId: UUID { get }
 
     func cancelPolling()
     func startEntranceAnimation() async
@@ -34,6 +35,9 @@ struct PraiseContentView<ViewModel: PraiseViewModelProtocol>: View {
     // Paywall state
     @State private var paywallService = PaywallService.shared
     @State private var showPaywall = false
+
+    // Highlight service
+    @State private var highlightService = HighlightService.shared
 
     var body: some View {
         VStack(spacing: 0) {
@@ -125,6 +129,10 @@ struct PraiseContentView<ViewModel: PraiseViewModelProtocol>: View {
             PrimaryButton(title: "Nice") {
                 UIImpactFeedbackGenerator(style: .light).impactOccurred()
                 viewModel.cancelPolling()
+
+                // Highlight the newly created moment
+                highlightService.highlightMoment(viewModel.clientId)
+
                 selectedTab = 1 // Navigate to Moments tab
                 onDismiss()
             }

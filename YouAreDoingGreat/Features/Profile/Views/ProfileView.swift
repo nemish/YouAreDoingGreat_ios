@@ -321,6 +321,17 @@ struct ProfileView: View {
                     .foregroundStyle(.textSecondary)
 
                 Button {
+                    viewModel.resetDailyLimit()
+                } label: {
+                    settingsRow(
+                        icon: "clock.arrow.circlepath",
+                        title: "Reset Daily Limit",
+                        subtitle: "Clear daily moment limit restriction"
+                    )
+                }
+                .buttonStyle(.plain)
+
+                Button {
                     viewModel.showClearDatabaseConfirmation = true
                 } label: {
                     settingsRow(

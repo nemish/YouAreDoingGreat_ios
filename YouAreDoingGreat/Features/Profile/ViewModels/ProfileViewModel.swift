@@ -127,6 +127,11 @@ final class ProfileViewModel {
         isClearingDatabase = false
     }
 
+    func resetDailyLimit() {
+        paywallService.resetDailyLimit()
+        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+    }
+
     // MARK: - Private Methods
 
     private func handleError(_ error: Error) {

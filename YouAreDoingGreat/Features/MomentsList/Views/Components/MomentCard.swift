@@ -5,9 +5,17 @@ import SwiftUI
 
 struct MomentCard: View {
     let moment: Moment
+    let isHighlighted: Bool
+
+    @State private var glowIntensity: CGFloat = 0
 
     private var timeOfDay: TimeOfDay {
         TimeOfDay(from: moment.happenedAt)
+    }
+
+    init(moment: Moment, isHighlighted: Bool = false) {
+        self.moment = moment
+        self.isHighlighted = isHighlighted
     }
 
     var body: some View {
@@ -64,6 +72,31 @@ struct MomentCard: View {
             RoundedRectangle(cornerRadius: 12)
                 .strokeBorder(timeOfDay.borderColor, lineWidth: 1)
         )
+        .shadow(
+            color: isHighlighted ? timeOfDay.accentColor.opacity(glowIntensity) : .clear,
+            radius: isHighlighted ? 20 : 0
+        )
+        .scaleEffect(isHighlighted ? 1 + (glowIntensity * 0.02) : 1)
+        .onAppear {
+            if isHighlighted {
+                startHighlightAnimation()
+            }
+        }
+    }
+
+    private func startHighlightAnimation() {
+        // Pulse animation - 3 pulses, ending at normal state
+        withAnimation(.easeInOut(duration: 0.6).repeatCount(4, autoreverses: true)) {
+            glowIntensity = 0.8
+        }
+
+//        // Reset to normal state after animation completes
+//        Task {
+//            try? await Task.sleep(for: .seconds(0.6 * 3)) // 3 pulses × 2 (in/out) × 0.6s
+//            withAnimation(.easeOut(duration: 0.6)) {
+//                glowIntensity = 0
+//            }
+//        }
     }
 
     private var timeDisplayText: String {
@@ -147,6 +180,47 @@ struct MomentCard: View {
                 }
             }
             .padding()
+        }
+    }
+    .preferredColorScheme(.dark)
+}
+
+#Preview("Moment Card - Highlighted") {
+    let calendar = Calendar.current
+    let now = Date()
+
+    // Create a highlighted moment at morning time
+    let morningDate = calendar.date(bySettingHour: 10, minute: 0, second: 0, of: now)!
+
+    let highlightedMoment = Moment(
+        text: "Just finished an important work presentation! Feeling accomplished.",
+        submittedAt: morningDate,
+        happenedAt: morningDate,
+        timezone: TimeZone.current.identifier,
+        timeAgo: 0,
+        offlinePraise: "That's it. Small stuff adds up."
+    )
+    highlightedMoment.tags = ["work", "achievement"]
+    highlightedMoment.isSynced = true
+
+    return ZStack {
+        LinearGradient.cosmic
+            .ignoresSafeArea()
+
+        VStack(spacing: 20) {
+            Text("Highlighted Card")
+                .font(.appTitle3)
+                .foregroundStyle(.textSecondary)
+
+            MomentCard(moment: highlightedMoment, isHighlighted: true)
+                .padding(.horizontal)
+
+            Text("Normal Card")
+                .font(.appTitle3)
+                .foregroundStyle(.textSecondary)
+
+            MomentCard(moment: highlightedMoment, isHighlighted: false)
+                .padding(.horizontal)
         }
     }
     .preferredColorScheme(.dark)
