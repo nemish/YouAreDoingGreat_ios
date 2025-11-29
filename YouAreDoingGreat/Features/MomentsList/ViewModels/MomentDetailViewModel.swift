@@ -55,7 +55,7 @@ final class MomentDetailViewModel: PraiseViewModelProtocol {
 
     var timeDisplayText: String {
         let formatter = RelativeDateTimeFormatter()
-        formatter.unitsStyle = .short
+        formatter.unitsStyle = .abbreviated
         return formatter.localizedString(for: moment.happenedAt, relativeTo: Date())
     }
 

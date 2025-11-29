@@ -24,14 +24,18 @@ struct ProfileView: View {
                         // Profile header
 //                        profileHeader
 
-                        // Account Info Section
+                        // Account Info Section - Always shown
                         if let profile = viewModel.userProfile {
                             accountInfoSection(profile: profile)
+                        } else {
+                            accountInfoLoadingSection
                         }
 
-                        // Stats Section
+                        // Stats Section - Always shown
                         if let stats = viewModel.userStats {
                             statsSection(stats: stats)
+                        } else {
+                            statsLoadingSection
                         }
 
                         // Subscription Section
@@ -129,6 +133,33 @@ struct ProfileView: View {
         }
     }
 
+    private var accountInfoLoadingSection: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("Account")
+                .font(.appHeadline)
+                .foregroundStyle(.textSecondary)
+
+            HStack(spacing: 12) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("User ID")
+                        .font(.appFootnote)
+                        .foregroundStyle(.textSecondary)
+
+                    ProgressView()
+                        .scaleEffect(0.8)
+                        .frame(height: 20)
+                }
+
+                Spacer()
+            }
+            .padding(16)
+            .background(
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(Color.white.opacity(0.08))
+            )
+        }
+    }
+
     // MARK: - Stats Section
 
     private func statsSection(stats: UserStatsDTO) -> some View {
@@ -154,6 +185,64 @@ struct ProfileView: View {
 //                label: "Current Streak",
 //                value: "\(stats.currentStreak) days"
 //            )
+        }
+    }
+
+    private var statsLoadingSection: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("Stats")
+                .font(.appHeadline)
+                .foregroundStyle(.textSecondary)
+
+            // Total Moments loading
+            HStack(spacing: 16) {
+                Image(systemName: "sparkles")
+                    .font(.system(size: 28))
+                    .foregroundStyle(.appPrimary)
+                    .frame(width: 44, height: 44)
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Total Moments")
+                        .font(.appFootnote)
+                        .foregroundStyle(.textSecondary)
+
+                    ProgressView()
+                        .scaleEffect(0.8)
+                        .frame(height: 20)
+                }
+
+                Spacer()
+            }
+            .padding(16)
+            .background(
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(Color.white.opacity(0.08))
+            )
+
+            // Today loading
+            HStack(spacing: 16) {
+                Image(systemName: "calendar")
+                    .font(.system(size: 28))
+                    .foregroundStyle(.appPrimary)
+                    .frame(width: 44, height: 44)
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Today")
+                        .font(.appFootnote)
+                        .foregroundStyle(.textSecondary)
+
+                    ProgressView()
+                        .scaleEffect(0.8)
+                        .frame(height: 20)
+                }
+
+                Spacer()
+            }
+            .padding(16)
+            .background(
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(Color.white.opacity(0.08))
+            )
         }
     }
 

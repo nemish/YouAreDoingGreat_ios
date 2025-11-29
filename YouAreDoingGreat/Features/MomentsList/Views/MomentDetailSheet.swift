@@ -9,6 +9,11 @@ struct MomentDetailSheet: View {
     @Bindable var viewModel: MomentDetailViewModel
     let moment: Moment
 
+    @State private var showMomentText = false
+    @State private var showPraise = false
+    @State private var showTags = false
+    @State private var showButtons = false
+
     var body: some View {
         NavigationStack {
             ZStack {
@@ -32,6 +37,7 @@ struct MomentDetailSheet: View {
                                     .foregroundStyle(.textTertiary)
                             }
                             .padding(.top, 24)
+                            .opacity(showMomentText ? 1 : 0)
 
                             // Praise section
                             VStack(spacing: 16) {
@@ -60,10 +66,12 @@ struct MomentDetailSheet: View {
                                         .multilineTextAlignment(.center)
                                 }
                             }
+                            .opacity(showPraise ? 1 : 0)
 
                             // Tags section
                             if !moment.tags.isEmpty {
                                 tagsSection
+                                    .opacity(showTags ? 1 : 0)
                             }
                         }
                         .padding(.horizontal, 32)
@@ -87,10 +95,14 @@ struct MomentDetailSheet: View {
                             .padding(.horizontal, 24)
                             .padding(.bottom, 40)
                             .background(Color(red: 0.06, green: 0.07, blue: 0.11))
+                            .opacity(showButtons ? 1 : 0)
                     }
                 }
             }
             .navigationBarTitleDisplayMode(.inline)
+            .onAppear {
+                startAnimations()
+            }
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button {
@@ -103,6 +115,26 @@ struct MomentDetailSheet: View {
                 }
             }
             .toolbarBackground(.hidden, for: .navigationBar)
+        }
+    }
+
+    // MARK: - Animations
+
+    private func startAnimations() {
+        withAnimation(.easeIn(duration: 0.6).delay(0.1)) {
+            showMomentText = true
+        }
+
+        withAnimation(.easeIn(duration: 0.6).delay(0.4)) {
+            showPraise = true
+        }
+
+        withAnimation(.easeIn(duration: 0.6).delay(0.7)) {
+            showTags = true
+        }
+
+        withAnimation(.easeIn(duration: 0.6).delay(1.0)) {
+            showButtons = true
         }
     }
 

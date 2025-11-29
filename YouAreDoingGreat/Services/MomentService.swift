@@ -32,6 +32,10 @@ final class MomentService {
 
     /// Sync a single moment DTO to local storage
     private func syncMoment(_ dto: MomentDTO) async throws -> Moment {
+        // Date formatter for parsing ISO8601 with fractional seconds
+        let dateFormatter = ISO8601DateFormatter()
+        dateFormatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+
         // Check if moment already exists by serverId or clientId
         var existingMoment: Moment?
 
@@ -47,8 +51,13 @@ final class MomentService {
 
         let moment: Moment
         if let existing = existingMoment {
-            // Update existing moment
+            // Update existing moment with ALL fields from server
             existing.serverId = dto.id
+            existing.text = dto.text
+            existing.submittedAt = dateFormatter.date(from: dto.submittedAt) ?? existing.submittedAt
+            existing.happenedAt = dateFormatter.date(from: dto.happenedAt) ?? existing.happenedAt
+            existing.timezone = dto.tz
+            existing.timeAgo = dto.timeAgo
             existing.praise = dto.praise
             existing.action = dto.action
             existing.tags = dto.tags ?? []
@@ -56,15 +65,20 @@ final class MomentService {
             existing.isSynced = true
             try await repository.update(existing)
             moment = existing
-            logger.info("✅ Updated moment \(existing.clientId.uuidString) - praise: \(dto.praise ?? "nil"), tags: \(dto.tags?.count ?? 0)")
+            logger.info("✅ Updated moment \(existing.clientId.uuidString) - happenedAt: \(dto.happenedAt), happenedAt saved: \(moment.happenedAt), praise: \(dto.praise ?? "nil"), tags: \(dto.tags?.count ?? 0)")
         } else {
             // Create new moment from server data
-            let newMoment = dto.toMoment()
+            let clientId = UUID(uuidString: dto.clientId ?? "") ?? UUID()
 
-            // IMPORTANT: Preserve clientId from server if available
-            if let clientIdString = dto.clientId, let clientId = UUID(uuidString: clientIdString) {
-                newMoment.clientId = clientId
-            }
+            let newMoment = Moment(
+                clientId: clientId,
+                text: dto.text,
+                submittedAt: dateFormatter.date(from: dto.submittedAt) ?? Date(),
+                happenedAt: dateFormatter.date(from: dto.happenedAt) ?? Date(),
+                timezone: dto.tz,
+                timeAgo: dto.timeAgo,
+                offlinePraise: "" // Server data doesn't need offline praise
+            )
 
             newMoment.serverId = dto.id
             newMoment.praise = dto.praise
@@ -74,7 +88,7 @@ final class MomentService {
             newMoment.isSynced = true
             try await repository.save(newMoment)
             moment = newMoment
-            logger.info("✅ Saved new moment \(newMoment.clientId.uuidString) - praise: \(dto.praise ?? "nil"), tags: \(dto.tags?.count ?? 0)")
+            logger.info("✅ Saved new moment \(newMoment.clientId.uuidString) - happenedAt: \(dto.happenedAt), happenedAt saved: \(moment.happenedAt), praise: \(dto.praise ?? "nil"), tags: \(dto.tags?.count ?? 0)")
         }
 
         return moment

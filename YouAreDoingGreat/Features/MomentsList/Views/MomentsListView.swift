@@ -8,9 +8,6 @@ struct MomentsListView: View {
     @Environment(\.modelContext) private var modelContext
     @State private var viewModel: MomentsListViewModel
 
-    // Haptic feedback
-    private let mediumFeedback = UIImpactFeedbackGenerator(style: .medium)
-
     init(viewModel: MomentsListViewModel) {
         _viewModel = State(initialValue: viewModel)
         configureNavigationBarAppearance()
@@ -73,7 +70,6 @@ struct MomentsListView: View {
                 ForEach(viewModel.moments) { moment in
                     MomentCard(moment: moment)
                         .onTapGesture {
-                            mediumFeedback.impactOccurred()
                             viewModel.showDetail(for: moment)
                         }
                         .transition(.opacity.combined(with: .scale(scale: 0.95)))

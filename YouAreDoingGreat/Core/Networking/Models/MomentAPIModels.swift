@@ -20,22 +20,6 @@ struct MomentDTO: Decodable {
     let action: String?
     let tags: [String]?
     let isFavorite: Bool?
-
-    // MARK: - Conversion to Domain Model
-
-    func toMoment() -> Moment {
-        let dateFormatter = ISO8601DateFormatter()
-
-        return Moment(
-            clientId: UUID(uuidString: clientId ?? "") ?? UUID(),
-            text: text,
-            submittedAt: dateFormatter.date(from: submittedAt) ?? Date(),
-            happenedAt: dateFormatter.date(from: happenedAt) ?? Date(),
-            timezone: tz,
-            timeAgo: timeAgo,
-            offlinePraise: "" // Will be populated by service layer if needed
-        )
-    }
 }
 
 struct UpdateMomentResponse: Decodable {
