@@ -30,6 +30,7 @@ enum APIEndpoint {
     case userProfile
     case userStats
     case submitFeedback
+    case timeline(cursor: String?, limit: Int)
 
     var path: String {
         switch self {
@@ -60,6 +61,16 @@ enum APIEndpoint {
 
         case .submitFeedback:
             return "\(AppConfig.apiBaseURL)/user/feedback"
+
+        case .timeline(let cursor, let limit):
+            var components = URLComponents(string: "\(AppConfig.apiBaseURL)/timeline")
+            components?.queryItems = [
+                URLQueryItem(name: "limit", value: "\(limit)")
+            ]
+            if let cursor = cursor {
+                components?.queryItems?.append(URLQueryItem(name: "cursor", value: cursor))
+            }
+            return components?.url?.absoluteString ?? "\(AppConfig.apiBaseURL)/timeline"
         }
     }
 

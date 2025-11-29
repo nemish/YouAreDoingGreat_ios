@@ -32,10 +32,6 @@ final class MomentService {
 
     /// Sync a single moment DTO to local storage
     private func syncMoment(_ dto: MomentDTO) async throws -> Moment {
-        // Date formatter for parsing ISO8601 with fractional seconds
-        let dateFormatter = ISO8601DateFormatter()
-        dateFormatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-
         // Check if moment already exists by serverId or clientId
         var existingMoment: Moment?
 
@@ -54,8 +50,8 @@ final class MomentService {
             // Update existing moment with ALL fields from server
             existing.serverId = dto.id
             existing.text = dto.text
-            existing.submittedAt = dateFormatter.date(from: dto.submittedAt) ?? existing.submittedAt
-            existing.happenedAt = dateFormatter.date(from: dto.happenedAt) ?? existing.happenedAt
+            existing.submittedAt = DateFormatters.parseISO8601(dto.submittedAt) ?? existing.submittedAt
+            existing.happenedAt = DateFormatters.parseISO8601(dto.happenedAt) ?? existing.happenedAt
             existing.timezone = dto.tz
             existing.timeAgo = dto.timeAgo
             existing.praise = dto.praise
@@ -73,8 +69,8 @@ final class MomentService {
             let newMoment = Moment(
                 clientId: clientId,
                 text: dto.text,
-                submittedAt: dateFormatter.date(from: dto.submittedAt) ?? Date(),
-                happenedAt: dateFormatter.date(from: dto.happenedAt) ?? Date(),
+                submittedAt: DateFormatters.parseISO8601(dto.submittedAt) ?? Date(),
+                happenedAt: DateFormatters.parseISO8601(dto.happenedAt) ?? Date(),
                 timezone: dto.tz,
                 timeAgo: dto.timeAgo,
                 offlinePraise: "" // Server data doesn't need offline praise

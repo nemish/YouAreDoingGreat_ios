@@ -53,5 +53,12 @@ final class ViewModelFactory {
         let apiClient = makeAPIClient()
         return MomentService(apiClient: apiClient, repository: repository)
     }
+
+    // MARK: - Journey ViewModel
+
+    func makeJourneyViewModel() -> JourneyViewModel {
+        let apiClient = makeAPIClient()
+        return JourneyViewModel(apiClient: apiClient)
+    }
 }
 

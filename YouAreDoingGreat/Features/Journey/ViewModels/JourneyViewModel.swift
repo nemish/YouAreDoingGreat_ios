@@ -1,0 +1,122 @@
+import Foundation
+import OSLog
+
+private let logger = Logger(subsystem: "com.youaredoinggreat", category: "journey")
+
+// MARK: - Journey View Model
+// Manages timeline data with cursor-based pagination
+
+@MainActor
+@Observable
+final class JourneyViewModel {
+    // MARK: - Dependencies
+
+    private let apiClient: APIClient
+
+    // MARK: - State
+
+    var items: [DaySummaryDTO] = []
+    var isInitialLoading = false
+    var isLoadingMore = false
+    var isRefreshing = false
+    var error: String?
+    var showError = false
+
+    // Pagination
+    private var nextCursor: String?
+    var canLoadMore: Bool {
+        nextCursor != nil
+    }
+
+    // MARK: - Initialization
+
+    init(apiClient: APIClient) {
+        self.apiClient = apiClient
+    }
+
+    // MARK: - Public Methods
+
+    /// Load initial timeline data
+    func loadTimeline() async {
+        guard !isInitialLoading else { return }
+
+        isInitialLoading = true
+        error = nil
+        showError = false
+
+        do {
+            let response: TimelineResponseDTO = try await apiClient.request(
+                endpoint: .timeline(cursor: nil, limit: 20),
+                method: .get,
+                body: Optional<String>.none
+            )
+
+            items = response.data
+            nextCursor = response.nextCursor
+
+            logger.info("Loaded \(response.data.count) timeline items")
+        } catch {
+            handleError(error)
+        }
+
+        isInitialLoading = false
+    }
+
+    /// Refresh timeline (pull to refresh)
+    func refresh() async {
+        guard !isRefreshing else { return }
+
+        isRefreshing = true
+        error = nil
+        showError = false
+
+        do {
+            let response: TimelineResponseDTO = try await apiClient.request(
+                endpoint: .timeline(cursor: nil, limit: 20),
+                method: .get,
+                body: Optional<String>.none
+            )
+
+            items = response.data
+            nextCursor = response.nextCursor
+
+            logger.info("Refreshed timeline with \(response.data.count) items")
+        } catch {
+            handleError(error)
+        }
+
+        isRefreshing = false
+    }
+
+    /// Load next page of timeline data
+    func loadNextPage() async {
+        guard !isLoadingMore, let cursor = nextCursor else { return }
+
+        isLoadingMore = true
+
+        do {
+            let response: TimelineResponseDTO = try await apiClient.request(
+                endpoint: .timeline(cursor: cursor, limit: 20),
+                method: .get,
+                body: Optional<String>.none
+            )
+
+            items.append(contentsOf: response.data)
+            nextCursor = response.nextCursor
+
+            logger.info("Loaded \(response.data.count) more timeline items")
+        } catch {
+            handleError(error)
+        }
+
+        isLoadingMore = false
+    }
+
+    // MARK: - Private Methods
+
+    private func handleError(_ error: Error) {
+        logger.error("Timeline error: \(error.localizedDescription)")
+        self.error = error.localizedDescription
+        showError = true
+    }
+}

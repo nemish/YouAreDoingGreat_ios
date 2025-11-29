@@ -12,10 +12,11 @@ struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
     @State private var selectedTab = 0
     @State private var momentsViewModel: MomentsListViewModel?
+    @State private var journeyViewModel: JourneyViewModel?
 
     // Haptic feedback for tab switch
     private let tabFeedback = UIImpactFeedbackGenerator(style: .light)
-    
+
     // ViewModel factory for dependency injection
     private var viewModelFactory: ViewModelFactory {
         ViewModelFactory(modelContext: modelContext)
@@ -44,15 +45,20 @@ struct ContentView: View {
             }
             .tag(1)
 
-            // TODO: JourneyView
-            Text("Journey")
-                .font(.appTitle)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .background(LinearGradient.cosmic.ignoresSafeArea())
-                .tabItem {
-                    Label("Journey", systemImage: "chart.line.uptrend.xyaxis")
+            Group {
+                if let viewModel = journeyViewModel {
+                    JourneyView(viewModel: viewModel)
+                } else {
+                    Color.clear
+                        .onAppear {
+                            journeyViewModel = viewModelFactory.makeJourneyViewModel()
+                        }
                 }
-                .tag(2)
+            }
+            .tabItem {
+                Label("Journey", systemImage: "chart.line.uptrend.xyaxis")
+            }
+            .tag(2)
         }
         .tint(Color.appPrimary)
         .onChange(of: selectedTab) { _, _ in
@@ -62,6 +68,9 @@ struct ContentView: View {
         .onAppear {
             if momentsViewModel == nil {
                 momentsViewModel = viewModelFactory.makeMomentsListViewModel()
+            }
+            if journeyViewModel == nil {
+                journeyViewModel = viewModelFactory.makeJourneyViewModel()
             }
         }
     }
