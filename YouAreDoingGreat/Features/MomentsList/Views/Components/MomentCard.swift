@@ -6,13 +6,23 @@ import SwiftUI
 struct MomentCard: View {
     let moment: Moment
 
+    private var timeOfDay: TimeOfDay {
+        TimeOfDay(from: moment.happenedAt)
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             // Header: Time + Icons
             HStack {
-                Text(timeDisplayText)
-                    .font(.appCaption)
-                    .foregroundStyle(.textTertiary)
+                HStack(spacing: 6) {
+                    Image(systemName: timeOfDay.iconName)
+                        .font(.system(size: 12))
+                        .foregroundStyle(timeOfDay.accentColor)
+
+                    Text(timeDisplayText)
+                        .font(.appCaption)
+                        .foregroundStyle(.textTertiary)
+                }
 
                 Spacer()
 
@@ -48,7 +58,11 @@ struct MomentCard: View {
         .padding(16)
         .background(
             RoundedRectangle(cornerRadius: 12)
-                .fill(Color.white.opacity(0.08))
+                .fill(timeOfDay.backgroundColor)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .strokeBorder(timeOfDay.borderColor, lineWidth: 1)
         )
     }
 
@@ -61,22 +75,79 @@ struct MomentCard: View {
 
 // MARK: - Preview
 
-#Preview("Moment Card") {
-    ZStack {
+#Preview("Moment Card - All Times of Day") {
+    let calendar = Calendar.current
+    let now = Date()
+
+    // Create moments for different times of day
+    let earlyMorningDate = calendar.date(bySettingHour: 6, minute: 30, second: 0, of: now)!
+    let morningDate = calendar.date(bySettingHour: 10, minute: 0, second: 0, of: now)!
+    let afternoonDate = calendar.date(bySettingHour: 14, minute: 30, second: 0, of: now)!
+    let eveningDate = calendar.date(bySettingHour: 18, minute: 45, second: 0, of: now)!
+    let nightDate = calendar.date(bySettingHour: 22, minute: 0, second: 0, of: now)!
+
+    let moments = [
+        Moment(
+            text: "Watched the sunrise while drinking coffee",
+            submittedAt: earlyMorningDate,
+            happenedAt: earlyMorningDate,
+            timezone: TimeZone.current.identifier,
+            timeAgo: 0,
+            offlinePraise: "Nice. You're making moves."
+        ),
+        Moment(
+            text: "Had a productive morning work session",
+            submittedAt: morningDate,
+            happenedAt: morningDate,
+            timezone: TimeZone.current.identifier,
+            timeAgo: 0,
+            offlinePraise: "That's it. Small stuff adds up."
+        ),
+        Moment(
+            text: "Went for a walk in the sunshine",
+            submittedAt: afternoonDate,
+            happenedAt: afternoonDate,
+            timezone: TimeZone.current.identifier,
+            timeAgo: 0,
+            offlinePraise: "Look at you showing up."
+        ),
+        Moment(
+            text: "Called my mom to check in",
+            submittedAt: eveningDate,
+            happenedAt: eveningDate,
+            timezone: TimeZone.current.identifier,
+            timeAgo: 0,
+            offlinePraise: "You did that. Nice."
+        ),
+        Moment(
+            text: "Read a few chapters before bed",
+            submittedAt: nightDate,
+            happenedAt: nightDate,
+            timezone: TimeZone.current.identifier,
+            timeAgo: 0,
+            offlinePraise: "Small wins count too."
+        ),
+    ]
+
+    // Add tags and favorite to some
+    moments[0].tags = ["self-care", "morning"]
+    moments[2].tags = ["exercise", "outdoors"]
+    moments[2].isFavorite = true
+    moments[3].tags = ["family", "connection"]
+    moments[4].isSynced = false
+
+    return ZStack {
         LinearGradient.cosmic
             .ignoresSafeArea()
 
-        MomentCard(
-            moment: Moment(
-                text: "Finished that thing I was putting off for weeks",
-                submittedAt: Date(),
-                happenedAt: Date().addingTimeInterval(-3600),
-                timezone: TimeZone.current.identifier,
-                timeAgo: 3600,
-                offlinePraise: "Nice. You're making moves."
-            )
-        )
-        .padding()
+        ScrollView {
+            VStack(spacing: 12) {
+                ForEach(moments) { moment in
+                    MomentCard(moment: moment)
+                }
+            }
+            .padding()
+        }
     }
     .preferredColorScheme(.dark)
 }
