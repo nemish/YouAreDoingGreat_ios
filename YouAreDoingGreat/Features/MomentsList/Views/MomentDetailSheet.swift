@@ -14,6 +14,10 @@ struct MomentDetailSheet: View {
     @State private var showTags = false
     @State private var showButtons = false
 
+    private var timeOfDay: TimeOfDay {
+        TimeOfDay(from: moment.happenedAt)
+    }
+
     var body: some View {
         NavigationStack {
             ZStack {
@@ -26,6 +30,12 @@ struct MomentDetailSheet: View {
                         VStack(spacing: 32) {
                             // Moment text display (full text, no ellipsis)
                             VStack(spacing: 12) {
+                                // Time-of-day icon
+                                Image(systemName: timeOfDay.iconName)
+                                    .font(.system(size: 32))
+                                    .foregroundStyle(timeOfDay.accentColor)
+                                    .padding(.bottom, 8)
+
                                 Text(moment.text)
                                     .font(.appTitle3)
                                     .foregroundStyle(.textPrimary)
