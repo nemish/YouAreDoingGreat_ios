@@ -113,10 +113,7 @@ struct HomeView: View {
         }
         .fullScreenCover(isPresented: $showProfile) {
             ProfileView(
-                viewModel: ProfileViewModel(
-                    userService: UserService(apiClient: DefaultAPIClient()),
-                    momentRepository: SwiftDataMomentRepository(modelContext: modelContext)
-                )
+                viewModel: ViewModelFactory(modelContext: modelContext).makeProfileViewModel()
             )
         }
     }

@@ -15,6 +15,11 @@ struct ContentView: View {
 
     // Haptic feedback for tab switch
     private let tabFeedback = UIImpactFeedbackGenerator(style: .light)
+    
+    // ViewModel factory for dependency injection
+    private var viewModelFactory: ViewModelFactory {
+        ViewModelFactory(modelContext: modelContext)
+    }
 
     var body: some View {
         TabView(selection: $selectedTab) {
@@ -30,7 +35,7 @@ struct ContentView: View {
                 } else {
                     Color.clear
                         .onAppear {
-                            momentsViewModel = makeMomentsListViewModel()
+                            momentsViewModel = viewModelFactory.makeMomentsListViewModel()
                         }
                 }
             }
@@ -56,18 +61,9 @@ struct ContentView: View {
         .animation(.easeInOut(duration: 0.2), value: selectedTab)
         .onAppear {
             if momentsViewModel == nil {
-                momentsViewModel = makeMomentsListViewModel()
+                momentsViewModel = viewModelFactory.makeMomentsListViewModel()
             }
         }
-    }
-
-    // MARK: - Helper Methods
-
-    private func makeMomentsListViewModel() -> MomentsListViewModel {
-        let repository = SwiftDataMomentRepository(modelContext: modelContext)
-        let apiClient = DefaultAPIClient()
-        let service = MomentService(apiClient: apiClient, repository: repository)
-        return MomentsListViewModel(momentService: service, repository: repository)
     }
 }
 
