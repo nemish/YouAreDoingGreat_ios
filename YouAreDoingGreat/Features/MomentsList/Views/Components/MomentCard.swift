@@ -85,18 +85,34 @@ struct MomentCard: View {
     }
 
     private func startHighlightAnimation() {
-        // Pulse animation - 3 pulses, ending at normal state
-        withAnimation(.easeInOut(duration: 0.6).repeatCount(4, autoreverses: true)) {
+        // Pulse animation: exactly 2 pulses, then return to normal state
+        let pulseDuration: TimeInterval = 0.5
+        
+        // First pulse: up
+        withAnimation(.easeInOut(duration: pulseDuration)) {
             glowIntensity = 0.8
         }
-
-//        // Reset to normal state after animation completes
-//        Task {
-//            try? await Task.sleep(for: .seconds(0.6 * 3)) // 3 pulses × 2 (in/out) × 0.6s
-//            withAnimation(.easeOut(duration: 0.6)) {
-//                glowIntensity = 0
-//            }
-//        }
+        
+        // Sequence the remaining animation steps
+        Task {
+            // First pulse: down
+            try? await Task.sleep(for: .seconds(pulseDuration))
+            withAnimation(.easeInOut(duration: pulseDuration)) {
+                glowIntensity = 0
+            }
+            
+            // Second pulse: up
+            try? await Task.sleep(for: .seconds(pulseDuration))
+            withAnimation(.easeInOut(duration: pulseDuration)) {
+                glowIntensity = 0.8
+            }
+            
+            // Second pulse: down and ensure we end at 0
+            try? await Task.sleep(for: .seconds(pulseDuration))
+            withAnimation(.easeOut(duration: pulseDuration * 0.6)) {
+                glowIntensity = 0
+            }
+        }
     }
 
     private var timeDisplayText: String {
