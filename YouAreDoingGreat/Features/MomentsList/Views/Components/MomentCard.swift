@@ -8,6 +8,7 @@ struct MomentCard: View {
     let isHighlighted: Bool
 
     @State private var glowIntensity: CGFloat = 0
+    @State private var previousTagsCount: Int = 0
 
     private var timeOfDay: TimeOfDay {
         TimeOfDay(from: moment.happenedAt)
@@ -16,6 +17,7 @@ struct MomentCard: View {
     init(moment: Moment, isHighlighted: Bool = false) {
         self.moment = moment
         self.isHighlighted = isHighlighted
+        _previousTagsCount = State(initialValue: moment.tags.count)
     }
 
     var body: some View {
@@ -79,6 +81,10 @@ struct MomentCard: View {
             if !moment.tags.isEmpty {
                 TagsView(tags: moment.tags)
                     .padding(.top, 12)
+                    .transition(.asymmetric(
+                        insertion: .opacity.combined(with: .move(edge: .top)).combined(with: .scale(scale: 0.95)),
+                        removal: .opacity
+                    ))
             }
         }
         .padding(16)
@@ -95,9 +101,16 @@ struct MomentCard: View {
             radius: isHighlighted ? 20 : 0
         )
         .scaleEffect(isHighlighted ? 1 + (glowIntensity * 0.02) : 1)
+        .animation(.spring(response: 0.4, dampingFraction: 0.8), value: moment.tags.count)
         .onAppear {
             if isHighlighted {
                 startHighlightAnimation()
+            }
+        }
+        .onChange(of: moment.tags.count) { oldValue, newValue in
+            if newValue > previousTagsCount {
+                // Tags were added (enrichment completed)
+                previousTagsCount = newValue
             }
         }
     }
