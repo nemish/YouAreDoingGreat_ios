@@ -15,6 +15,7 @@ final class MomentsListViewModel {
     private let momentService: MomentService
     private let repository: MomentRepository
     private var loadTask: Task<Void, Never>?
+    private var syncMonitorTask: Task<Void, Never>?
 
     // MARK: - State
 
@@ -63,11 +64,67 @@ final class MomentsListViewModel {
             groupedMoments = groupMomentsByDate(moments)
             canLoadMore = momentService.hasNextPage
             logger.info("Loaded \(self.moments.count) moments")
+
+            // Start background sync service
+            SyncService.shared.startSyncing(repository: repository)
+
+            // Start monitoring for sync updates
+            startSyncMonitoring()
         } catch {
             handleError(error)
         }
 
         isInitialLoading = false
+    }
+
+    /// Start monitoring for unsynced moments that get synced in the background
+    private func startSyncMonitoring() {
+        // Cancel existing monitor if any
+        syncMonitorTask?.cancel()
+
+        let initialUnsyncedCount = moments.filter { !$0.isSynced }.count
+
+        guard initialUnsyncedCount > 0 else {
+            logger.info("No unsynced moments, skipping sync monitoring")
+            return
+        }
+
+        logger.info("Starting sync monitoring with \(initialUnsyncedCount) unsynced moments")
+
+        syncMonitorTask = Task { @MainActor in
+            var previousUnsyncedCount = initialUnsyncedCount
+
+            while !Task.isCancelled {
+                // Wait 2 seconds between checks
+                try? await Task.sleep(nanoseconds: 2_000_000_000)
+
+                // Fetch current unsynced moments from storage
+                if let unsyncedMoments = try? await repository.fetchUnsyncedMoments() {
+                    let currentUnsyncedCount = unsyncedMoments.count
+
+                    logger.debug("Sync monitor check: \(currentUnsyncedCount) unsynced moments (was \(previousUnsyncedCount))")
+
+                    // If the count changed, it means something got synced
+                    if currentUnsyncedCount != previousUnsyncedCount {
+                        logger.info("Sync status changed: \(previousUnsyncedCount) -> \(currentUnsyncedCount) unsynced moments - reloading")
+                        await reloadFromLocalStorage()
+                        previousUnsyncedCount = currentUnsyncedCount
+                    }
+
+                    // Stop monitoring if there are no more unsynced moments
+                    if currentUnsyncedCount == 0 {
+                        logger.info("All moments synced, stopping monitor")
+                        break
+                    }
+                }
+            }
+        }
+    }
+
+    /// Stop monitoring for sync updates
+    func stopSyncMonitoring() {
+        syncMonitorTask?.cancel()
+        syncMonitorTask = nil
     }
 
     /// Reload moments from local storage (called after background refresh)

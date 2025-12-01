@@ -338,3 +338,71 @@ struct MomentsListView: View {
         .preferredColorScheme(.dark)
         .modelContainer(container)
 }
+
+#Preview("Moments List - Syncing State") {
+    let config = ModelConfiguration(isStoredInMemoryOnly: true)
+    let container = try! ModelContainer(for: Moment.self, configurations: config)
+    let context = container.mainContext
+
+    let calendar = Calendar.current
+    let now = Date()
+
+    // Create moments at different times of day
+    let earlyMorningDate = calendar.date(bySettingHour: 6, minute: 30, second: 0, of: now)!
+    let morningDate = calendar.date(bySettingHour: 10, minute: 0, second: 0, of: now)!
+    let afternoonDate = calendar.date(bySettingHour: 14, minute: 30, second: 0, of: now)!
+
+    // Synced moment
+    let syncedMoment = Moment(
+        text: "Started my morning with a walk in the park",
+        submittedAt: earlyMorningDate,
+        happenedAt: earlyMorningDate,
+        timezone: TimeZone.current.identifier,
+        timeAgo: 0,
+        offlinePraise: "Nice. You're making moves."
+    )
+    syncedMoment.tags = ["self-care", "morning"]
+    syncedMoment.isSynced = true
+    syncedMoment.praise = "That's a great way to start the day! Fresh air and movement set a positive tone."
+
+    // Syncing moment (just created, waiting for AI praise)
+    let syncingMoment = Moment(
+        text: "Just finished an important work presentation! Feeling accomplished.",
+        submittedAt: morningDate,
+        happenedAt: morningDate,
+        timezone: TimeZone.current.identifier,
+        timeAgo: 0,
+        offlinePraise: "That's it. Small stuff adds up."
+    )
+    syncingMoment.tags = ["work", "achievement"]
+    syncingMoment.isSynced = false  // Still syncing!
+
+    // Another synced moment
+    let moment3 = Moment(
+        text: "Had a healthy lunch instead of fast food",
+        submittedAt: afternoonDate,
+        happenedAt: afternoonDate,
+        timezone: TimeZone.current.identifier,
+        timeAgo: 0,
+        offlinePraise: "Look at you showing up."
+    )
+    moment3.tags = ["health", "wins"]
+    moment3.isSynced = true
+
+    context.insert(syncedMoment)
+    context.insert(syncingMoment)
+    context.insert(moment3)
+
+    let repository = SwiftDataMomentRepository(modelContext: context)
+    let apiClient = DefaultAPIClient()
+    let service = MomentService(apiClient: apiClient, repository: repository)
+    let viewModel = MomentsListViewModel(momentService: service, repository: repository)
+
+    // Set the syncing moment as highlighted to simulate navigation from PraiseView
+    let highlightService = HighlightService.shared
+    highlightService.highlightedMomentId = syncingMoment.clientId
+
+    return MomentsListView(viewModel: viewModel)
+        .preferredColorScheme(.dark)
+        .modelContainer(container)
+}

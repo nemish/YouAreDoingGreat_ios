@@ -35,10 +35,28 @@ struct MomentCard: View {
                 Spacer()
 
                 HStack(spacing: 8) {
-                    if !moment.isSynced {
+                    // Enrichment status indicator
+                    if moment.serverId != nil && !moment.isSynced {
+                        // Has serverId but not synced = enriching
+                        if let praise = moment.praise, !praise.isEmpty {
+                            // Just enriched - show checkmark briefly
+                            Image(systemName: "checkmark.circle.fill")
+                                .font(.system(size: 12))
+                                .foregroundStyle(.green)
+                                .symbolEffect(.bounce, value: moment.praise)
+                        } else {
+                            // Enriching in progress
+                            Image(systemName: "sparkles")
+                                .font(.system(size: 12))
+                                .foregroundStyle(.appPrimary)
+                                .symbolEffect(.pulse, options: .repeating)
+                        }
+                    } else if moment.serverId == nil && !moment.isSynced {
+                        // No serverId yet = creating on server
                         Image(systemName: "arrow.triangle.2.circlepath")
                             .font(.system(size: 12))
                             .foregroundStyle(.textTertiary)
+                            .symbolEffect(.pulse, options: .repeating)
                     }
 
                     if moment.isFavorite {
@@ -85,31 +103,15 @@ struct MomentCard: View {
     }
 
     private func startHighlightAnimation() {
-        // Pulse animation: exactly 2 pulses, then return to normal state
-        let pulseDuration: TimeInterval = 0.5
-        
-        // First pulse: up
-        withAnimation(.easeInOut(duration: pulseDuration)) {
+        // Pulse animation - 2 complete cycles (in/out/in/out)
+        withAnimation(.easeInOut(duration: 0.6).repeatCount(2, autoreverses: true)) {
             glowIntensity = 0.8
         }
-        
-        // Sequence the remaining animation steps
+
+        // Reset to normal state after animation completes
         Task {
-            // First pulse: down
-            try? await Task.sleep(for: .seconds(pulseDuration))
-            withAnimation(.easeInOut(duration: pulseDuration)) {
-                glowIntensity = 0
-            }
-            
-            // Second pulse: up
-            try? await Task.sleep(for: .seconds(pulseDuration))
-            withAnimation(.easeInOut(duration: pulseDuration)) {
-                glowIntensity = 0.8
-            }
-            
-            // Second pulse: down and ensure we end at 0
-            try? await Task.sleep(for: .seconds(pulseDuration))
-            withAnimation(.easeOut(duration: pulseDuration * 0.6)) {
+            try? await Task.sleep(for: .seconds(0.6 * 2 * 2)) // 2 cycles × 2 (in/out) × 0.6s = 2.4s
+            withAnimation(.easeOut(duration: 0.3)) {
                 glowIntensity = 0
             }
         }

@@ -14,6 +14,13 @@ tools to resolve library id and get library docs without me having to explicitly
 
 Key endpoints: `/moments` (CRUD), `/timeline`, `/user/stats`, `/user/me`
 
+### Refreshing API Schema
+
+When the user asks to "refresh API schema":
+1. Fetch the latest schema from `http://1test1.xyz/docs/as_json`
+2. Update `API_SCHEMA.json` with the fetched OpenAPI schema
+3. Update `API_SPECIFICATION.md` with human-readable documentation based on the schema
+
 ## Reference Implementation
 
 `youre-doing-great-app_old` (in same parent directory) contains the old React Native implementation. **Reference only** for functionality - never modify files there.

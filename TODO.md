@@ -1,0 +1,1 @@
+- make visual transition between log moment and praise view animated

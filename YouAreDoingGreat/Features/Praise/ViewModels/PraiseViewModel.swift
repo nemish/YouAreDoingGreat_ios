@@ -8,6 +8,9 @@ private let logger = Logger(subsystem: "com.youaredoinggreat", category: "praise
 @MainActor
 @Observable
 final class PraiseViewModel: PraiseViewModelProtocol {
+    // Dependencies
+    private let repository: MomentRepository
+
     // Moment data
     let momentText: String
     let happenedAt: Date
@@ -23,6 +26,10 @@ final class PraiseViewModel: PraiseViewModelProtocol {
     var isLoadingAIPraise: Bool = false
     var syncError: String?
 
+    // Two-phase sync state
+    var isCreatingMoment: Bool = false      // Phase 1: POST /moments
+    var isEnrichingMoment: Bool = false     // Phase 2: POST /enrich
+
     // Animation state
     var showContent: Bool = false
     var showPraise: Bool = false
@@ -35,6 +42,9 @@ final class PraiseViewModel: PraiseViewModelProtocol {
     private let maxPolls: Int = AppConfig.maxPraisePolls
     private let pollInterval: UInt64 = UInt64(AppConfig.praisePollingInterval * 1_000_000_000)
 
+    // Local moment reference
+    private var localMoment: Moment?
+
     // Computed properties
     var displayedPraise: String {
         aiPraise ?? offlinePraise
@@ -42,6 +52,10 @@ final class PraiseViewModel: PraiseViewModelProtocol {
 
     var isShowingAIPraise: Bool {
         aiPraise != nil
+    }
+
+    var isNiceButtonDisabled: Bool {
+        isCreatingMoment  // Only disabled during Phase 1
     }
 
     var timeDisplayText: String {
@@ -62,6 +76,7 @@ final class PraiseViewModel: PraiseViewModelProtocol {
     }
 
     init(
+        repository: MomentRepository,
         momentText: String,
         happenedAt: Date = Date(),
         timeAgoSeconds: Int? = nil,
@@ -70,6 +85,7 @@ final class PraiseViewModel: PraiseViewModelProtocol {
         submittedAt: Date = Date(),
         timezone: String = TimeZone.current.identifier
     ) {
+        self.repository = repository
         self.momentText = momentText
         self.happenedAt = happenedAt
         self.timeAgoSeconds = timeAgoSeconds
@@ -77,6 +93,32 @@ final class PraiseViewModel: PraiseViewModelProtocol {
         self.clientId = clientId
         self.submittedAt = submittedAt
         self.timezone = timezone
+
+        // Save moment to local storage immediately
+        Task {
+            await saveLocalMoment()
+        }
+    }
+
+    private func saveLocalMoment() async {
+        let moment = Moment(
+            clientId: clientId,
+            text: momentText,
+            submittedAt: submittedAt,
+            happenedAt: happenedAt,
+            timezone: timezone,
+            timeAgo: timeAgoSeconds,
+            offlinePraise: offlinePraise
+        )
+        moment.isSynced = false  // Mark as not synced yet
+
+        do {
+            try await repository.save(moment)
+            localMoment = moment
+            logger.info("Saved moment locally: \(self.clientId.uuidString)")
+        } catch {
+            logger.error("Failed to save moment locally: \(error.localizedDescription)")
+        }
     }
 
     func cancelPolling() {
@@ -106,33 +148,92 @@ final class PraiseViewModel: PraiseViewModelProtocol {
     // MARK: - Sync & AI Praise
 
     func syncMomentAndFetchPraise() async {
+        // Phase 1: Create moment on server (BLOCKING - button disabled)
+        isCreatingMoment = true
         isLoadingAIPraise = true
 
         do {
-            // First, POST the moment to create it on server
             let response = try await createMomentOnServer()
 
-            // Check if praise is already available
+            // Save serverId immediately for background sync
+            if let serverId = response.id, let moment = localMoment {
+                moment.serverId = serverId
+                try? await repository.update(moment)
+                logger.info("Saved serverId \(serverId)")
+            }
+
+            // Phase 1 complete - enable Nice button
+            isCreatingMoment = false
+
+            // Check if enrichment already complete
             if let praise = response.praise, !praise.isEmpty {
                 await updateWithServerResponse(response)
                 isLoadingAIPraise = false
                 return
             }
 
-            // If no praise yet, start polling
+            // Phase 2: Request enrichment (NON-BLOCKING - button enabled)
             guard let serverId = response.id else {
                 isLoadingAIPraise = false
                 return
             }
 
-            await pollForPraise(serverId: serverId)
+            await requestEnrichment(serverId: serverId)
 
         } catch let error as MomentError {
-            handleMomentError(error)
-        } catch {
-            logger.error("Failed to sync moment: \(error.localizedDescription)")
-            syncError = error.localizedDescription
+            isCreatingMoment = false
             isLoadingAIPraise = false
+            handleMomentError(error)
+        } catch is CancellationError {
+            // Task was cancelled (user dismissed view) - this is expected, don't log as error
+            isCreatingMoment = false
+            logger.debug("Sync task cancelled by user")
+            isLoadingAIPraise = false
+        } catch {
+            isCreatingMoment = false
+            isLoadingAIPraise = false
+            logger.error("Failed to create moment: \(error)")
+            syncError = error.localizedDescription
+        }
+    }
+
+    private func requestEnrichment(serverId: String) async {
+        isEnrichingMoment = true
+
+        do {
+            // POST to enrichment endpoint
+            let enriched = try await enrichMomentOnServer(serverId: serverId)
+
+            // Check if enrichment complete
+            if let praise = enriched.praise, !praise.isEmpty {
+                await updateWithServerResponse(enriched)
+                isEnrichingMoment = false
+                isLoadingAIPraise = false
+                return
+            }
+
+            // Not ready yet - start polling
+            await pollForEnrichment(serverId: serverId)
+
+        } catch let error as MomentError {
+            isEnrichingMoment = false
+            isLoadingAIPraise = false
+            handleMomentError(error)
+        } catch is CancellationError {
+            // Task was cancelled (user dismissed) - this is expected
+            isEnrichingMoment = false
+            isLoadingAIPraise = false
+            logger.debug("Enrichment cancelled by user")
+        } catch let error as URLError where error.code == .cancelled {
+            // URLSession task was cancelled - this is expected when user dismisses
+            isEnrichingMoment = false
+            isLoadingAIPraise = false
+            logger.debug("Enrichment request cancelled")
+        } catch {
+            isEnrichingMoment = false
+            isLoadingAIPraise = false
+            logger.error("Failed to request enrichment: \(error)")
+            syncError = "Couldn't fetch extra encouragement this time."
         }
     }
 
@@ -207,33 +308,93 @@ final class PraiseViewModel: PraiseViewModelProtocol {
         }
     }
 
-    private func pollForPraise(serverId: String) async {
+    private func enrichMomentOnServer(serverId: String) async throws -> MomentResponse {
+        guard let url = AppConfig.enrichMomentURL(id: serverId) else {
+            throw URLError(.badURL)
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue(UserIDProvider.shared.userID, forHTTPHeaderField: AppConfig.userIdHeaderKey)
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw MomentError.invalidResponse
+        }
+
+        // Handle daily limit during enrichment
+        if httpResponse.statusCode == 400 {
+            if let errorResponse = try? JSONDecoder().decode(APIErrorResponse.self, from: data) {
+                if errorResponse.error.code == .dailyLimitReached {
+                    throw MomentError.dailyLimitReached(message: errorResponse.error.message)
+                }
+            }
+        }
+
+        // Handle 409 Conflict (enrichment already in progress) gracefully
+        if httpResponse.statusCode == 409 {
+            logger.debug("⏳ Enrichment already in progress, will continue polling")
+            // Return empty response, polling will continue
+            return MomentResponse(
+                id: serverId,
+                clientId: nil,
+                text: "",
+                submittedAt: "",
+                happenedAt: "",
+                tz: "",
+                timeAgo: nil,
+                praise: nil,
+                action: nil,
+                tags: nil,
+                isFavorite: nil
+            )
+        }
+
+        guard (200...299).contains(httpResponse.statusCode) else {
+            // Log error response for debugging
+            let responseBody = String(data: data, encoding: .utf8) ?? "Unable to decode response"
+            logger.error("❌ Enrichment failed with status \(httpResponse.statusCode): \(responseBody)")
+            throw MomentError.invalidResponse
+        }
+
+        let decoded = try JSONDecoder().decode(GetMomentResponseWrapper.self, from: data)
+        return decoded.item
+    }
+
+    private func pollForEnrichment(serverId: String) async {
         pollingTask = Task {
-            while pollCount < maxPolls && !Task.isCancelled {
-                pollCount += 1
+            while self.pollCount < self.maxPolls && !Task.isCancelled {
+                self.pollCount += 1
 
                 do {
-                    try await Task.sleep(nanoseconds: pollInterval)
+                    try await Task.sleep(nanoseconds: self.pollInterval)
 
-                    let moment = try await fetchMomentFromServer(serverId: serverId)
+                    // Poll enrichment endpoint (idempotent)
+                    let enriched = try await self.enrichMomentOnServer(serverId: serverId)
 
-                    if let praise = moment.praise, !praise.isEmpty {
-                        await updateWithServerResponse(moment)
+                    if let praise = enriched.praise, !praise.isEmpty {
+                        await self.updateWithServerResponse(enriched)
                         break
                     }
 
                     logger.debug("Poll \(self.pollCount)/\(self.maxPolls): No praise yet")
 
+                } catch is CancellationError {
+                    logger.debug("Enrichment polling cancelled")
+                    break
                 } catch {
-                    logger.error("Poll failed: \(error.localizedDescription)")
-                    if pollCount >= maxPolls {
-                        syncError = "Couldn't fetch extra encouragement this time."
+                    logger.error("Enrichment poll failed: \(error)")
+                    if self.pollCount >= self.maxPolls {
+                        self.syncError = "Couldn't fetch extra encouragement this time."
                     }
                 }
             }
 
             await MainActor.run {
-                isLoadingAIPraise = false
+                self.isEnrichingMoment = false
+                self.isLoadingAIPraise = false
             }
         }
 
@@ -279,6 +440,22 @@ final class PraiseViewModel: PraiseViewModelProtocol {
                     }
                 }
             }
+        }
+
+        // Update local moment with server data
+        guard let moment = localMoment else { return }
+
+        moment.serverId = response.id
+        moment.praise = response.praise
+        moment.action = response.action
+        moment.tags = response.tags ?? []
+        moment.isSynced = true
+
+        do {
+            try await repository.update(moment)
+            logger.info("Updated local moment with server data: \(self.clientId.uuidString)")
+        } catch {
+            logger.error("Failed to update local moment: \(error.localizedDescription)")
         }
     }
 

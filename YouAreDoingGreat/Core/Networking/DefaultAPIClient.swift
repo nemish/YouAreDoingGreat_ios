@@ -77,12 +77,6 @@ final class DefaultAPIClient: APIClient {
             throw MomentError.invalidResponse
         }
 
-        // Decode successful response
-        if let responseBody = String(data: data, encoding: .utf8) {
-            logger.info("API Response Body: \(responseBody)")
-        } else {
-            logger.info("API Response Body is non-UTF8 data (\(data.count) bytes)")
-        }
         do {
             let decoded = try jsonDecoder.decode(T.self, from: data)
             return decoded

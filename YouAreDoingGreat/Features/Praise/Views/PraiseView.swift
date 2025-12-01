@@ -17,6 +17,7 @@ protocol PraiseViewModelProtocol: AnyObject, Observable {
     var showButton: Bool { get set }
     var timeDisplayText: String { get }
     var clientId: UUID { get }
+    var isNiceButtonDisabled: Bool { get }
 
     func cancelPolling()
     func startEntranceAnimation() async
@@ -128,14 +129,17 @@ struct PraiseContentView<ViewModel: PraiseViewModelProtocol>: View {
             // Done button
             PrimaryButton(title: "Nice") {
                 UIImpactFeedbackGenerator(style: .light).impactOccurred()
-                viewModel.cancelPolling()
 
                 // Highlight the newly created moment
                 highlightService.highlightMoment(viewModel.clientId)
 
                 selectedTab = 1 // Navigate to Moments tab
                 onDismiss()
+
+                // Note: We don't cancel polling here - let it continue in background
+                // to update the moment with AI praise when ready
             }
+            .disabled(viewModel.isNiceButtonDisabled)  // Disable during Phase 1 (POST /moments)
             .padding(.horizontal, 32)
             .padding(.bottom, 40)
             .opacity(viewModel.showButton ? 1 : 0)
@@ -278,6 +282,10 @@ private final class MockPraiseViewModel: PraiseViewModelProtocol {
 
     var isShowingAIPraise: Bool {
         aiPraise != nil
+    }
+
+    var isNiceButtonDisabled: Bool {
+        false  // Mock never disables button
     }
 
     var timeDisplayText: String {

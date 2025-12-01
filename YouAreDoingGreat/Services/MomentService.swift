@@ -37,12 +37,10 @@ final class MomentService {
 
         if let serverId = dto.id {
             existingMoment = try await repository.fetch(serverId: serverId)
-            logger.debug("Found existing moment by serverId: \(serverId)")
         }
 
         if existingMoment == nil, let clientIdString = dto.clientId, let clientId = UUID(uuidString: clientIdString) {
             existingMoment = try await repository.fetch(clientId: clientId)
-            logger.debug("Found existing moment by clientId: \(clientIdString)")
         }
 
         let moment: Moment
@@ -58,10 +56,10 @@ final class MomentService {
             existing.action = dto.action
             existing.tags = dto.tags ?? []
             existing.isFavorite = dto.isFavorite ?? false
-            existing.isSynced = true
+            // Only mark as synced if enrichment is complete (has praise)
+            existing.isSynced = dto.praise != nil && !(dto.praise?.isEmpty ?? true)
             try await repository.update(existing)
             moment = existing
-            logger.info("✅ Updated moment \(existing.clientId.uuidString) - happenedAt: \(dto.happenedAt), happenedAt saved: \(moment.happenedAt), praise: \(dto.praise ?? "nil"), tags: \(dto.tags?.count ?? 0)")
         } else {
             // Create new moment from server data
             let clientId = UUID(uuidString: dto.clientId ?? "") ?? UUID()
@@ -81,10 +79,10 @@ final class MomentService {
             newMoment.action = dto.action
             newMoment.tags = dto.tags ?? []
             newMoment.isFavorite = dto.isFavorite ?? false
-            newMoment.isSynced = true
+            // Only mark as synced if enrichment is complete (has praise)
+            newMoment.isSynced = dto.praise != nil && !(dto.praise?.isEmpty ?? true)
             try await repository.save(newMoment)
             moment = newMoment
-            logger.info("✅ Saved new moment \(newMoment.clientId.uuidString) - happenedAt: \(dto.happenedAt), happenedAt saved: \(moment.happenedAt), praise: \(dto.praise ?? "nil"), tags: \(dto.tags?.count ?? 0)")
         }
 
         return moment
