@@ -89,18 +89,37 @@ struct MomentCard: View {
         }
         .padding(16)
         .background(
-            RoundedRectangle(cornerRadius: 12)
-                .fill(timeOfDay.backgroundColor)
+            ZStack {
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(timeOfDay.backgroundColor)
+
+                // Glow overlay when highlighted
+                if isHighlighted {
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(
+                            timeOfDay.accentColor
+                                .opacity(glowIntensity * 0.2)
+                        )
+                        .blendMode(.plusLighter)
+                }
+            }
         )
         .overlay(
             RoundedRectangle(cornerRadius: 12)
-                .strokeBorder(timeOfDay.borderColor, lineWidth: 1)
+                .strokeBorder(
+                    isHighlighted ? timeOfDay.accentColor.opacity(0.3 + (glowIntensity * 0.5)) : timeOfDay.borderColor,
+                    lineWidth: isHighlighted ? 1.5 : 1
+                )
         )
         .shadow(
-            color: isHighlighted ? timeOfDay.accentColor.opacity(glowIntensity) : .clear,
-            radius: isHighlighted ? 20 : 0
+            color: isHighlighted ? timeOfDay.accentColor.opacity(glowIntensity * 0.8) : .clear,
+            radius: isHighlighted ? 30 : 0
         )
-        .scaleEffect(isHighlighted ? 1 + (glowIntensity * 0.02) : 1)
+        .shadow(
+            color: isHighlighted ? timeOfDay.accentColor.opacity(glowIntensity * 0.4) : .clear,
+            radius: isHighlighted ? 60 : 0
+        )
+        .scaleEffect(isHighlighted ? 1 + (glowIntensity * 0.04) : 1)
         .animation(.spring(response: 0.4, dampingFraction: 0.8), value: moment.tags.count)
         .onAppear {
             if isHighlighted {
@@ -116,15 +135,28 @@ struct MomentCard: View {
     }
 
     private func startHighlightAnimation() {
-        // Pulse animation - 2 complete cycles (in/out/in/out)
-        withAnimation(.easeInOut(duration: 0.6).repeatCount(2, autoreverses: true)) {
-            glowIntensity = 0.8
-        }
+        // Pulse animation - 2 complete cycles with smooth sequence
+        Task { @MainActor in
+            // Cycle 1: In
+            withAnimation(.easeInOut(duration: 0.5)) {
+                glowIntensity = 1.0
+            }
+            try? await Task.sleep(for: .seconds(0.5))
 
-        // Reset to normal state after animation completes
-        Task {
-            try? await Task.sleep(for: .seconds(0.6 * 2 * 2)) // 2 cycles × 2 (in/out) × 0.6s = 2.4s
-            withAnimation(.easeOut(duration: 0.3)) {
+            // Cycle 1: Out
+            withAnimation(.easeInOut(duration: 0.5)) {
+                glowIntensity = 0
+            }
+            try? await Task.sleep(for: .seconds(0.5))
+
+            // Cycle 2: In
+            withAnimation(.easeInOut(duration: 0.5)) {
+                glowIntensity = 1.0
+            }
+            try? await Task.sleep(for: .seconds(0.5))
+
+            // Cycle 2: Out (smooth finish)
+            withAnimation(.easeOut(duration: 0.5)) {
                 glowIntensity = 0
             }
         }
