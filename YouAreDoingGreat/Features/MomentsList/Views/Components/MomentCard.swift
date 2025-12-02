@@ -8,6 +8,7 @@ struct MomentCard: View {
     let isHighlighted: Bool
 
     @State private var glowIntensity: CGFloat = 0
+    @State private var previousTagsCount: Int = 0
 
     private var timeOfDay: TimeOfDay {
         TimeOfDay(from: moment.happenedAt)
@@ -16,6 +17,7 @@ struct MomentCard: View {
     init(moment: Moment, isHighlighted: Bool = false) {
         self.moment = moment
         self.isHighlighted = isHighlighted
+        _previousTagsCount = State(initialValue: moment.tags.count)
     }
 
     var body: some View {
@@ -35,10 +37,28 @@ struct MomentCard: View {
                 Spacer()
 
                 HStack(spacing: 8) {
-                    if !moment.isSynced {
+                    // Enrichment status indicator
+                    if moment.serverId != nil && !moment.isSynced {
+                        // Has serverId but not synced = enriching
+                        if let praise = moment.praise, !praise.isEmpty {
+                            // Just enriched - show checkmark briefly
+                            Image(systemName: "checkmark.circle.fill")
+                                .font(.system(size: 12))
+                                .foregroundStyle(.green)
+                                .symbolEffect(.bounce, value: moment.praise)
+                        } else {
+                            // Enriching in progress
+                            Image(systemName: "sparkles")
+                                .font(.system(size: 12))
+                                .foregroundStyle(.appPrimary)
+                                .symbolEffect(.pulse, options: .repeating)
+                        }
+                    } else if moment.serverId == nil && !moment.isSynced {
+                        // No serverId yet = creating on server
                         Image(systemName: "arrow.triangle.2.circlepath")
                             .font(.system(size: 12))
                             .foregroundStyle(.textTertiary)
+                            .symbolEffect(.pulse, options: .repeating)
                     }
 
                     if moment.isFavorite {
@@ -61,55 +81,82 @@ struct MomentCard: View {
             if !moment.tags.isEmpty {
                 TagsView(tags: moment.tags)
                     .padding(.top, 12)
+                    .transition(.asymmetric(
+                        insertion: .opacity.combined(with: .move(edge: .top)).combined(with: .scale(scale: 0.95)),
+                        removal: .opacity
+                    ))
             }
         }
         .padding(16)
         .background(
-            RoundedRectangle(cornerRadius: 12)
-                .fill(timeOfDay.backgroundColor)
+            ZStack {
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(timeOfDay.backgroundColor)
+
+                // Glow overlay when highlighted
+                if isHighlighted {
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(
+                            timeOfDay.accentColor
+                                .opacity(glowIntensity * 0.2)
+                        )
+                        .blendMode(.plusLighter)
+                }
+            }
         )
         .overlay(
             RoundedRectangle(cornerRadius: 12)
-                .strokeBorder(timeOfDay.borderColor, lineWidth: 1)
+                .strokeBorder(
+                    isHighlighted ? timeOfDay.accentColor.opacity(0.3 + (glowIntensity * 0.5)) : timeOfDay.borderColor,
+                    lineWidth: isHighlighted ? 1.5 : 1
+                )
         )
         .shadow(
-            color: isHighlighted ? timeOfDay.accentColor.opacity(glowIntensity) : .clear,
-            radius: isHighlighted ? 20 : 0
+            color: isHighlighted ? timeOfDay.accentColor.opacity(glowIntensity * 0.8) : .clear,
+            radius: isHighlighted ? 30 : 0
         )
-        .scaleEffect(isHighlighted ? 1 + (glowIntensity * 0.02) : 1)
+        .shadow(
+            color: isHighlighted ? timeOfDay.accentColor.opacity(glowIntensity * 0.4) : .clear,
+            radius: isHighlighted ? 60 : 0
+        )
+        .scaleEffect(isHighlighted ? 1 + (glowIntensity * 0.04) : 1)
+        .animation(.spring(response: 0.4, dampingFraction: 0.8), value: moment.tags.count)
         .onAppear {
             if isHighlighted {
                 startHighlightAnimation()
             }
         }
+        .onChange(of: moment.tags.count) { oldValue, newValue in
+            if newValue > previousTagsCount {
+                // Tags were added (enrichment completed)
+                previousTagsCount = newValue
+            }
+        }
     }
 
     private func startHighlightAnimation() {
-        // Pulse animation: exactly 2 pulses, then return to normal state
-        let pulseDuration: TimeInterval = 0.5
-        
-        // First pulse: up
-        withAnimation(.easeInOut(duration: pulseDuration)) {
-            glowIntensity = 0.8
-        }
-        
-        // Sequence the remaining animation steps
-        Task {
-            // First pulse: down
-            try? await Task.sleep(for: .seconds(pulseDuration))
-            withAnimation(.easeInOut(duration: pulseDuration)) {
+        // Pulse animation - 2 complete cycles with smooth sequence
+        Task { @MainActor in
+            // Cycle 1: In
+            withAnimation(.easeInOut(duration: 0.5)) {
+                glowIntensity = 1.0
+            }
+            try? await Task.sleep(for: .seconds(0.5))
+
+            // Cycle 1: Out
+            withAnimation(.easeInOut(duration: 0.5)) {
                 glowIntensity = 0
             }
-            
-            // Second pulse: up
-            try? await Task.sleep(for: .seconds(pulseDuration))
-            withAnimation(.easeInOut(duration: pulseDuration)) {
-                glowIntensity = 0.8
+            try? await Task.sleep(for: .seconds(0.5))
+
+            // Cycle 2: In
+            withAnimation(.easeInOut(duration: 0.5)) {
+                glowIntensity = 1.0
             }
-            
-            // Second pulse: down and ensure we end at 0
-            try? await Task.sleep(for: .seconds(pulseDuration))
-            withAnimation(.easeOut(duration: pulseDuration * 0.6)) {
+            try? await Task.sleep(for: .seconds(0.5))
+
+            // Cycle 2: Out (smooth finish)
+            withAnimation(.easeOut(duration: 0.5)) {
                 glowIntensity = 0
             }
         }

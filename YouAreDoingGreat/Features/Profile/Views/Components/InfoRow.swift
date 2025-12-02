@@ -9,6 +9,8 @@ struct InfoRow: View {
     let copyable: Bool
     var onCopy: (() -> Void)?
 
+    @State private var showCopied = false
+
     var body: some View {
         HStack(spacing: 12) {
             VStack(alignment: .leading, spacing: 4) {
@@ -26,10 +28,29 @@ struct InfoRow: View {
             if copyable {
                 Button {
                     onCopy?()
+                    withAnimation(.easeInOut(duration: 0.2)) {
+                        showCopied = true
+                    }
+                    // Hide "Copied" after 2 seconds
+                    Task {
+                        try? await Task.sleep(for: .seconds(2))
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            showCopied = false
+                        }
+                    }
                 } label: {
-                    Image(systemName: "doc.on.doc")
-                        .font(.system(size: 18))
-                        .foregroundStyle(.appPrimary)
+                    HStack(spacing: 6) {
+                        if showCopied {
+                            Text("Copied")
+                                .font(.appFootnote)
+                                .foregroundStyle(.appPrimary)
+                                .transition(.opacity.combined(with: .scale(scale: 0.8)))
+                        }
+
+                        Image(systemName: "doc.on.doc")
+                            .font(.system(size: 18))
+                            .foregroundStyle(.appPrimary)
+                    }
                 }
                 .buttonStyle(.plain)
             }

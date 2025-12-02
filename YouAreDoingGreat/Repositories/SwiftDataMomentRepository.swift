@@ -40,7 +40,6 @@ final class SwiftDataMomentRepository: MomentRepository {
 
     func update(_ moment: Moment) async throws {
         try modelContext.save()
-        logger.info("Updated moment with clientId: \(moment.clientId.uuidString)")
     }
 
     func fetchUnsyncedMoments() async throws -> [Moment] {

@@ -25,6 +25,26 @@ All endpoints require authentication via the `x-user-id` header:
 x-user-id: <user_id>
 ```
 
+## Key Changes in Latest Version
+
+### Offline Sync Support
+
+The API now supports offline-first clients with the following features:
+
+1. **Client ID Support**: Moments can include a `clientId` (UUID) for offline sync correlation
+2. **Lookup by Client ID**: New endpoint `GET /moments/by-client-id/{clientId}` for finding moments by client-generated ID
+3. **Separated Enrichment**: Moment creation (`POST /moments`) and AI enrichment (`POST /moments/{id}/enrich`) are now separate operations
+
+### Two-Phase Moment Creation
+
+1. **Phase 1 - Create**: `POST /moments` creates moment immediately without AI processing (fast return)
+2. **Phase 2 - Enrich**: `POST /moments/{id}/enrich` adds AI-generated praise, tags, and action category (async, can be polled)
+
+This allows clients to:
+- Save moments locally with client-generated UUID
+- Submit to server and get server ID back immediately
+- Poll for AI enrichment completion without blocking user
+
 ## Endpoints
 
 ### 1. Health Check
@@ -122,7 +142,53 @@ x-user-id: <user_id>
 - `401 Unauthorized`: Missing or invalid user ID
 - `500 Internal Server Error`: Server error
 
-### 4. Get Moments with Pagination
+### 4. Submit User Feedback
+
+**POST** `/user/feedback`
+
+Submit feedback from the user including title and description.
+
+#### Request Headers
+
+```
+Content-Type: application/json
+x-user-id: <user_id>
+```
+
+#### Request Body
+
+```json
+{
+  "title": "Feature request",
+  "text": "It would be great if the app had..."
+}
+```
+
+#### Request Fields
+
+- `title` (required): Title of the feedback (1-200 characters)
+- `text` (required): Detailed feedback text (1-5000 characters)
+
+#### Response
+
+```json
+{
+  "item": {
+    "id": "feedback_123",
+    "title": "Feature request",
+    "text": "It would be great if the app had...",
+    "createdAt": "2024-01-15T10:30:00Z"
+  }
+}
+```
+
+#### Error Responses
+
+- `400 Bad Request`: Invalid request body
+- `401 Unauthorized`: Missing or invalid user ID
+- `500 Internal Server Error`: Server error
+
+### 5. Get Moments with Pagination
 
 **GET** `/moments`
 
@@ -146,13 +212,16 @@ x-user-id: <user_id>
   "data": [
     {
       "id": "moment_123",
+      "clientId": "550e8400-e29b-41d4-a716-446655440000",
       "text": "Today was amazing!",
       "submittedAt": "2024-01-15T10:30:00Z",
+      "happenedAt": "2024-01-15T09:30:00Z",
       "tz": "America/New_York",
       "action": "exercise",
+      "tags": ["milestone", "writing", "streak"],
       "praise": "Great job! You're making amazing progress!",
       "isFavorite": false,
-      "archivedAt": null
+      "timeAgo": 3600
     }
   ],
   "nextCursor": "2024-01-15T10:30:00Z",
@@ -172,15 +241,15 @@ x-user-id: <user_id>
 - `401 Unauthorized`: Missing or invalid user ID
 - `500 Internal Server Error`: Server error
 
-### 5. Get a Specific Moment
+### 6. Get a Specific Moment
 
 **GET** `/moments/{id}`
 
-Retrieve a specific moment by ID.
+Retrieve a specific moment by server ID.
 
 #### Path Parameters
 
-- `id`: Moment ID
+- `id`: Server-generated moment ID
 
 #### Request Headers
 
@@ -194,13 +263,16 @@ x-user-id: <user_id>
 {
   "item": {
     "id": "moment_123",
+    "clientId": "550e8400-e29b-41d4-a716-446655440000",
     "text": "Today was amazing!",
     "submittedAt": "2024-01-15T10:30:00Z",
+    "happenedAt": "2024-01-15T09:30:00Z",
     "tz": "America/New_York",
     "action": "exercise",
+    "tags": ["milestone", "writing", "streak"],
     "praise": "Great job! You're making amazing progress!",
     "isFavorite": false,
-    "archivedAt": null
+    "timeAgo": 3600
   }
 }
 ```
@@ -216,11 +288,62 @@ x-user-id: <user_id>
 - `404 Not Found`: Moment not found
 - `500 Internal Server Error`: Server error
 
-### 6. Create a New Moment
+### 7. Get Moment by Client ID (NEW)
+
+**GET** `/moments/by-client-id/{clientId}`
+
+Retrieve a specific moment by its client-generated UUID. This endpoint is essential for offline sync correlation.
+
+#### Path Parameters
+
+- `clientId`: Client-generated UUID (format: `550e8400-e29b-41d4-a716-446655440000`)
+
+#### Request Headers
+
+```
+x-user-id: <user_id>
+```
+
+#### Response
+
+```json
+{
+  "item": {
+    "id": "moment_123",
+    "clientId": "550e8400-e29b-41d4-a716-446655440000",
+    "text": "Today was amazing!",
+    "submittedAt": "2024-01-15T10:30:00Z",
+    "happenedAt": "2024-01-15T09:30:00Z",
+    "tz": "America/New_York",
+    "action": null,
+    "tags": null,
+    "praise": null,
+    "isFavorite": false,
+    "timeAgo": 3600
+  }
+}
+```
+
+#### Use Cases
+
+- **Offline Sync**: Client creates moment offline with UUID, later finds it on server using this endpoint
+- **Correlation**: Match local moment with server moment after sync
+- **Status Check**: Poll to see if moment has been enriched with AI content
+
+#### Error Responses
+
+- `401 Unauthorized`: Missing or invalid user ID
+- `403 Forbidden`: User does not own this moment
+- `404 Not Found`: Moment with this clientId not found
+- `500 Internal Server Error`: Server error
+
+### 8. Create a New Moment (UPDATED)
 
 **POST** `/moments`
 
-Submit a new moment for the authenticated user.
+Create a moment record in the database **without AI processing**. The moment is created immediately with null/undefined action, tags, and praise. Use `POST /moments/{id}/enrich` to add AI-generated content.
+
+This endpoint now returns immediately, making it suitable for offline-first apps that need fast responses.
 
 #### Request Headers
 
@@ -233,17 +356,21 @@ x-user-id: <user_id>
 
 ```json
 {
+  "clientId": "550e8400-e29b-41d4-a716-446655440000",
   "text": "New moment text",
   "submittedAt": "2024-01-15T10:30:00Z",
-  "tz": "America/New_York"
+  "tz": "America/New_York",
+  "timeAgo": 3600
 }
 ```
 
 #### Request Fields
 
+- `clientId` (optional): Client-generated UUID for offline sync correlation. Server echoes this back in response.
 - `text` (required): The moment text content (1-1000 characters)
 - `submittedAt` (optional): When the moment was submitted (defaults to current time)
 - `tz` (optional): Timezone of the user
+- `timeAgo` (optional): Seconds passed from when the moment actually happened to when it was submitted
 
 #### Response
 
@@ -251,24 +378,86 @@ x-user-id: <user_id>
 {
   "item": {
     "id": "moment_123",
+    "clientId": "550e8400-e29b-41d4-a716-446655440000",
     "text": "New moment text",
     "submittedAt": "2024-01-15T10:30:00Z",
+    "happenedAt": "2024-01-15T09:30:00Z",
+    "tz": "America/New_York",
+    "action": null,
+    "tags": null,
+    "praise": null,
+    "isFavorite": false,
+    "timeAgo": 3600
+  }
+}
+```
+
+**Note**: `action`, `tags`, and `praise` will be `null` until enrichment is performed.
+
+#### Error Responses
+
+- `401 Unauthorized`: Missing or invalid user ID
+- `500 Internal Server Error`: Server error
+
+### 9. Enrich Moment with AI Content (NEW)
+
+**POST** `/moments/{id}/enrich`
+
+Add AI-generated action category, tags, and praise to an existing moment. This endpoint is **idempotent** - if the moment is already enriched, it returns the existing data without calling the AI again. Daily limits are checked before processing.
+
+#### Path Parameters
+
+- `id`: Server-generated moment ID to enrich
+
+#### Request Headers
+
+```
+x-user-id: <user_id>
+```
+
+#### Response
+
+```json
+{
+  "item": {
+    "id": "moment_123",
+    "clientId": "550e8400-e29b-41d4-a716-446655440000",
+    "text": "New moment text",
+    "submittedAt": "2024-01-15T10:30:00Z",
+    "happenedAt": "2024-01-15T09:30:00Z",
     "tz": "America/New_York",
     "action": "exercise",
+    "tags": ["milestone", "writing", "streak"],
     "praise": "Great job! You're making amazing progress!",
     "isFavorite": false,
-    "archivedAt": null
+    "timeAgo": 3600
   }
+}
+```
+
+#### Client Implementation Pattern
+
+```typescript
+// 1. Create moment (fast, no AI)
+const created = await POST('/moments', { text, clientId });
+
+// 2. Poll for enrichment (async, can be in background)
+let enriched = created;
+while (!enriched.praise) {
+  await sleep(3000);
+  enriched = await POST(`/moments/${created.id}/enrich`);
 }
 ```
 
 #### Error Responses
 
-- `400 Bad Request`: Invalid request body or daily limit reached
+- `400 Bad Request`: Daily limit reached
 - `401 Unauthorized`: Missing or invalid user ID
+- `403 Forbidden`: User does not own this moment
+- `404 Not Found`: Moment not found
 - `500 Internal Server Error`: Server error
 
-### 7. Update a Moment
+### 10. Update a Moment
 
 **PUT** `/moments/{id}`
 
@@ -312,7 +501,7 @@ x-user-id: <user_id>
 - `404 Not Found`: Moment not found
 - `500 Internal Server Error`: Server error
 
-### 8. Archive a Moment
+### 11. Archive a Moment
 
 **DELETE** `/moments/{id}`
 
@@ -343,7 +532,7 @@ x-user-id: <user_id>
 - `404 Not Found`: Moment not found
 - `500 Internal Server Error`: Server error
 
-### 9. Get Timeline with Pagination
+### 12. Get Timeline with Pagination
 
 **GET** `/timeline`
 
@@ -370,6 +559,8 @@ x-user-id: <user_id>
       "date": "2024-01-15T00:00:00Z",
       "text": "You had a productive day with 5 workouts and quality family time!",
       "tags": ["exercise", "mindfulness", "productivity"],
+      "momentsCount": 12,
+      "timesOfDay": ["cloud-sun", "sun-medium", "sunset"],
       "createdAt": "2024-01-16T02:00:00Z"
     }
   ],
@@ -390,65 +581,18 @@ x-user-id: <user_id>
 - `date`: The date this summary represents (start of day, ISO date-time)
 - `text`: AI-generated summary text (null if no moments for this day)
 - `tags`: Top 5 most popular tags from moments on this day
+- `momentsCount`: Total number of moments logged on this day
+- `timesOfDay`: Array of time periods when moments were logged:
+  - `sunrise`: 5-8am
+  - `cloud-sun`: 8am-12pm
+  - `sun-medium`: 12-5pm
+  - `sunset`: 5-8pm
+  - `moon`: night
 - `createdAt`: When the summary was created (ISO date-time)
 
 #### Error Responses
 
 - `400 Bad Request`: Invalid parameters
-- `401 Unauthorized`: Missing or invalid user ID
-- `500 Internal Server Error`: Server error
-
-### 10. Submit User Feedback
-
-**POST** `/user/feedback`
-
-Submit feedback from the user including title and description.
-
-#### Request Headers
-
-```
-Content-Type: application/json
-x-user-id: <user_id>
-```
-
-#### Request Body
-
-```json
-{
-  "title": "Feature request",
-  "text": "It would be great if the app had..."
-}
-```
-
-#### Request Fields
-
-- `title` (required): Title of the feedback (1-200 characters)
-- `text` (required): Detailed feedback text (1-5000 characters)
-
-#### Response
-
-```json
-{
-  "item": {
-    "id": "feedback_123",
-    "title": "Feature request",
-    "text": "It would be great if the app had...",
-    "createdAt": "2024-01-15T10:30:00Z"
-  }
-}
-```
-
-#### Response Fields
-
-- `item`: User feedback object containing:
-  - `id`: Unique identifier for the feedback
-  - `title`: Title of the feedback
-  - `text`: Detailed feedback text
-  - `createdAt`: When the feedback was submitted (ISO date-time)
-
-#### Error Responses
-
-- `400 Bad Request`: Invalid request body (missing required fields, text too long, etc.)
 - `401 Unauthorized`: Missing or invalid user ID
 - `500 Internal Server Error`: Server error
 
@@ -469,22 +613,22 @@ x-user-id: <user_id>
 ```json
 {
   "id": "string",
+  "clientId": "string (UUID) | null",
   "text": "string",
   "submittedAt": "string (ISO date-time)",
   "happenedAt": "string (ISO date-time)",
   "tz": "string",
-  "action": "string",
-  "tags": "string[]",
-  "praise": "string",
+  "action": "string | null",
+  "tags": "string[] | null",
+  "praise": "string | null",
   "isFavorite": "boolean",
-  "timeAgo": "integer | null",
-  "archivedAt": "string (ISO date-time) | null"
+  "timeAgo": "integer | null"
 }
 ```
 
 **Required Fields:**
 
-- `id`: Unique identifier for the moment
+- `id`: Server-generated unique identifier for the moment
 - `text`: The moment text content
 - `submittedAt`: When the moment was submitted (ISO date-time)
 - `happenedAt`: When the moment actually happened (calculated as submittedAt - timeAgo, ISO date-time)
@@ -492,17 +636,18 @@ x-user-id: <user_id>
 
 **Optional Fields:**
 
-- `action`: Normalized action from the moment text
-- `tags`: Tags extracted from the moment during normalization (e.g., ["milestone", "writing", "streak"])
-- `praise`: Generated praise message for the moment
+- `clientId`: Client-generated UUID for offline sync correlation (null if not provided)
+- `action`: Normalized action category (null until enriched)
+- `tags`: Tags extracted from the moment (null/empty until enriched, e.g., ["milestone", "writing", "streak"])
+- `praise`: AI-generated praise message (null until enriched)
 - `isFavorite`: Whether the moment is marked as favorite
 - `timeAgo`: Seconds passed from when the moment actually happened to when it was submitted (null if not specified)
-- `archivedAt`: When the moment was archived (null if not archived)
 
 ### CreateMomentRequest
 
 ```json
 {
+  "clientId": "string (UUID, optional)",
   "text": "string (1-1000 characters)",
   "submittedAt": "string (ISO date-time, optional)",
   "tz": "string (optional)",
@@ -512,6 +657,7 @@ x-user-id: <user_id>
 
 **Fields:**
 
+- `clientId` (optional): Client-generated UUID for offline sync correlation
 - `text` (required): The moment text content (1-1000 characters)
 - `submittedAt` (optional): When the moment was submitted (defaults to current time)
 - `tz` (optional): Timezone of the user
@@ -544,6 +690,14 @@ x-user-id: <user_id>
 ```
 
 ### GetMomentResponse
+
+```json
+{
+  "item": "Moment"
+}
+```
+
+### EnrichMomentResponse
 
 ```json
 {
@@ -621,13 +775,6 @@ x-user-id: <user_id>
 }
 ```
 
-**Required Fields:**
-
-- `id`: Unique identifier for the feedback
-- `title`: Title of the feedback
-- `text`: Detailed feedback text
-- `createdAt`: When the feedback was submitted (ISO date-time)
-
 ### CreateUserFeedbackRequest
 
 ```json
@@ -653,6 +800,8 @@ x-user-id: <user_id>
   "date": "string (ISO date-time)",
   "text": "string | null",
   "tags": "string[]",
+  "momentsCount": "integer",
+  "timesOfDay": "string[]",
   "createdAt": "string (ISO date-time)"
 }
 ```
@@ -662,6 +811,8 @@ x-user-id: <user_id>
 - `id`: Unique identifier for the day summary
 - `date`: The date this summary represents (start of day, ISO date-time)
 - `tags`: Top 5 most popular tags from moments on this day
+- `momentsCount`: Total number of moments logged on this day
+- `timesOfDay`: Array of time periods when moments were logged
 - `createdAt`: When the summary was created (ISO date-time)
 
 **Optional Fields:**
@@ -682,8 +833,37 @@ x-user-id: <user_id>
 
 ```json
 {
-  "error": "string",
-  "message": "string (optional)"
+  "error": {
+    "code": "string",
+    "message": "string"
+  },
+  "meta": "object (optional)"
+}
+```
+
+**Error Codes:**
+
+- `UNAUTHORIZED`: Missing or invalid authentication
+- `RESTRICTED_ACCESS`: User does not have access to resource
+- `INTERNAL_SERVER_ERROR`: Server error
+- `DAILY_LIMIT_REACHED`: User has reached their daily moment limit
+- `INVALID_CURSOR`: Invalid pagination cursor
+- `MOMENT_NOT_FOUND`: Moment not found
+- `FORBIDDEN`: User does not own this resource
+- `INVALID_REQUEST`: Invalid request parameters
+
+**Example:**
+
+```json
+{
+  "error": {
+    "code": "DAILY_LIMIT_REACHED",
+    "message": "You've reached your daily limit of 10 moments. Upgrade to premium for 50 moments per day!"
+  },
+  "meta": {
+    "limit": 10,
+    "isPremium": false
+  }
 }
 ```
 
@@ -710,21 +890,88 @@ The API uses cursor-based pagination for efficient infinite scrolling:
 - Moments are sorted by `submittedAt` in **descending order** (newest first)
 - This ensures the most recent moments appear at the top of the list
 
-## Error Responses
+## Offline-First Implementation Guide
+
+### Recommended Sync Flow
+
+1. **Save locally**: Create moment in local storage with client-generated UUID
+2. **Show offline praise**: Display instant encouragement from local pool
+3. **Submit to server**: POST moment with `clientId` to `/moments`
+4. **Save server ID**: Update local moment with returned server `id`
+5. **Enrich in background**: POST to `/moments/{id}/enrich` (can be async/polled)
+6. **Update UI**: When enrichment completes, update local moment with AI praise/tags
+
+### Handling Disconnected State
+
+If user dismisses before POST completes:
+
+1. Moment remains in local storage with `isSynced: false`
+2. Background sync service finds unsynced moments
+3. For moments without `serverId`:
+   - Try `GET /moments/by-client-id/{clientId}`
+   - If 404: POST to create
+   - If 200: Save `serverId` and check enrichment status
+4. For moments with `serverId` but no praise:
+   - POST to `/moments/{id}/enrich`
+   - Poll until enriched or max attempts reached
+
+### Example Swift Implementation
+
+```swift
+// 1. Save locally with clientId
+let moment = Moment(
+    clientId: UUID(),
+    text: text,
+    submittedAt: Date(),
+    isSynced: false
+)
+try await repository.save(moment)
+
+// 2. POST to server
+let response = try await POST("/moments", body: {
+    clientId: moment.clientId.uuidString,
+    text: text
+})
+
+// 3. Save serverId
+moment.serverId = response.id
+try await repository.update(moment)
+
+// 4. Enrich (async, can continue in background)
+Task.detached {
+    let enriched = try await POST("/moments/\(response.id)/enrich")
+    if let praise = enriched.praise {
+        moment.praise = praise
+        moment.tags = enriched.tags
+        moment.isSynced = true
+        try await repository.update(moment)
+    }
+}
+```
+
+## Error Handling
 
 ### 400 Bad Request
 
 ```json
 {
-  "error": "Invalid cursor format",
-  "message": "Cursor must be a valid ISO timestamp"
+  "error": {
+    "code": "INVALID_REQUEST",
+    "message": "Text must be between 1 and 1000 characters"
+  }
 }
 ```
 
 ```json
 {
-  "error": "Daily limit reached",
-  "message": "You can only submit 5 moments per day"
+  "error": {
+    "code": "DAILY_LIMIT_REACHED",
+    "message": "You've reached your daily limit of 10 moments. Upgrade to premium for 50 moments per day!"
+  },
+  "meta": {
+    "limit": 10,
+    "isPremium": false
+  }
 }
 ```
 
@@ -732,8 +979,10 @@ The API uses cursor-based pagination for efficient infinite scrolling:
 
 ```json
 {
-  "error": "Unauthorized",
-  "message": "Missing or invalid user ID"
+  "error": {
+    "code": "UNAUTHORIZED",
+    "message": "Missing or invalid user ID"
+  }
 }
 ```
 
@@ -741,8 +990,10 @@ The API uses cursor-based pagination for efficient infinite scrolling:
 
 ```json
 {
-  "error": "Forbidden",
-  "message": "User does not own this moment"
+  "error": {
+    "code": "FORBIDDEN",
+    "message": "User does not own this moment"
+  }
 }
 ```
 
@@ -750,8 +1001,10 @@ The API uses cursor-based pagination for efficient infinite scrolling:
 
 ```json
 {
-  "error": "Not Found",
-  "message": "Moment not found"
+  "error": {
+    "code": "MOMENT_NOT_FOUND",
+    "message": "Moment not found"
+  }
 }
 ```
 
@@ -759,84 +1012,12 @@ The API uses cursor-based pagination for efficient infinite scrolling:
 
 ```json
 {
-  "error": "Internal Server Error",
-  "message": "An unexpected error occurred"
+  "error": {
+    "code": "INTERNAL_SERVER_ERROR",
+    "message": "An unexpected error occurred"
+  }
 }
 ```
-
-## Client-Side Implementation Guidelines
-
-### React Query Integration
-
-The API is designed to work seamlessly with TanStack Query's `useInfiniteQuery`:
-
-```typescript
-const useMoments = () => {
-  return useInfiniteQuery({
-    queryKey: ["moments"],
-    queryFn: ({ pageParam }) =>
-      fetch(`/api/v1/moments?cursor=${pageParam}&limit=20`, {
-        headers: { "x-user-id": userId },
-      }).then((res) => res.json()),
-    getNextPageParam: (lastPage) =>
-      lastPage.hasNextPage ? lastPage.nextCursor : undefined,
-    initialPageParam: undefined,
-  });
-};
-```
-
-### Authentication Headers
-
-All requests must include the `x-user-id` header:
-
-```typescript
-const apiClient = {
-  get: (url: string) =>
-    fetch(`${baseUrl}${url}`, {
-      headers: { "x-user-id": getCurrentUserId() },
-    }),
-
-  post: (url: string, data: any) =>
-    fetch(`${baseUrl}${url}`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-user-id": getCurrentUserId(),
-      },
-      body: JSON.stringify(data),
-    }),
-};
-```
-
-### Error Handling
-
-Implement proper error handling for all API responses:
-
-```typescript
-const handleApiError = (error: any) => {
-  if (error.status === 400) {
-    // Handle validation errors
-    if (error.error === "Daily limit reached") {
-      showDailyLimitMessage();
-    }
-  } else if (error.status === 401) {
-    // Handle authentication errors
-    redirectToLogin();
-  } else if (error.status === 403) {
-    // Handle permission errors
-    showPermissionDeniedMessage();
-  }
-};
-```
-
-### State Management
-
-Consider the following state management patterns:
-
-1. **Optimistic Updates**: Update UI immediately for better UX
-2. **Cache Invalidation**: Invalidate moments cache when creating/updating
-3. **Background Refetching**: Keep data fresh with background updates
-4. **Error Recovery**: Provide retry mechanisms for failed requests
 
 ## Testing Scenarios
 
@@ -848,36 +1029,34 @@ Consider the following state management patterns:
 4. **Invalid cursor**: Should return 400 error
 5. **Large limit**: Should return 400 if limit > 100
 6. **Empty results**: Should return empty data array with `hasNextPage: false`
-7. **Daily limit**: Should prevent more than 5 moments per day
-8. **Ownership**: Should prevent users from modifying others' moments
-9. **Archiving**: Should soft delete moments instead of hard delete
+7. **Client ID lookup**: Should find moment by clientId or return 404
+8. **Offline sync**: Create with clientId, dismiss, resume sync by clientId
+9. **Enrichment idempotency**: Calling enrich multiple times should not re-process
+10. **Ownership**: Should prevent users from accessing others' moments
 
 ### Example Test Sequence
 
 ```
-1. GET /api/v1/moments?limit=5
+1. POST /moments (with clientId)
+   → Returns moment with id, clientId, null praise
+
+2. POST /moments/{id}/enrich
+   → Returns 200 (processing started)
+
+3. Poll POST /moments/{id}/enrich
+   → Returns moment with praise when ready
+
+4. GET /moments/by-client-id/{clientId}
+   → Returns same moment
+
+5. GET /moments?limit=5
    → Returns first 5 moments, hasNextPage: true
 
-2. GET /api/v1/moments?cursor=2024-01-15T10:30:00Z&limit=5
-   → Returns next 5 moments, hasNextPage: true
-
-3. GET /api/v1/moments?cursor=2024-01-10T08:15:00Z&limit=5
-   → Returns next 5 moments, hasNextPage: false (last page)
-
-4. POST /api/v1/moments (5th moment of the day)
-   → Success
-
-5. POST /api/v1/moments (6th moment of the day)
-   → 400 Bad Request - Daily limit reached
+6. GET /moments?cursor=2024-01-15T10:30:00Z&limit=5
+   → Returns next 5 moments
 ```
 
 ## Business Rules
-
-### Daily Limits
-
-- Users can submit a maximum of **5 moments per day**
-- Daily limit resets at midnight in the user's timezone
-- Attempting to exceed the limit returns a 400 error
 
 ### User Status
 
@@ -887,10 +1066,11 @@ Consider the following state management patterns:
 
 ### Moment Lifecycle
 
-1. **Created**: Moment is submitted and stored
-2. **Updated**: Favorite status can be toggled
-3. **Archived**: Moment is soft-deleted (not permanently removed)
-4. **Retrieved**: Only non-archived moments are returned in queries
+1. **Created**: Moment is submitted without enrichment
+2. **Enriched**: AI content (praise, tags, action) is added
+3. **Updated**: Favorite status can be toggled
+4. **Archived**: Moment is soft-deleted (not permanently removed)
+5. **Retrieved**: Only non-archived moments are returned in queries
 
 ### Data Validation
 
@@ -898,3 +1078,4 @@ Consider the following state management patterns:
 - **Timestamp format**: ISO 8601 date-time strings
 - **Timezone**: Standard timezone identifiers (e.g., "America/New_York")
 - **Cursor format**: Valid ISO timestamp for pagination
+- **Client ID format**: Valid UUID format (e.g., "550e8400-e29b-41d4-a716-446655440000")

@@ -1,4 +1,7 @@
 import Foundation
+import OSLog
+
+private let logger = Logger(subsystem: "ee.required.you-are-doing-great", category: "moment-detail")
 
 // MARK: - Moment Detail View Model
 // Adapts an existing Moment to the PraiseViewModelProtocol for display in detail sheet
@@ -63,6 +66,10 @@ final class MomentDetailViewModel: PraiseViewModelProtocol {
         moment.clientId
     }
 
+    var isNiceButtonDisabled: Bool {
+        false  // Detail view never disables button
+    }
+
     // MARK: - Initialization
 
     init(
@@ -73,6 +80,9 @@ final class MomentDetailViewModel: PraiseViewModelProtocol {
         self.moment = moment
         self.onFavoriteToggle = onFavoriteToggle
         self.onDelete = onDelete
+
+        logger.info("🔍 MomentDetailViewModel init - clientId: \(moment.clientId), serverId: \(moment.serverId ?? "nil"), isSynced: \(moment.isSynced)")
+        logger.info("🔍 Praise: \(moment.praise?.prefix(50) ?? "nil"), Tags: \(moment.tags)")
     }
 
     // MARK: - PraiseViewModelProtocol Methods

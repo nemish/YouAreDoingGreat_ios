@@ -13,7 +13,6 @@ struct JourneyView: View {
     private var itemsWithMarkers: [TimelineItem] {
         var result: [TimelineItem] = []
         let formatter = ISO8601DateFormatter()
-        let calendar = Calendar.current
 
         // Always add "You are here" marker at the top
         let todayMarker = DaySummaryDTO(

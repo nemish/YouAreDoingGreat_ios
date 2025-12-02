@@ -43,6 +43,11 @@ enum AppConfig {
         URL(string: "\(apiBaseURL)/moments/\(id)")
     }
 
+    /// Build URL for moment enrichment endpoint
+    static func enrichMomentURL(id: String) -> URL? {
+        URL(string: "\(apiBaseURL)/moments/\(id)/enrich")
+    }
+
     // MARK: - API Headers
 
     /// Header key for user authentication

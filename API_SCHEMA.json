@@ -11,7 +11,7 @@
     },
     "servers": [
         {
-            "url": "https://1test1.xyz/api/v1",
+            "url": "http://localhost:3000/api/v1",
             "description": "Production server"
         }
     ],
@@ -377,8 +377,8 @@
                 }
             },
             "post": {
-                "summary": "Create a new moment",
-                "description": "Submit a new moment for the authenticated user",
+                "summary": "Create a new moment (without AI enrichment)",
+                "description": "Create a moment record in the database without AI processing.\nThe moment is created immediately with undefined action, tags, and praise.\nUse POST /moments/{id}/enrich to add AI-generated content.\n",
                 "operationId": "createMoment",
                 "requestBody": {
                     "required": true,
@@ -401,7 +401,7 @@
                 },
                 "responses": {
                     "200": {
-                        "description": "Moment created successfully",
+                        "description": "Moment created successfully (without enrichment)",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -410,8 +410,8 @@
                             }
                         }
                     },
-                    "400": {
-                        "description": "Bad request (e.g., daily limit reached)",
+                    "401": {
+                        "description": "Unauthorized",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -420,8 +420,79 @@
                             }
                         }
                     },
+                    "500": {
+                        "description": "Internal server error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/moments/by-client-id/{clientId}": {
+            "get": {
+                "summary": "Get a moment by client ID",
+                "description": "Retrieve a specific moment by its client-generated UUID (used for offline sync correlation)",
+                "operationId": "getMomentByClientId",
+                "parameters": [
+                    {
+                        "name": "clientId",
+                        "in": "path",
+                        "description": "Client-generated UUID for the moment",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid",
+                            "example": "550e8400-e29b-41d4-a716-446655440000"
+                        }
+                    }
+                ],
+                "headers": {
+                    "x-user-id": {
+                        "description": "User ID for authentication",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Moment retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/GetMomentResponse"
+                                }
+                            }
+                        }
+                    },
                     "401": {
                         "description": "Unauthorized",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden - User does not own this moment",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Moment not found",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -685,6 +756,95 @@
                     }
                 }
             }
+        },
+        "/moments/{id}/enrich": {
+            "post": {
+                "summary": "Enrich a moment with AI-generated content",
+                "description": "Add AI-generated action category, tags, and praise to an existing moment.\nThis endpoint is idempotent - if the moment is already enriched, it returns\nthe existing data without calling the AI again. Checks daily limits before\nprocessing.\n",
+                "operationId": "enrichMoment",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Moment ID to enrich",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "headers": {
+                    "x-user-id": {
+                        "description": "User ID for authentication",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Moment enriched successfully (or already enriched)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/EnrichMomentResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request (e.g., daily limit reached)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden - User does not own this moment",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Moment not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
     },
     "components": {
@@ -734,6 +894,13 @@
                         "description": "Unique identifier for the moment",
                         "example": "moment_123"
                     },
+                    "clientId": {
+                        "type": "string",
+                        "format": "uuid",
+                        "nullable": true,
+                        "description": "Client-generated UUID for offline sync correlation",
+                        "example": "550e8400-e29b-41d4-a716-446655440000"
+                    },
                     "text": {
                         "type": "string",
                         "description": "The moment text content",
@@ -758,7 +925,8 @@
                     },
                     "action": {
                         "type": "string",
-                        "description": "Normalized action from the moment text",
+                        "nullable": true,
+                        "description": "Normalized action category (null until enriched)",
                         "example": "exercise"
                     },
                     "tags": {
@@ -766,7 +934,8 @@
                         "items": {
                             "type": "string"
                         },
-                        "description": "Tags extracted from the moment during normalization",
+                        "nullable": true,
+                        "description": "Tags from normalization (null/empty until enriched)",
                         "example": [
                             "milestone",
                             "writing",
@@ -775,7 +944,8 @@
                     },
                     "praise": {
                         "type": "string",
-                        "description": "Generated praise message for the moment",
+                        "nullable": true,
+                        "description": "AI-generated praise (null until enriched)",
                         "example": "Great job! You're making amazing progress!"
                     },
                     "isFavorite": {
@@ -797,6 +967,12 @@
                     "text"
                 ],
                 "properties": {
+                    "clientId": {
+                        "type": "string",
+                        "format": "uuid",
+                        "description": "Client-generated UUID for offline sync correlation. Server echoes this back in response.",
+                        "example": "550e8400-e29b-41d4-a716-446655440000"
+                    },
                     "text": {
                         "type": "string",
                         "description": "The moment text content",
@@ -881,6 +1057,17 @@
                         "type": "string",
                         "description": "Success message",
                         "example": "Moment archived"
+                    }
+                }
+            },
+            "EnrichMomentResponse": {
+                "type": "object",
+                "required": [
+                    "item"
+                ],
+                "properties": {
+                    "item": {
+                        "$ref": "#/components/schemas/Moment"
                     }
                 }
             },

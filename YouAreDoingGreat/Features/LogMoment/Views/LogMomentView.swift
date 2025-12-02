@@ -5,6 +5,7 @@ import SwiftUI
 
 struct LogMomentView: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.modelContext) private var modelContext
     @Binding var selectedTab: Int
     @State private var viewModel: LogMomentViewModel
     @FocusState private var isTextFieldFocused: Bool
@@ -293,6 +294,7 @@ struct LogMomentView: View {
                     }
 
                     praiseViewModel = PraiseViewModel(
+                        repository: SwiftDataMomentRepository(modelContext: modelContext),
                         momentText: momentText,
                         happenedAt: happenedAt,
                         timeAgoSeconds: viewModel.timeAgoSeconds,
