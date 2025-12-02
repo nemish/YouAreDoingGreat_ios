@@ -60,5 +60,13 @@ final class ViewModelFactory {
         let apiClient = makeAPIClient()
         return JourneyViewModel(apiClient: apiClient)
     }
+
+    // MARK: - Home ViewModel
+
+    func makeHomeViewModel() -> HomeViewModel {
+        let apiClient = makeAPIClient()
+        let userService = UserService(apiClient: apiClient)
+        return HomeViewModel(userService: userService)
+    }
 }
 

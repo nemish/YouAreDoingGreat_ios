@@ -8,6 +8,9 @@ struct HomeView: View {
     @Environment(\.modelContext) private var modelContext
     @AppStorage("hasCompletedFirstLog") private var hasCompletedFirstLog = false
 
+    // ViewModel
+    @State private var viewModel: HomeViewModel?
+
     // Breathing animation state
     @State private var breathingScale: CGFloat = 1.0
     @State private var breathingOpacity: Double = 1.0
@@ -53,6 +56,15 @@ struct HomeView: View {
                 VStack(spacing: 0) {
                     Spacer()
 
+                    // User Stats Card (above title)
+                    if let viewModel = viewModel,
+                       let stats = viewModel.userStats {
+                        UserStatsCard(stats: stats, whisper: viewModel.statsWhisper)
+                            .padding(.horizontal, 24)
+
+                        Spacer().frame(height: 32)
+                    }
+
                     // Title phrase - tap to cycle
                     Text(currentPhrase)
                         .font(.appTitle3)
@@ -97,8 +109,14 @@ struct HomeView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbarBackground(.hidden, for: .navigationBar)
             .onAppear {
+                if viewModel == nil {
+                    viewModel = ViewModelFactory(modelContext: modelContext).makeHomeViewModel()
+                }
                 selectRandomPhrase()
                 startBreathingAnimation()
+            }
+            .task {
+                await viewModel?.loadStats()
             }
         }
         .sheet(isPresented: $showLogMoment) {
