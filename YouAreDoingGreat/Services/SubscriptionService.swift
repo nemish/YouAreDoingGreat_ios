@@ -118,4 +118,13 @@ final class SubscriptionService {
             }
         }
     }
+
+    // MARK: - Preview Helpers
+
+    #if DEBUG
+    /// Set subscription state manually (for previews/testing only)
+    func setHasActiveSubscription(_ value: Bool) {
+        hasActiveSubscription = value
+    }
+    #endif
 }

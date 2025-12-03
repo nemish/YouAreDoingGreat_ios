@@ -43,7 +43,7 @@ final class ProfileViewModel {
     }
 
     var isPremium: Bool {
-        userProfile?.status == .premium
+        SubscriptionService.shared.hasActiveSubscription
     }
 
     var planDescription: String {

@@ -149,7 +149,56 @@ struct PaywallView: View {
                 .padding(.horizontal, 32)
             }
         }
-        .starfieldBackground()
+        .background {
+            ZStack {
+                // Cosmic linear gradient
+                LinearGradient(
+                    colors: [
+                        Color(red: 0.10, green: 0.12, blue: 0.18),
+                        Color(red: 0.06, green: 0.07, blue: 0.11)
+                    ],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+                .ignoresSafeArea()
+
+                // bg7 overlay
+                GeometryReader { geometry in
+                    Image("bg7")
+                        .resizable()
+                        .scaledToFill()
+                        .frame(width: geometry.size.width, height: geometry.size.height)
+                        .clipped()
+                }
+                .blendMode(.colorDodge)
+                .opacity(0.2)
+                .ignoresSafeArea()
+
+                // Top accent glow (purple)
+                RadialGradient(
+                    colors: [
+                        Color.appSecondary.opacity(0.2),
+                        Color.clear
+                    ],
+                    center: .top,
+                    startRadius: 0,
+                    endRadius: 400
+                )
+                .ignoresSafeArea()
+
+                // Subtle bottom accent (warm)
+                RadialGradient(
+                    colors: [
+                        Color.appPrimary.opacity(0.05),
+                        Color.clear
+                    ],
+                    center: .bottom,
+                    startRadius: 0,
+                    endRadius: 300
+                )
+                .ignoresSafeArea()
+            }
+        }
         .task {
             await viewModel.loadOfferings()
             await playEntranceAnimation()
@@ -320,26 +369,8 @@ struct PaywallView: View {
                         .font(.appHeadline)
                         .foregroundStyle(.white)
 
-                    // "save XX%" badge for annual
-                    if package.packageType == .annual, let monthly = viewModel.monthlyPackage {
-                        let monthlyCost = monthly.storeProduct.price as Decimal
-                        let annualCost = package.storeProduct.price as Decimal
-                        let monthlyCostAnnualized = monthlyCost * 12
-                        let savings = ((monthlyCostAnnualized - annualCost) / monthlyCostAnnualized) * 100
-                        let savingsInt = NSDecimalNumber(decimal: savings).intValue
-
-                        if savingsInt > 0 {
-                            Text("save \(savingsInt)%")
-                                .font(.system(size: 11, weight: .bold))
-                                .foregroundStyle(Color.appPrimary.opacity(0.8))
-                                .padding(.horizontal, 8)
-                                .padding(.vertical, 4)
-                                .background(
-                                    Capsule()
-                                        .fill(Color.appPrimary.opacity(0.2))
-                                )
-                        }
-                    }
+                    // "save XX%" badge for yearly subscription
+                    savingsBadge(for: package)
                 }
 
                 Spacer()
@@ -363,6 +394,33 @@ struct PaywallView: View {
             )
         }
         .buttonStyle(.plain)
+    }
+
+    // MARK: - Savings Badge
+
+    @ViewBuilder
+    private func savingsBadge(for package: Package) -> some View {
+        let isYearly = package.storeProduct.subscriptionPeriod?.unit == .year
+
+        if isYearly, let monthly = viewModel.monthlyPackage {
+            let monthlyCost = NSDecimalNumber(decimal: monthly.storeProduct.price).doubleValue
+            let annualCost = NSDecimalNumber(decimal: package.storeProduct.price).doubleValue
+            let monthlyCostAnnualized = monthlyCost * 12
+            let savings = ((monthlyCostAnnualized - annualCost) / monthlyCostAnnualized) * 100
+            let savingsInt = Int(savings.rounded())
+
+            if savingsInt > 0 {
+                Text("save \(savingsInt)%")
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundStyle(Color.appPrimary.opacity(0.8))
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(
+                        Capsule()
+                            .fill(Color.appPrimary.opacity(0.2))
+                    )
+            }
+        }
     }
 
     // MARK: - Animations

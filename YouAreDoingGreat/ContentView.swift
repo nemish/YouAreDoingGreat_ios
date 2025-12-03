@@ -15,6 +15,10 @@ struct ContentView: View {
     @State private var momentsViewModel: MomentsListViewModel?
     @State private var journeyViewModel: JourneyViewModel?
 
+    // Paywall presentation
+    private var paywallService = PaywallService.shared
+    @State private var paywallViewModel: PaywallViewModel?
+
     // Haptic feedback for tab switch
     private let tabFeedback = UIImpactFeedbackGenerator(style: .light)
 
@@ -79,6 +83,19 @@ struct ContentView: View {
             }
             if journeyViewModel == nil {
                 journeyViewModel = viewModelFactory.makeJourneyViewModel()
+            }
+            if paywallViewModel == nil {
+                paywallViewModel = viewModelFactory.makePaywallViewModel()
+            }
+        }
+        .fullScreenCover(isPresented: Binding(
+            get: { paywallService.shouldShowPaywall },
+            set: { paywallService.shouldShowPaywall = $0 }
+        )) {
+            if let viewModel = paywallViewModel {
+                PaywallView(viewModel: viewModel) {
+                    paywallService.dismissPaywall()
+                }
             }
         }
     }

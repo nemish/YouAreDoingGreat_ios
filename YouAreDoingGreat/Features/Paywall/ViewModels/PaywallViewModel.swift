@@ -36,10 +36,10 @@ final class PaywallViewModel {
         do {
             offerings = try await subscriptionService.fetchOfferings()
 
-            // Auto-select annual package (matches current hardcoded default)
-            if let annual = offerings?.current?.annual {
+            // Auto-select annual package by default
+            if let annual = annualPackage {
                 selectedPackage = annual
-            } else if let monthly = offerings?.current?.monthly {
+            } else if let monthly = monthlyPackage {
                 selectedPackage = monthly
             }
 
@@ -123,15 +123,28 @@ final class PaywallViewModel {
     // MARK: - Computed Properties
 
     var monthlyPackage: Package? {
-        offerings?.current?.monthly
+        // Try built-in monthly first, fallback to finding by subscription period
+        if let monthly = offerings?.current?.monthly {
+            return monthly
+        }
+        return offerings?.current?.availablePackages.first { package in
+            package.storeProduct.subscriptionPeriod?.unit == .month &&
+            package.storeProduct.subscriptionPeriod?.value == 1
+        }
     }
 
     var annualPackage: Package? {
-        offerings?.current?.annual
+        // Try built-in annual first, fallback to finding by subscription period
+        if let annual = offerings?.current?.annual {
+            return annual
+        }
+        return offerings?.current?.availablePackages.first { package in
+            package.storeProduct.subscriptionPeriod?.unit == .year
+        }
     }
 
     var hasOfferings: Bool {
-        offerings?.current != nil
+        offerings?.current != nil && (monthlyPackage != nil || annualPackage != nil)
     }
 
     // MARK: - Private Helpers
