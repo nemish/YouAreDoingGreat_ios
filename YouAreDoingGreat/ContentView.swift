@@ -10,6 +10,7 @@ import SwiftData
 
 struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.scenePhase) private var scenePhase
     @State private var selectedTab = 0
     @State private var momentsViewModel: MomentsListViewModel?
     @State private var journeyViewModel: JourneyViewModel?
@@ -63,6 +64,13 @@ struct ContentView: View {
         .tint(Color.appPrimary)
         .onChange(of: selectedTab) { _, _ in
             tabFeedback.impactOccurred()
+        }
+        .onChange(of: scenePhase) { oldPhase, newPhase in
+            if newPhase == .active {
+                Task {
+                    await SubscriptionService.shared.refreshSubscriptionStatus()
+                }
+            }
         }
         .animation(.easeInOut(duration: 0.2), value: selectedTab)
         .onAppear {

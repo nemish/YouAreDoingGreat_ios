@@ -7,10 +7,15 @@
 
 import SwiftUI
 import SwiftData
+import RevenueCat
 
 @main
 struct YouAreDoingGreatApp: App {
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
+
+    init() {
+        configureRevenueCat()
+    }
 
     var body: some Scene {
         WindowGroup {
@@ -43,6 +48,21 @@ struct YouAreDoingGreatApp: App {
     private func completeOnboarding() {
         withAnimation {
             hasCompletedOnboarding = true
+        }
+    }
+
+    private func configureRevenueCat() {
+        Purchases.logLevel = AppConfig.isDebugBuild ? .debug : .error
+
+        Purchases.configure(
+            with: .builder(withAPIKey: AppConfig.revenueCatAPIKey)
+                .with(appUserID: UserIDProvider.shared.userID)
+                .build()
+        )
+
+        // Refresh subscription status on app launch
+        Task { @MainActor in
+            await SubscriptionService.shared.refreshSubscriptionStatus()
         }
     }
 }

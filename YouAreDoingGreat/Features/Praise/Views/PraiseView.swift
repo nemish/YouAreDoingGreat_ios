@@ -36,6 +36,7 @@ struct PraiseContentView<ViewModel: PraiseViewModelProtocol>: View {
     // Paywall state
     @State private var paywallService = PaywallService.shared
     @State private var showPaywall = false
+    @State private var paywallViewModel = PaywallViewModel(subscriptionService: SubscriptionService.shared)
 
     // Highlight service
     @State private var highlightService = HighlightService.shared
@@ -162,7 +163,7 @@ struct PraiseContentView<ViewModel: PraiseViewModelProtocol>: View {
             viewModel.cancelPolling()
             onDismiss()
         }) {
-            PaywallView {
+            PaywallView(viewModel: paywallViewModel) {
                 // This closure only runs for programmatic dismissal (button taps)
                 showPaywall = false
             }
