@@ -14,6 +14,7 @@ struct ContentView: View {
     @State private var selectedTab = 0
     @State private var momentsViewModel: MomentsListViewModel?
     @State private var journeyViewModel: JourneyViewModel?
+    @State private var profileViewModel: ProfileViewModel?
 
     // Paywall presentation
     private var paywallService = PaywallService.shared
@@ -64,6 +65,21 @@ struct ContentView: View {
                 Label("Journey", systemImage: "chart.line.uptrend.xyaxis")
             }
             .tag(2)
+
+            Group {
+                if let viewModel = profileViewModel {
+                    ProfileView(viewModel: viewModel)
+                } else {
+                    Color.clear
+                        .onAppear {
+                            profileViewModel = viewModelFactory.makeProfileViewModel()
+                        }
+                }
+            }
+            .tabItem {
+                Label("Profile", systemImage: "person.fill")
+            }
+            .tag(3)
         }
         .tint(Color.appPrimary)
         .onChange(of: selectedTab) { _, _ in
@@ -83,6 +99,9 @@ struct ContentView: View {
             }
             if journeyViewModel == nil {
                 journeyViewModel = viewModelFactory.makeJourneyViewModel()
+            }
+            if profileViewModel == nil {
+                profileViewModel = viewModelFactory.makeProfileViewModel()
             }
             if paywallViewModel == nil {
                 paywallViewModel = viewModelFactory.makePaywallViewModel()

@@ -5,7 +5,6 @@ import SwiftUI
 
 struct HomeView: View {
     @Binding var selectedTab: Int
-    @Environment(\.modelContext) private var modelContext
     @AppStorage("hasCompletedFirstLog") private var hasCompletedFirstLog = false
 
     // Breathing animation state
@@ -14,7 +13,6 @@ struct HomeView: View {
 
     // Navigation state
     @State private var showLogMoment = false
-    @State private var showProfile = false
 
     // Title phrases - tap to cycle
     private let titlePhrases = [
@@ -82,18 +80,7 @@ struct HomeView: View {
                     .padding(.bottom, 40)
                 }
             }
-            .starfieldBackground(isPaused: showLogMoment || showProfile)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button {
-                        showProfile = true
-                    } label: {
-                        Image(systemName: "person")
-                            .font(.system(size: 20))
-                            .foregroundStyle(.textSecondary)
-                    }
-                }
-            }
+            .starfieldBackground(isPaused: showLogMoment)
             .navigationBarTitleDisplayMode(.inline)
             .toolbarBackground(.hidden, for: .navigationBar)
             .onAppear {
@@ -110,11 +97,6 @@ struct HomeView: View {
             }
             .presentationDetents([.large])
             .presentationDragIndicator(.hidden)
-        }
-        .fullScreenCover(isPresented: $showProfile) {
-            ProfileView(
-                viewModel: ViewModelFactory(modelContext: modelContext).makeProfileViewModel()
-            )
         }
     }
     

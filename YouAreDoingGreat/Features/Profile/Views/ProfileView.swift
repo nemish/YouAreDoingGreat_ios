@@ -4,7 +4,6 @@ import SwiftUI
 // Full-screen profile/settings view with account info, stats, subscription, and support
 
 struct ProfileView: View {
-    @Environment(\.dismiss) private var dismiss
     @State private var viewModel: ProfileViewModel
 
     // Observe subscription service for real-time premium status updates
@@ -63,17 +62,6 @@ struct ProfileView: View {
                 }
             }
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button {
-                        dismiss()
-                    } label: {
-                        Image(systemName: "xmark")
-                            .font(.system(size: 16, weight: .medium))
-                            .foregroundStyle(.textSecondary)
-                    }
-                }
-            }
             .toolbarBackground(.hidden, for: .navigationBar)
             .task {
                 await viewModel.loadProfile()
@@ -289,7 +277,6 @@ struct ProfileView: View {
                 if !isPremium {
                     PrimaryButton(title: "Upgrade to Premium") {
                         viewModel.showPaywall()
-                        dismiss()
                     }
                 }
             }
