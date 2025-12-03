@@ -106,7 +106,7 @@ final class SubscriptionService {
 
     /// Update subscription state from customer info
     private func updateSubscriptionState(from customerInfo: CustomerInfo) {
-        let isPremium = customerInfo.entitlements["premium"]?.isActive == true
+        let isPremium = customerInfo.entitlements["Premium"]?.isActive == true
 
         if hasActiveSubscription != isPremium {
             hasActiveSubscription = isPremium
