@@ -74,7 +74,7 @@ struct PaywallView: View {
                     VStack(spacing: 32) {
                         Text("You've been doing the hard part already")
                             .font(.appTitle2)
-                            .foregroundStyle(Color(red: 0.75, green: 0.85, blue: 1.0)) // blue-200
+                            .foregroundStyle(.textPrimary)
                             .multilineTextAlignment(.center)
                             .opacity(showContent ? 1 : 0)
 
@@ -98,7 +98,7 @@ struct PaywallView: View {
                 // Plans and CTA section
                 VStack(spacing: 24) {
                     // Header
-                    Text("Unlock up to 50 praises per day")
+                    Text("Unlock up to 30 praises per day")
                         .font(.appHeadline)
                         .foregroundStyle(Color(red: 0.75, green: 0.85, blue: 1.0))
                         .multilineTextAlignment(.center)
