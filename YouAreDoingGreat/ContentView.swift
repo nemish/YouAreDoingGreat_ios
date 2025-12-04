@@ -19,6 +19,7 @@ struct ContentView: View {
     // Paywall presentation
     private var paywallService = PaywallService.shared
     @State private var paywallViewModel: PaywallViewModel?
+    @State private var animatePremiumBadge = false
 
     // Haptic feedback for tab switch
     private let tabFeedback = UIImpactFeedbackGenerator(style: .light)
@@ -30,7 +31,7 @@ struct ContentView: View {
 
     var body: some View {
         TabView(selection: $selectedTab) {
-            HomeView(selectedTab: $selectedTab)
+            HomeView(selectedTab: $selectedTab, animatePremiumBadge: animatePremiumBadge)
                 .tabItem {
                     Label("Home", systemImage: "house.fill")
                 }
@@ -114,6 +115,12 @@ struct ContentView: View {
             if let viewModel = paywallViewModel {
                 PaywallView(viewModel: viewModel) {
                     paywallService.dismissPaywall()
+                    // Navigate to Home and animate premium badge after successful purchase
+                    if SubscriptionService.shared.hasActiveSubscription {
+                        selectedTab = 0
+                        // Toggle to trigger animation
+                        animatePremiumBadge.toggle()
+                    }
                 }
             }
         }

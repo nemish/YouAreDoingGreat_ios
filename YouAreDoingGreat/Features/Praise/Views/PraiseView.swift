@@ -159,7 +159,11 @@ struct PraiseContentView<ViewModel: PraiseViewModelProtocol>: View {
             // This handles both programmatic dismissal and interactive gestures
             paywallService.dismissPaywall()
 
-            // Navigate back to home view
+            // Navigate to Home tab after successful purchase
+            if SubscriptionService.shared.hasActiveSubscription {
+                selectedTab = 0
+            }
+
             viewModel.cancelPolling()
             onDismiss()
         }) {
