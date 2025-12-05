@@ -10,9 +10,16 @@ import SwiftData
 
 struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.scenePhase) private var scenePhase
     @State private var selectedTab = 0
     @State private var momentsViewModel: MomentsListViewModel?
     @State private var journeyViewModel: JourneyViewModel?
+    @State private var profileViewModel: ProfileViewModel?
+
+    // Paywall presentation
+    private var paywallService = PaywallService.shared
+    @State private var paywallViewModel: PaywallViewModel?
+    @State private var animatePremiumBadge = false
 
     // Haptic feedback for tab switch
     private let tabFeedback = UIImpactFeedbackGenerator(style: .light)
@@ -24,7 +31,7 @@ struct ContentView: View {
 
     var body: some View {
         TabView(selection: $selectedTab) {
-            HomeView(selectedTab: $selectedTab)
+            HomeView(selectedTab: $selectedTab, animatePremiumBadge: animatePremiumBadge)
                 .tabItem {
                     Label("Home", systemImage: "house.fill")
                 }
@@ -59,10 +66,32 @@ struct ContentView: View {
                 Label("Journey", systemImage: "chart.line.uptrend.xyaxis")
             }
             .tag(2)
+
+            Group {
+                if let viewModel = profileViewModel {
+                    ProfileView(viewModel: viewModel)
+                } else {
+                    Color.clear
+                        .onAppear {
+                            profileViewModel = viewModelFactory.makeProfileViewModel()
+                        }
+                }
+            }
+            .tabItem {
+                Label("Profile", systemImage: "person.fill")
+            }
+            .tag(3)
         }
         .tint(Color.appPrimary)
         .onChange(of: selectedTab) { _, _ in
             tabFeedback.impactOccurred()
+        }
+        .onChange(of: scenePhase) { oldPhase, newPhase in
+            if newPhase == .active {
+                Task {
+                    await SubscriptionService.shared.refreshSubscriptionStatus()
+                }
+            }
         }
         .animation(.easeInOut(duration: 0.2), value: selectedTab)
         .onAppear {
@@ -71,6 +100,28 @@ struct ContentView: View {
             }
             if journeyViewModel == nil {
                 journeyViewModel = viewModelFactory.makeJourneyViewModel()
+            }
+            if profileViewModel == nil {
+                profileViewModel = viewModelFactory.makeProfileViewModel()
+            }
+            if paywallViewModel == nil {
+                paywallViewModel = viewModelFactory.makePaywallViewModel()
+            }
+        }
+        .fullScreenCover(isPresented: Binding(
+            get: { paywallService.shouldShowPaywall },
+            set: { paywallService.shouldShowPaywall = $0 }
+        )) {
+            if let viewModel = paywallViewModel {
+                PaywallView(viewModel: viewModel) {
+                    paywallService.dismissPaywall()
+                    // Navigate to Home and animate premium badge after successful purchase
+                    if SubscriptionService.shared.hasActiveSubscription {
+                        selectedTab = 0
+                        // Toggle to trigger animation
+                        animatePremiumBadge.toggle()
+                    }
+                }
             }
         }
     }

@@ -317,7 +317,8 @@ struct LogMomentView: View {
             // This handles both programmatic dismissal and interactive gestures
             PaywallService.shared.dismissPaywall()
         }) {
-            PaywallView {
+            let factory = ViewModelFactory(modelContext: modelContext)
+            PaywallView(viewModel: factory.makePaywallViewModel()) {
                 // This closure only runs for programmatic dismissal (button taps)
                 showPaywall = false
             }

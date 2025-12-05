@@ -60,5 +60,11 @@ final class ViewModelFactory {
         let apiClient = makeAPIClient()
         return JourneyViewModel(apiClient: apiClient)
     }
+
+    // MARK: - Paywall ViewModel
+
+    func makePaywallViewModel() -> PaywallViewModel {
+        PaywallViewModel(subscriptionService: SubscriptionService.shared)
+    }
 }
 

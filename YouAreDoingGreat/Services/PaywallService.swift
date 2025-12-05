@@ -49,6 +49,12 @@ final class PaywallService {
     /// Check if user should see paywall (called before logging moment)
     func shouldBlockMomentCreation() -> Bool {
         checkIfNewDay()
+
+        // Premium users bypass daily limit
+        if SubscriptionService.shared.hasActiveSubscription {
+            return false
+        }
+
         return isDailyLimitReached
     }
 

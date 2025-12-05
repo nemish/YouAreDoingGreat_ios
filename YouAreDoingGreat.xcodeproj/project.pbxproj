@@ -6,6 +6,10 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		9F8DBA342EDFA56A00EE086B /* RevenueCat in Frameworks */ = {isa = PBXBuildFile; productRef = 9F8DBA332EDFA56A00EE086B /* RevenueCat */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXFileReference section */
 		9F85065B2ECBC90C000A97E7 /* YouAreDoingGreat.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = YouAreDoingGreat.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -36,6 +40,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				9F8DBA342EDFA56A00EE086B /* RevenueCat in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -46,6 +51,7 @@
 			isa = PBXGroup;
 			children = (
 				9F85065D2ECBC90C000A97E7 /* YouAreDoingGreat */,
+				9F8DBA322EDFA56A00EE086B /* Frameworks */,
 				9F85065C2ECBC90C000A97E7 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -56,6 +62,13 @@
 				9F85065B2ECBC90C000A97E7 /* YouAreDoingGreat.app */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		9F8DBA322EDFA56A00EE086B /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -78,6 +91,7 @@
 			);
 			name = YouAreDoingGreat;
 			packageProductDependencies = (
+				9F8DBA332EDFA56A00EE086B /* RevenueCat */,
 			);
 			productName = YouAreDoingGreat;
 			productReference = 9F85065B2ECBC90C000A97E7 /* YouAreDoingGreat.app */;
@@ -107,6 +121,9 @@
 			);
 			mainGroup = 9F8506522ECBC90C000A97E7;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				9F8DBA2D2EDFA3F000EE086B /* XCRemoteSwiftPackageReference "purchases-ios-spm" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 9F85065C2ECBC90C000A97E7 /* Products */;
 			projectDirPath = "";
@@ -347,6 +364,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		9F8DBA2D2EDFA3F000EE086B /* XCRemoteSwiftPackageReference "purchases-ios-spm" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/RevenueCat/purchases-ios-spm";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 5.49.2;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		9F8DBA332EDFA56A00EE086B /* RevenueCat */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 9F8DBA2D2EDFA3F000EE086B /* XCRemoteSwiftPackageReference "purchases-ios-spm" */;
+			productName = RevenueCat;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 9F8506532ECBC90C000A97E7 /* Project object */;
 }

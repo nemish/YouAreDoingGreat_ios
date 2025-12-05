@@ -1,4 +1,5 @@
 import SwiftUI
+import RevenueCat
 
 // MARK: - Paywall View
 // Full-screen modal shown when daily limit is reached
@@ -25,14 +26,19 @@ struct PaywallView: View {
     @State private var showContent = false
     @State private var showQuote = false
     @State private var showPlans = false
-    @State private var selectedPlan: PlanOption = .yearly
     @State private var pulseAnimation = false
+    @State private var viewModel: PaywallViewModel
 
     let onDismiss: () -> Void
 
     // Random quote selection
     private let randomQuote = quotes.randomElement() ?? quotes[0]
     private let isDailyLimitReached = PaywallService.shared.isDailyLimitReached
+
+    init(viewModel: PaywallViewModel, onDismiss: @escaping () -> Void) {
+        self.viewModel = viewModel
+        self.onDismiss = onDismiss
+    }
 
     var body: some View {
         ScrollView {
@@ -68,7 +74,7 @@ struct PaywallView: View {
                     VStack(spacing: 32) {
                         Text("You've been doing the hard part already")
                             .font(.appTitle2)
-                            .foregroundStyle(Color(red: 0.75, green: 0.85, blue: 1.0)) // blue-200
+                            .foregroundStyle(.textPrimary)
                             .multilineTextAlignment(.center)
                             .opacity(showContent ? 1 : 0)
 
@@ -92,7 +98,7 @@ struct PaywallView: View {
                 // Plans and CTA section
                 VStack(spacing: 24) {
                     // Header
-                    Text("Unlock up to 50 praises per day")
+                    Text("Unlock up to 30 praises per day")
                         .font(.appHeadline)
                         .foregroundStyle(Color(red: 0.75, green: 0.85, blue: 1.0))
                         .multilineTextAlignment(.center)
@@ -103,10 +109,14 @@ struct PaywallView: View {
                         .opacity(showPlans ? 1 : 0)
 
                     // Premium CTA
-                    PrimaryButton(title: "Start 7-Day Free Trial", showGlow: pulseAnimation) {
+                    PrimaryButton(
+                        title: viewModel.isPurchasing ? "Processing..." : "Start 7-Day Free Trial",
+                        showGlow: !viewModel.isPurchasing && pulseAnimation
+                    ) {
                         UIImpactFeedbackGenerator(style: .medium).impactOccurred()
                         handleUpgrade()
                     }
+                    .disabled(viewModel.isPurchasing || viewModel.isRestoring || !viewModel.hasOfferings)
                     .opacity(showPlans ? 1 : 0)
 
                     // Footer links
@@ -125,12 +135,13 @@ struct PaywallView: View {
                             .foregroundStyle(.white.opacity(0.5))
                         }
 
-                        Button("Restore purchases") {
+                        Button(viewModel.isRestoring ? "Restoring..." : "Restore purchases") {
                             UIImpactFeedbackGenerator(style: .light).impactOccurred()
                             handleRestorePurchases()
                         }
                         .font(.appFootnote)
                         .foregroundStyle(.white.opacity(0.5))
+                        .disabled(viewModel.isPurchasing || viewModel.isRestoring)
                     }
                     .opacity(showPlans ? 1 : 0)
                     .padding(.bottom, 20)
@@ -138,8 +149,58 @@ struct PaywallView: View {
                 .padding(.horizontal, 32)
             }
         }
-        .starfieldBackground()
+        .background {
+            ZStack {
+                // Cosmic linear gradient
+                LinearGradient(
+                    colors: [
+                        Color(red: 0.10, green: 0.12, blue: 0.18),
+                        Color(red: 0.06, green: 0.07, blue: 0.11)
+                    ],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+                .ignoresSafeArea()
+
+                // bg7 overlay
+                GeometryReader { geometry in
+                    Image("bg7")
+                        .resizable()
+                        .scaledToFill()
+                        .frame(width: geometry.size.width, height: geometry.size.height)
+                        .clipped()
+                }
+                .blendMode(.colorDodge)
+                .opacity(0.2)
+                .ignoresSafeArea()
+
+                // Top accent glow (purple)
+                RadialGradient(
+                    colors: [
+                        Color.appSecondary.opacity(0.2),
+                        Color.clear
+                    ],
+                    center: .top,
+                    startRadius: 0,
+                    endRadius: 400
+                )
+                .ignoresSafeArea()
+
+                // Subtle bottom accent (warm)
+                RadialGradient(
+                    colors: [
+                        Color.appPrimary.opacity(0.05),
+                        Color.clear
+                    ],
+                    center: .bottom,
+                    startRadius: 0,
+                    endRadius: 300
+                )
+                .ignoresSafeArea()
+            }
+        }
         .task {
+            await viewModel.loadOfferings()
             await playEntranceAnimation()
             startPulseAnimation()
         }
@@ -147,6 +208,55 @@ struct PaywallView: View {
             // Safety measure: Always clear service flag when view disappears
             // This ensures the flag is cleared even if parent's onDismiss fails
             PaywallService.shared.dismissPaywall()
+        }
+        .overlay {
+            if viewModel.isLoading {
+                ZStack {
+                    Color.black.opacity(0.6)
+                    VStack(spacing: 16) {
+                        ProgressView()
+                            .scaleEffect(1.5)
+                            .tint(.appPrimary)
+                        Text("Loading subscription options...")
+                            .font(.appBody)
+                            .foregroundStyle(.white)
+                    }
+                }
+                .ignoresSafeArea()
+            }
+        }
+        .overlay {
+            if let errorMessage = viewModel.errorMessage {
+                ZStack {
+                    Color.black.opacity(0.8)
+                    VStack(spacing: 20) {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .font(.system(size: 48))
+                            .foregroundStyle(.appPrimary)
+
+                        Text("Oops, something went wrong")
+                            .font(.appTitle2)
+                            .foregroundStyle(.white)
+                            .multilineTextAlignment(.center)
+
+                        Text(errorMessage)
+                            .font(.appBody)
+                            .foregroundStyle(.white.opacity(0.7))
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal, 32)
+
+                        PrimaryButton(title: "Try Again") {
+                            viewModel.clearError()
+                            Task {
+                                await viewModel.loadOfferings()
+                            }
+                        }
+                        .padding(.horizontal, 32)
+                    }
+                    .padding(.vertical, 40)
+                }
+                .ignoresSafeArea()
+            }
         }
     }
 
@@ -214,23 +324,27 @@ struct PaywallView: View {
     private var planSelection: some View {
         VStack(spacing: 12) {
             // Monthly plan
-            planOption(
-                plan: .monthly,
-                isSelected: selectedPlan == .monthly
-            )
+            if let monthly = viewModel.monthlyPackage {
+                packageOption(
+                    package: monthly,
+                    isSelected: viewModel.selectedPackage?.identifier == monthly.identifier
+                )
+            }
 
             // Yearly plan
-            planOption(
-                plan: .yearly,
-                isSelected: selectedPlan == .yearly
-            )
+            if let annual = viewModel.annualPackage {
+                packageOption(
+                    package: annual,
+                    isSelected: viewModel.selectedPackage?.identifier == annual.identifier
+                )
+            }
         }
     }
 
-    private func planOption(plan: PlanOption, isSelected: Bool) -> some View {
+    private func packageOption(package: Package, isSelected: Bool) -> some View {
         Button {
             UIImpactFeedbackGenerator(style: .light).impactOccurred()
-            selectedPlan = plan
+            viewModel.selectPackage(package)
         } label: {
             HStack {
                 // Left: Radio button + Label
@@ -251,28 +365,18 @@ struct PaywallView: View {
                         }
                     }
 
-                    Text(plan.label)
+                    Text(package.storeProduct.localizedTitle)
                         .font(.appHeadline)
                         .foregroundStyle(.white)
 
-                    // "save 20%" badge for yearly
-                    if plan == .yearly {
-                        Text("save 20%")
-                            .font(.system(size: 11, weight: .bold))
-                            .foregroundStyle(Color.appPrimary.opacity(0.8))
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 4)
-                            .background(
-                                Capsule()
-                                    .fill(Color.appPrimary.opacity(0.2))
-                            )
-                    }
+                    // "save XX%" badge for yearly subscription
+                    savingsBadge(for: package)
                 }
 
                 Spacer()
 
                 // Right: Price
-                Text(plan.priceDisplay)
+                Text(package.storeProduct.localizedPriceString)
                     .font(.appHeadline)
                     .foregroundStyle(.white)
             }
@@ -290,6 +394,33 @@ struct PaywallView: View {
             )
         }
         .buttonStyle(.plain)
+    }
+
+    // MARK: - Savings Badge
+
+    @ViewBuilder
+    private func savingsBadge(for package: Package) -> some View {
+        let isYearly = package.storeProduct.subscriptionPeriod?.unit == .year
+
+        if isYearly, let monthly = viewModel.monthlyPackage {
+            let monthlyCost = NSDecimalNumber(decimal: monthly.storeProduct.price).doubleValue
+            let annualCost = NSDecimalNumber(decimal: package.storeProduct.price).doubleValue
+            let monthlyCostAnnualized = monthlyCost * 12
+            let savings = ((monthlyCostAnnualized - annualCost) / monthlyCostAnnualized) * 100
+            let savingsInt = Int(savings.rounded())
+
+            if savingsInt > 0 {
+                Text("save \(savingsInt)%")
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundStyle(Color.appPrimary.opacity(0.8))
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(
+                        Capsule()
+                            .fill(Color.appPrimary.opacity(0.2))
+                    )
+            }
+        }
     }
 
     // MARK: - Animations
@@ -323,17 +454,37 @@ struct PaywallView: View {
     // MARK: - Actions
 
     private func handleUpgrade() {
-        // TODO: Implement StoreKit integration with selected plan
-        print("Selected plan: \(selectedPlan)")
-        // For now, just reset the limit for testing
-        PaywallService.shared.resetDailyLimit()
-        dismiss()
-        onDismiss()
+        guard !viewModel.isPurchasing else { return }
+
+        Task {
+            let success = await viewModel.purchaseSelectedPackage()
+
+            if success {
+                UINotificationFeedbackGenerator().notificationOccurred(.success)
+                PaywallService.shared.resetDailyLimit()
+                dismiss()
+                onDismiss()
+            } else if viewModel.errorMessage != nil {
+                UINotificationFeedbackGenerator().notificationOccurred(.error)
+            }
+        }
     }
 
     private func handleRestorePurchases() {
-        // TODO: Implement StoreKit restore purchases
-        print("Restore purchases tapped")
+        guard !viewModel.isRestoring else { return }
+
+        Task {
+            let success = await viewModel.restorePurchases()
+
+            if success {
+                UINotificationFeedbackGenerator().notificationOccurred(.success)
+                PaywallService.shared.resetDailyLimit()
+                dismiss()
+                onDismiss()
+            } else if viewModel.errorMessage != nil {
+                UINotificationFeedbackGenerator().notificationOccurred(.error)
+            }
+        }
     }
 }
 
@@ -361,7 +512,9 @@ enum PlanOption: String {
 // MARK: - Preview
 
 #Preview("Paywall") {
-    PaywallView {
+    PaywallView(
+        viewModel: PaywallViewModel(subscriptionService: SubscriptionService.shared)
+    ) {
         print("Dismissed")
     }
     .preferredColorScheme(.dark)
@@ -371,7 +524,9 @@ enum PlanOption: String {
     let service = PaywallService.shared
     service.markDailyLimitReached()
 
-    return PaywallView {
+    return PaywallView(
+        viewModel: PaywallViewModel(subscriptionService: SubscriptionService.shared)
+    ) {
         print("Dismissed")
         service.resetDailyLimit()
     }

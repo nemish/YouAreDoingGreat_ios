@@ -4,11 +4,17 @@ import SwiftUI
 // Full-screen profile/settings view with account info, stats, subscription, and support
 
 struct ProfileView: View {
-    @Environment(\.dismiss) private var dismiss
     @State private var viewModel: ProfileViewModel
+
+    // Observe subscription service for real-time premium status updates
+    private var subscriptionService = SubscriptionService.shared
 
     init(viewModel: ProfileViewModel) {
         _viewModel = State(initialValue: viewModel)
+    }
+
+    private var isPremium: Bool {
+        subscriptionService.hasActiveSubscription
     }
 
     var body: some View {
@@ -56,17 +62,6 @@ struct ProfileView: View {
                 }
             }
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button {
-                        dismiss()
-                    } label: {
-                        Image(systemName: "xmark")
-                            .font(.system(size: 16, weight: .medium))
-                            .foregroundStyle(.textSecondary)
-                    }
-                }
-            }
             .toolbarBackground(.hidden, for: .navigationBar)
             .task {
                 await viewModel.loadProfile()
@@ -257,18 +252,18 @@ struct ProfileView: View {
             VStack(spacing: 12) {
                 HStack {
                     VStack(alignment: .leading, spacing: 4) {
-                        Text(viewModel.isPremium ? "Premium" : "Free Plan")
+                        Text(isPremium ? "Premium" : "Free Plan")
                             .font(.appHeadline)
                             .foregroundStyle(.textPrimary)
 
-                        Text(viewModel.planDescription)
+                        Text(isPremium ? "Enjoy 50 moments per day and advanced analytics" : "Limited to 3 moments per day")
                             .font(.appFootnote)
                             .foregroundStyle(.textSecondary)
                     }
 
                     Spacer()
 
-                    if viewModel.isPremium {
+                    if isPremium {
                         Image(systemName: "crown.fill")
                             .foregroundStyle(.appPrimary)
                     }
@@ -279,10 +274,9 @@ struct ProfileView: View {
                         .fill(Color.white.opacity(0.08))
                 )
 
-                if !viewModel.isPremium {
+                if !isPremium {
                     PrimaryButton(title: "Upgrade to Premium") {
                         viewModel.showPaywall()
-                        dismiss()
                     }
                 }
             }
@@ -343,6 +337,30 @@ struct ProfileView: View {
                 .buttonStyle(.plain)
                 .disabled(viewModel.isClearingDatabase)
                 .opacity(viewModel.isClearingDatabase ? 0.5 : 1.0)
+
+                Button {
+                    SubscriptionService.shared.setHasActiveSubscription(true)
+                } label: {
+                    settingsRow(
+                        icon: "crown.fill",
+                        title: "Simulate Premium",
+                        subtitle: "Toggle premium state for testing"
+                    )
+                }
+                .buttonStyle(.plain)
+
+                Button {
+                    Task {
+                        await SubscriptionService.shared.refreshSubscriptionStatus()
+                    }
+                } label: {
+                    settingsRow(
+                        icon: "arrow.clockwise",
+                        title: "Refresh Subscription",
+                        subtitle: "Re-fetch status from RevenueCat"
+                    )
+                }
+                .buttonStyle(.plain)
             }
         }
     }
@@ -410,16 +428,17 @@ struct ProfileView: View {
 
 // MARK: - Preview
 
-#Preview("Profile View") {
+private func makePreviewViewModel() -> ProfileViewModel {
     let apiClient = DefaultAPIClient()
     let userService = UserService(apiClient: apiClient)
     let viewModel = ProfileViewModel(userService: userService)
 
     // Mock data for preview
+    // Note: isPremium is based on SubscriptionService.shared.hasActiveSubscription
     viewModel.userProfile = UserDTO(
         id: "123",
         userId: "user_1234567890abcdef",
-        status: .paywallNeeded
+        status: .newcomer
     )
     viewModel.userStats = UserStatsDTO(
         totalMoments: 127,
@@ -430,30 +449,21 @@ struct ProfileView: View {
         lastMomentDate: "2025-11-28"
     )
 
-    return ProfileView(viewModel: viewModel)
+    return viewModel
+}
+
+#Preview("Profile View") {
+    ProfileView(viewModel: makePreviewViewModel())
         .preferredColorScheme(.dark)
 }
 
 #Preview("Profile View - Premium") {
-    let apiClient = DefaultAPIClient()
-    let userService = UserService(apiClient: apiClient)
-    let viewModel = ProfileViewModel(userService: userService)
-
-    // Mock premium user
-    viewModel.userProfile = UserDTO(
-        id: "123",
-        userId: "user_1234567890abcdef",
-        status: .premium
-    )
-    viewModel.userStats = UserStatsDTO(
-        totalMoments: 450,
-        momentsToday: 12,
-        momentsYesterday: 15,
-        currentStreak: 28,
-        longestStreak: 45,
-        lastMomentDate: "2025-11-28"
-    )
-
-    return ProfileView(viewModel: viewModel)
+    // Note: To preview premium state, SubscriptionService.shared.hasActiveSubscription
+    // needs to be true (requires actual subscription or mock)
+    ProfileView(viewModel: makePreviewViewModel())
         .preferredColorScheme(.dark)
+        .onAppear {
+            // For preview purposes, manually set premium state
+            SubscriptionService.shared.setHasActiveSubscription(true)
+        }
 }

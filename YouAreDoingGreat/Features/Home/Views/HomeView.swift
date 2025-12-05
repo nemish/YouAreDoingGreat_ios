@@ -5,8 +5,17 @@ import SwiftUI
 
 struct HomeView: View {
     @Binding var selectedTab: Int
-    @Environment(\.modelContext) private var modelContext
     @AppStorage("hasCompletedFirstLog") private var hasCompletedFirstLog = false
+    var animatePremiumBadge: Bool = false
+
+    // Premium status
+    private var isPremium: Bool {
+        SubscriptionService.shared.hasActiveSubscription
+    }
+
+    // Premium badge animation
+    @State private var premiumBadgeGlow: CGFloat = 0
+    @State private var shouldAnimatePremiumBadge = false
 
     // Breathing animation state
     @State private var breathingScale: CGFloat = 1.0
@@ -14,7 +23,6 @@ struct HomeView: View {
 
     // Navigation state
     @State private var showLogMoment = false
-    @State private var showProfile = false
 
     // Title phrases - tap to cycle
     private let titlePhrases = [
@@ -82,23 +90,22 @@ struct HomeView: View {
                     .padding(.bottom, 40)
                 }
             }
-            .starfieldBackground(isPaused: showLogMoment || showProfile)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button {
-                        showProfile = true
-                    } label: {
-                        Image(systemName: "person")
-                            .font(.system(size: 20))
-                            .foregroundStyle(.textSecondary)
-                    }
-                }
-            }
+            .starfieldBackground(isPaused: showLogMoment)
             .navigationBarTitleDisplayMode(.inline)
             .toolbarBackground(.hidden, for: .navigationBar)
+            .overlay(alignment: .topTrailing) {
+                premiumBadge
+                    .padding(.top, 8)
+                    .padding(.trailing, 16)
+            }
             .onAppear {
                 selectRandomPhrase()
                 startBreathingAnimation()
+            }
+            .onChange(of: animatePremiumBadge) { _, newValue in
+                if newValue && isPremium {
+                    startPremiumBadgePulse()
+                }
             }
         }
         .sheet(isPresented: $showLogMoment) {
@@ -110,11 +117,6 @@ struct HomeView: View {
             }
             .presentationDetents([.large])
             .presentationDragIndicator(.hidden)
-        }
-        .fullScreenCover(isPresented: $showProfile) {
-            ProfileView(
-                viewModel: ViewModelFactory(modelContext: modelContext).makeProfileViewModel()
-            )
         }
     }
     
@@ -138,6 +140,53 @@ struct HomeView: View {
         }
         .frame(height: 60)
         .padding(.top, 8)
+    }
+
+    @ViewBuilder
+    private var premiumBadge: some View {
+        if isPremium {
+            HStack(alignment: .center, spacing: 4) {
+                Image(systemName: "star.fill")
+                    .font(.system(size: 12))
+                Text("Premium")
+                    .font(.appFootnote)
+            }
+            .foregroundStyle(.textPrimary.opacity(0.4 + (premiumBadgeGlow * 0.6)))
+            .scaleEffect(1 + (premiumBadgeGlow * 0.1))
+            .onAppear {
+                if shouldAnimatePremiumBadge {
+                    startPremiumBadgePulse()
+                    shouldAnimatePremiumBadge = false
+                }
+            }
+        }
+    }
+
+    private func startPremiumBadgePulse() {
+        Task { @MainActor in
+            // Cycle 1: In
+            withAnimation(.easeInOut(duration: 0.5)) {
+                premiumBadgeGlow = 1.0
+            }
+            try? await Task.sleep(for: .seconds(0.5))
+
+            // Cycle 1: Out
+            withAnimation(.easeInOut(duration: 0.5)) {
+                premiumBadgeGlow = 0
+            }
+            try? await Task.sleep(for: .seconds(0.5))
+
+            // Cycle 2: In
+            withAnimation(.easeInOut(duration: 0.5)) {
+                premiumBadgeGlow = 1.0
+            }
+            try? await Task.sleep(for: .seconds(0.5))
+
+            // Cycle 2: Out
+            withAnimation(.easeOut(duration: 0.5)) {
+                premiumBadgeGlow = 0
+            }
+        }
     }
 
     // MARK: - Private Methods
@@ -180,4 +229,81 @@ struct HomeView: View {
             UserDefaults.standard.set(false, forKey: "hasCompletedFirstLog")
         }
         .preferredColorScheme(.dark)
+}
+
+#Preview("Home View - Premium Badge") {
+    PremiumBadgePreview()
+        .preferredColorScheme(.dark)
+}
+
+// MARK: - Premium Badge Preview Helper
+
+private struct PremiumBadgePreview: View {
+    @State private var badgeGlow: CGFloat = 0
+    @State private var animateBadge = false
+
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                VStack(spacing: 0) {
+                    Spacer()
+
+                    Text("You're not lazy. You're just overwhelmed and have wifi.")
+                        .font(.appTitle3)
+                        .foregroundStyle(.textHighlightOnePrimary)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 32)
+
+                    Spacer()
+
+                    VStack(spacing: 16) {
+                        PrimaryButton(title: "I Did a Thing") {}
+                    }
+                    .padding(.horizontal, 32)
+                    .padding(.bottom, 40)
+                }
+            }
+            .starfieldBackground(isPaused: false)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbarBackground(.hidden, for: .navigationBar)
+            .overlay(alignment: .topTrailing) {
+                HStack(alignment: .center, spacing: 4) {
+                    Image(systemName: "star.fill")
+                        .font(.system(size: 12))
+                    Text("Premium")
+                        .font(.appFootnote)
+                }
+                .foregroundStyle(.textPrimary.opacity(0.4 + (badgeGlow * 0.6)))
+                .scaleEffect(1 + (badgeGlow * 0.1))
+                .padding(.top, 8)
+                .padding(.trailing, 16)
+            }
+        }
+        .onAppear {
+            startPulse()
+        }
+    }
+
+    private func startPulse() {
+        Task { @MainActor in
+            withAnimation(.easeInOut(duration: 0.5)) {
+                badgeGlow = 1.0
+            }
+            try? await Task.sleep(for: .seconds(0.5))
+
+            withAnimation(.easeInOut(duration: 0.5)) {
+                badgeGlow = 0
+            }
+            try? await Task.sleep(for: .seconds(0.5))
+
+            withAnimation(.easeInOut(duration: 0.5)) {
+                badgeGlow = 1.0
+            }
+            try? await Task.sleep(for: .seconds(0.5))
+
+            withAnimation(.easeOut(duration: 0.5)) {
+                badgeGlow = 0
+            }
+        }
+    }
 }

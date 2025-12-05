@@ -36,6 +36,7 @@ struct PraiseContentView<ViewModel: PraiseViewModelProtocol>: View {
     // Paywall state
     @State private var paywallService = PaywallService.shared
     @State private var showPaywall = false
+    @State private var paywallViewModel = PaywallViewModel(subscriptionService: SubscriptionService.shared)
 
     // Highlight service
     @State private var highlightService = HighlightService.shared
@@ -158,11 +159,15 @@ struct PraiseContentView<ViewModel: PraiseViewModelProtocol>: View {
             // This handles both programmatic dismissal and interactive gestures
             paywallService.dismissPaywall()
 
-            // Navigate back to home view
+            // Navigate to Home tab after successful purchase
+            if SubscriptionService.shared.hasActiveSubscription {
+                selectedTab = 0
+            }
+
             viewModel.cancelPolling()
             onDismiss()
         }) {
-            PaywallView {
+            PaywallView(viewModel: paywallViewModel) {
                 // This closure only runs for programmatic dismissal (button taps)
                 showPaywall = false
             }

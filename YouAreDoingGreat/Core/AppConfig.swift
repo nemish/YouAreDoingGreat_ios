@@ -88,4 +88,17 @@ enum AppConfig {
 
     /// Timeout for network requests (in seconds)
     static let networkTimeout: TimeInterval = 30.0
+
+    // MARK: - RevenueCat Configuration
+
+    /// RevenueCat API keys (public keys, safe to commit)
+    static let revenueCatAPIKey: String = {
+        #if DEBUG
+        // Sandbox/test API key for development
+        return "test_ETmaetFJRSDFWJdEQZtRkYqodHI"
+        #else
+        // Production API key
+        return "appl_yxHvlKNyslQKbgTsDayWLVtkEjn"
+        #endif
+    }()
 }
