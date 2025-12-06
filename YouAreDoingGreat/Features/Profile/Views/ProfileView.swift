@@ -5,6 +5,7 @@ import SwiftUI
 
 struct ProfileView: View {
     @State private var viewModel: ProfileViewModel
+    @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
 
     // Observe subscription service for real-time premium status updates
     private var subscriptionService = SubscriptionService.shared
@@ -92,6 +93,24 @@ struct ProfileView: View {
                 Button("Cancel", role: .cancel) { }
             } message: {
                 Text("This will delete all moments from local storage. This action cannot be undone.")
+            }
+            .confirmationDialog(
+                "Reset User Journey?",
+                isPresented: $viewModel.showResetJourneyConfirmation,
+                titleVisibility: .visible
+            ) {
+                Button("Reset Everything", role: .destructive) {
+                    Task {
+                        await viewModel.resetUserJourney {
+                            withAnimation {
+                                hasCompletedOnboarding = false
+                            }
+                        }
+                    }
+                }
+                Button("Cancel", role: .cancel) { }
+            } message: {
+                Text("This will delete all moments, generate a new user ID, and return to the welcome screen. This action cannot be undone.")
             }
         }
     }
@@ -361,6 +380,19 @@ struct ProfileView: View {
                     )
                 }
                 .buttonStyle(.plain)
+
+                Button {
+                    viewModel.showResetJourneyConfirmation = true
+                } label: {
+                    settingsRow(
+                        icon: "arrow.counterclockwise.circle.fill",
+                        title: "Reset User Journey",
+                        subtitle: "New user ID, clear data, back to welcome"
+                    )
+                }
+                .buttonStyle(.plain)
+                .disabled(viewModel.isResettingJourney)
+                .opacity(viewModel.isResettingJourney ? 0.5 : 1.0)
             }
         }
     }
