@@ -9,6 +9,7 @@ struct MomentCard: View {
 
     @State private var glowIntensity: CGFloat = 0
     @State private var previousTagsCount: Int = 0
+    @State private var syncRotation: Double = 0
 
     private var timeOfDay: TimeOfDay {
         TimeOfDay(from: moment.happenedAt)
@@ -58,7 +59,12 @@ struct MomentCard: View {
                         Image(systemName: "arrow.triangle.2.circlepath")
                             .font(.system(size: 12))
                             .foregroundStyle(.textTertiary)
-                            .symbolEffect(.pulse, options: .repeating)
+                            .rotationEffect(.degrees(syncRotation))
+                            .onAppear {
+                                withAnimation(.linear(duration: 1).repeatForever(autoreverses: false)) {
+                                    syncRotation = 360
+                                }
+                            }
                     }
 
                     if moment.isFavorite {

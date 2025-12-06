@@ -16,8 +16,11 @@ final class SyncService {
     private var syncTask: Task<Void, Never>?
     private let pollInterval: UInt64 = 3_000_000_000 // 3 seconds
     private let maxPollsPerMoment: Int = 10
+    private let apiClient: APIClient
 
-    private init() {}
+    private init(apiClient: APIClient = DefaultAPIClient()) {
+        self.apiClient = apiClient
+    }
 
     // MARK: - Public Methods
 
@@ -99,20 +102,25 @@ final class SyncService {
 
         do {
             // Try to fetch moment from server by clientId
-            let response = try await fetchMomentByClientId(clientId: moment.clientId.uuidString)
+            let response: GetMomentResponseWrapper = try await apiClient.request(
+                endpoint: .momentByClientId(clientId: moment.clientId.uuidString),
+                method: .get,
+                body: EmptyBody?.none
+            )
+            let momentResponse = response.item
 
             // Moment exists on server! Save the serverId
-            if let serverId = response.id {
+            if let serverId = momentResponse.id {
                 moment.serverId = serverId
                 logger.info("✅ Found moment on server with serverId \(serverId)")
             }
 
             // Check if moment has complete data (praise, tags, action)
-            if let praise = response.praise, !praise.isEmpty {
+            if let praise = momentResponse.praise, !praise.isEmpty {
                 // Moment has all data - sync it
                 moment.praise = praise
-                moment.action = response.action
-                moment.tags = response.tags ?? []
+                moment.action = momentResponse.action
+                moment.tags = momentResponse.tags ?? []
                 moment.isSynced = true
                 try await repository.update(moment)
                 logger.info("✅ Moment \(moment.clientId.uuidString) synced from server!")
@@ -122,7 +130,7 @@ final class SyncService {
                 logger.debug("⏳ Moment exists on server but no praise yet")
             }
 
-        } catch let error as URLError where error.code == .badServerResponse {
+        } catch let error as MomentError where error.isNotFoundError {
             // Moment doesn't exist on server - create it
             logger.info("📤 Moment not found on server, creating...")
             await createMomentOnServer(moment, repository: repository)
@@ -134,16 +142,6 @@ final class SyncService {
     /// Create moment on server (for moments that don't exist on server yet)
     private func createMomentOnServer(_ moment: Moment, repository: MomentRepository) async {
         do {
-            // POST moment to server
-            guard let url = AppConfig.momentsURL else {
-                throw URLError(.badURL)
-            }
-
-            var request = URLRequest(url: url)
-            request.httpMethod = "POST"
-            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-            request.setValue(UserIDProvider.shared.userID, forHTTPHeaderField: AppConfig.userIdHeaderKey)
-
             let body = CreateMomentRequest(
                 clientId: moment.clientId.uuidString,
                 text: moment.text,
@@ -152,19 +150,12 @@ final class SyncService {
                 timeAgo: moment.timeAgo
             )
 
-            let encoder = JSONEncoder()
-            encoder.dateEncodingStrategy = .iso8601
-            request.httpBody = try encoder.encode(body)
-
-            let (data, response) = try await URLSession.shared.data(for: request)
-
-            guard let httpResponse = response as? HTTPURLResponse,
-                  (200...299).contains(httpResponse.statusCode) else {
-                throw URLError(.badServerResponse)
-            }
-
-            let decoded = try JSONDecoder().decode(CreateMomentResponseWrapper.self, from: data)
-            let momentResponse = decoded.item
+            let response: CreateMomentResponseWrapper = try await apiClient.request(
+                endpoint: .createMoment,
+                method: .post,
+                body: body
+            )
+            let momentResponse = response.item
 
             // Save serverId
             if let serverId = momentResponse.id {
@@ -200,36 +191,12 @@ final class SyncService {
         logger.info("🎨 Requesting enrichment for moment \(serverId)")
 
         do {
-            guard let url = AppConfig.enrichMomentURL(id: serverId) else {
-                throw URLError(.badURL)
-            }
-
-            var request = URLRequest(url: url)
-            request.httpMethod = "POST"
-            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-            request.setValue(UserIDProvider.shared.userID, forHTTPHeaderField: AppConfig.userIdHeaderKey)
-
-            let (data, response) = try await URLSession.shared.data(for: request)
-
-            guard let httpResponse = response as? HTTPURLResponse else {
-                throw URLError(.badServerResponse)
-            }
-
-            // Handle 409 Conflict (enrichment already in progress) - this is OK, just wait
-            if httpResponse.statusCode == 409 {
-                logger.debug("⏳ Enrichment already in progress for \(serverId), will check again later")
-                return
-            }
-
-            // Log other errors for debugging
-            if !(200...299).contains(httpResponse.statusCode) {
-                let responseBody = String(data: data, encoding: .utf8) ?? "Unable to decode response"
-                logger.error("❌ Enrichment failed with status \(httpResponse.statusCode): \(responseBody)")
-                throw URLError(.badServerResponse)
-            }
-
-            let decoded = try JSONDecoder().decode(GetMomentResponseWrapper.self, from: data)
-            let enriched = decoded.item
+            let response: EnrichMomentResponseWrapper = try await apiClient.request(
+                endpoint: .enrichMoment(id: serverId),
+                method: .post,
+                body: EmptyBody?.none
+            )
+            let enriched = response.item
 
             // Update moment if enriched
             if let praise = enriched.praise, !praise.isEmpty {
@@ -248,6 +215,9 @@ final class SyncService {
                 logger.debug("⏳ Enrichment requested but not ready yet for \(serverId)")
             }
 
+        } catch let error as MomentError where error.isEnrichmentInProgressError {
+            // 409 Conflict - enrichment already in progress, this is OK
+            logger.debug("⏳ Enrichment already in progress for \(serverId), will check again later")
         } catch {
             logger.error("❌ Failed to request enrichment: \(error)")
         }
@@ -259,13 +229,18 @@ final class SyncService {
 
         do {
             // Fetch latest state from server
-            let response = try await fetchMomentFromServer(serverId: serverId)
+            let response: GetMomentResponseWrapper = try await apiClient.request(
+                endpoint: .moment(id: serverId),
+                method: .get,
+                body: EmptyBody?.none
+            )
+            let momentResponse = response.item
 
             // Check if enriched
-            if let praise = response.praise, !praise.isEmpty {
+            if let praise = momentResponse.praise, !praise.isEmpty {
                 moment.praise = praise
-                moment.action = response.action
-                moment.tags = response.tags ?? []
+                moment.action = momentResponse.action
+                moment.tags = momentResponse.tags ?? []
                 moment.isSynced = true
                 try await repository.update(moment)
                 logger.info("✅ Updated moment \(serverId) - now synced!")
@@ -279,66 +254,11 @@ final class SyncService {
             logger.error("❌ Failed to sync moment \(serverId): \(error)")
         }
     }
-
-    /// Fetch moment from server by serverId
-    private func fetchMomentFromServer(serverId: String) async throws -> MomentResponse {
-        guard let url = AppConfig.momentURL(id: serverId) else {
-            throw URLError(.badURL)
-        }
-
-        var request = URLRequest(url: url)
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.setValue(UserIDProvider.shared.userID, forHTTPHeaderField: AppConfig.userIdHeaderKey)
-
-        let (data, response) = try await URLSession.shared.data(for: request)
-
-        guard let httpResponse = response as? HTTPURLResponse,
-              (200...299).contains(httpResponse.statusCode) else {
-            throw URLError(.badServerResponse)
-        }
-
-        let decoded = try JSONDecoder().decode(GetMomentResponseWrapper.self, from: data)
-        return decoded.item
-    }
-
-    /// Fetch moment from server by clientId
-    /// Expected API endpoint: GET /api/v1/moments/by-client-id/{clientId}
-    /// Returns 404 if moment doesn't exist on server
-    private func fetchMomentByClientId(clientId: String) async throws -> MomentResponse {
-        guard let baseURL = URL(string: AppConfig.apiBaseURL) else {
-            throw URLError(.badURL)
-        }
-
-        // Expected endpoint: GET /api/v1/moments/by-client-id/{clientId}
-        let url = baseURL.appendingPathComponent("moments/by-client-id/\(clientId)")
-
-        var request = URLRequest(url: url)
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.setValue(UserIDProvider.shared.userID, forHTTPHeaderField: AppConfig.userIdHeaderKey)
-
-        let (data, response) = try await URLSession.shared.data(for: request)
-
-        guard let httpResponse = response as? HTTPURLResponse else {
-            throw URLError(.badServerResponse)
-        }
-
-        // 404 means moment doesn't exist on server yet
-        if httpResponse.statusCode == 404 {
-            throw URLError(.badServerResponse)
-        }
-
-        guard (200...299).contains(httpResponse.statusCode) else {
-            throw URLError(.badServerResponse)
-        }
-
-        let decoded = try JSONDecoder().decode(GetMomentResponseWrapper.self, from: data)
-        return decoded.item
-    }
 }
 
 // MARK: - API Models
 
-private struct CreateMomentRequest: Encodable {
+struct CreateMomentRequest: Encodable {
     let clientId: String
     let text: String
     let submittedAt: Date
@@ -359,15 +279,19 @@ private struct CreateMomentRequest: Encodable {
     }
 }
 
-private struct CreateMomentResponseWrapper: Decodable {
+struct CreateMomentResponseWrapper: Decodable {
     let item: MomentResponse
 }
 
-private struct GetMomentResponseWrapper: Decodable {
+struct GetMomentResponseWrapper: Decodable {
     let item: MomentResponse
 }
 
-private struct MomentResponse: Decodable {
+struct EnrichMomentResponseWrapper: Decodable {
+    let item: MomentResponse
+}
+
+struct MomentResponse: Decodable {
     let id: String?
     let clientId: String?
     let text: String
@@ -379,4 +303,25 @@ private struct MomentResponse: Decodable {
     let action: String?
     let tags: [String]?
     let isFavorite: Bool?
+}
+
+/// Empty body for requests that don't need a body
+struct EmptyBody: Encodable {}
+
+// MARK: - MomentError Extensions
+
+extension MomentError {
+    var isNotFoundError: Bool {
+        if case .serverError(let message) = self {
+            return message.lowercased().contains("not found")
+        }
+        return false
+    }
+
+    var isEnrichmentInProgressError: Bool {
+        if case .serverError(let message) = self {
+            return message.lowercased().contains("in progress") || message.lowercased().contains("conflict")
+        }
+        return false
+    }
 }

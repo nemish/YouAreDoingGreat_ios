@@ -33,6 +33,9 @@ final class DefaultAPIClient: APIClient {
         // Add user ID header for authentication
         request.setValue(UserIDProvider.shared.userID, forHTTPHeaderField: AppConfig.userIdHeaderKey)
 
+        // Add app token header for API access validation
+        request.setValue(AppConfig.appToken, forHTTPHeaderField: AppConfig.appTokenHeaderKey)
+
         // Add request body if provided
         if let body = body {
             request.httpBody = try jsonEncoder.encode(body)

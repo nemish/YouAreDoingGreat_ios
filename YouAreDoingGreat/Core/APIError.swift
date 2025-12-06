@@ -22,6 +22,11 @@ enum APIErrorCode: String, Decodable {
     case momentNotFound = "MOMENT_NOT_FOUND"
     case forbidden = "FORBIDDEN"
     case invalidRequest = "INVALID_REQUEST"
+    case invalidAppToken = "INVALID_APP_TOKEN"
+    case validationError = "VALIDATION_ERROR"
+    case rateLimitExceeded = "RATE_LIMIT_EXCEEDED"
+    case conflict = "CONFLICT"
+    case enrichmentInProgress = "ENRICHMENT_IN_PROGRESS"
 }
 
 // MARK: - AnyCodable Helper
