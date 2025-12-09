@@ -19,21 +19,58 @@ http://localhost:3000/api/v1
 
 ## Authentication
 
-All endpoints require authentication via the `x-user-id` header:
+The API uses a dual authentication system:
+
+### 1. App Token (Required for all endpoints except /health)
+
+All API endpoints require an app token via the `x-app-token-code` header:
+
+```
+x-app-token-code: <app_token>
+```
+
+This validates that requests come from authorized applications.
+
+### 2. User Authentication (Required for protected endpoints)
+
+User-specific endpoints also require the `x-user-id` header:
 
 ```
 x-user-id: <user_id>
 ```
 
+### Request Headers Example
+
+```
+x-app-token-code: your-app-token
+x-user-id: user-123
+Content-Type: application/json
+```
+
 ## Key Changes in Latest Version
+
+### App Token Authentication
+
+All endpoints now require `x-app-token-code` header for API access validation (except `/health`).
+
+### Enhanced Health Check
+
+The `/health` endpoint now returns MongoDB connection status and does NOT require app token authentication.
+
+### New Error Codes
+
+- `INVALID_APP_TOKEN`: Missing or invalid app token
+- `VALIDATION_ERROR`: Request validation failed
+- `RATE_LIMIT_EXCEEDED`: Too many requests
+- `CONFLICT`: Resource conflict
 
 ### Offline Sync Support
 
-The API now supports offline-first clients with the following features:
+The API supports offline-first clients with the following features:
 
 1. **Client ID Support**: Moments can include a `clientId` (UUID) for offline sync correlation
-2. **Lookup by Client ID**: New endpoint `GET /moments/by-client-id/{clientId}` for finding moments by client-generated ID
-3. **Separated Enrichment**: Moment creation (`POST /moments`) and AI enrichment (`POST /moments/{id}/enrich`) are now separate operations
+2. **Lookup by Client ID**: Endpoint `GET /moments/by-client-id/{clientId}` for finding moments by client-generated ID
+3. **Separated Enrichment**: Moment creation (`POST /moments`) and AI enrichment (`POST /moments/{id}/enrich`) are separate operations
 
 ### Two-Phase Moment Creation
 
@@ -49,16 +86,29 @@ This allows clients to:
 
 ### 1. Health Check
 
-**GET** `/healthcheck`
+**GET** `/health`
 
-Simple health check to verify the API is running.
+Health check endpoint for monitoring. This endpoint does NOT require app token authentication. Returns MongoDB connection status and overall API health.
 
-#### Response
+#### Response (200 - Healthy)
 
 ```json
 {
   "status": "ok",
-  "version": 1
+  "checks": {
+    "mongodb": "connected"
+  }
+}
+```
+
+#### Response (503 - Degraded)
+
+```json
+{
+  "status": "degraded",
+  "checks": {
+    "mongodb": "disconnected"
+  }
 }
 ```
 
@@ -71,6 +121,7 @@ Retrieve the current user's profile information.
 #### Request Headers
 
 ```
+x-app-token-code: <app_token>
 x-user-id: <user_id>
 ```
 
@@ -95,7 +146,7 @@ x-user-id: <user_id>
 
 #### Error Responses
 
-- `401 Unauthorized`: Missing or invalid user ID
+- `401 Unauthorized`: Invalid or missing app token (INVALID_APP_TOKEN) or user ID (RESTRICTED_ACCESS)
 - `500 Internal Server Error`: Server error
 
 ### 3. Get User Statistics
@@ -107,6 +158,7 @@ Retrieve statistics about user's moment submissions including streaks and totals
 #### Request Headers
 
 ```
+x-app-token-code: <app_token>
 x-user-id: <user_id>
 ```
 
@@ -139,7 +191,7 @@ x-user-id: <user_id>
 
 #### Error Responses
 
-- `401 Unauthorized`: Missing or invalid user ID
+- `401 Unauthorized`: Invalid or missing app token (INVALID_APP_TOKEN) or user ID (RESTRICTED_ACCESS)
 - `500 Internal Server Error`: Server error
 
 ### 4. Submit User Feedback
@@ -152,6 +204,7 @@ Submit feedback from the user including title and description.
 
 ```
 Content-Type: application/json
+x-app-token-code: <app_token>
 x-user-id: <user_id>
 ```
 
@@ -185,7 +238,7 @@ x-user-id: <user_id>
 #### Error Responses
 
 - `400 Bad Request`: Invalid request body
-- `401 Unauthorized`: Missing or invalid user ID
+- `401 Unauthorized`: Invalid or missing app token (INVALID_APP_TOKEN) or user ID (RESTRICTED_ACCESS)
 - `500 Internal Server Error`: Server error
 
 ### 5. Get Moments with Pagination
@@ -202,6 +255,7 @@ Retrieve user moments with cursor-based pagination for infinite scrolling.
 #### Request Headers
 
 ```
+x-app-token-code: <app_token>
 x-user-id: <user_id>
 ```
 
@@ -238,7 +292,7 @@ x-user-id: <user_id>
 #### Error Responses
 
 - `400 Bad Request`: Invalid parameters
-- `401 Unauthorized`: Missing or invalid user ID
+- `401 Unauthorized`: Invalid or missing app token (INVALID_APP_TOKEN) or user ID (RESTRICTED_ACCESS)
 - `500 Internal Server Error`: Server error
 
 ### 6. Get a Specific Moment
@@ -254,6 +308,7 @@ Retrieve a specific moment by server ID.
 #### Request Headers
 
 ```
+x-app-token-code: <app_token>
 x-user-id: <user_id>
 ```
 
@@ -283,12 +338,12 @@ x-user-id: <user_id>
 
 #### Error Responses
 
-- `401 Unauthorized`: Missing or invalid user ID
+- `401 Unauthorized`: Invalid or missing app token (INVALID_APP_TOKEN) or user ID (RESTRICTED_ACCESS)
 - `403 Forbidden`: User does not own this moment
 - `404 Not Found`: Moment not found
 - `500 Internal Server Error`: Server error
 
-### 7. Get Moment by Client ID (NEW)
+### 7. Get Moment by Client ID
 
 **GET** `/moments/by-client-id/{clientId}`
 
@@ -301,6 +356,7 @@ Retrieve a specific moment by its client-generated UUID. This endpoint is essent
 #### Request Headers
 
 ```
+x-app-token-code: <app_token>
 x-user-id: <user_id>
 ```
 
@@ -332,12 +388,12 @@ x-user-id: <user_id>
 
 #### Error Responses
 
-- `401 Unauthorized`: Missing or invalid user ID
+- `401 Unauthorized`: Invalid or missing app token (INVALID_APP_TOKEN) or user ID (RESTRICTED_ACCESS)
 - `403 Forbidden`: User does not own this moment
 - `404 Not Found`: Moment with this clientId not found
 - `500 Internal Server Error`: Server error
 
-### 8. Create a New Moment (UPDATED)
+### 8. Create a New Moment
 
 **POST** `/moments`
 
@@ -349,6 +405,7 @@ This endpoint now returns immediately, making it suitable for offline-first apps
 
 ```
 Content-Type: application/json
+x-app-token-code: <app_token>
 x-user-id: <user_id>
 ```
 
@@ -396,10 +453,10 @@ x-user-id: <user_id>
 
 #### Error Responses
 
-- `401 Unauthorized`: Missing or invalid user ID
+- `401 Unauthorized`: Invalid or missing app token (INVALID_APP_TOKEN) or user ID (RESTRICTED_ACCESS)
 - `500 Internal Server Error`: Server error
 
-### 9. Enrich Moment with AI Content (NEW)
+### 9. Enrich Moment with AI Content
 
 **POST** `/moments/{id}/enrich`
 
@@ -412,6 +469,7 @@ Add AI-generated action category, tags, and praise to an existing moment. This e
 #### Request Headers
 
 ```
+x-app-token-code: <app_token>
 x-user-id: <user_id>
 ```
 
@@ -452,9 +510,10 @@ while (!enriched.praise) {
 #### Error Responses
 
 - `400 Bad Request`: Daily limit reached
-- `401 Unauthorized`: Missing or invalid user ID
+- `401 Unauthorized`: Invalid or missing app token (INVALID_APP_TOKEN) or user ID (RESTRICTED_ACCESS)
 - `403 Forbidden`: User does not own this moment
 - `404 Not Found`: Moment not found
+- `409 Conflict`: Enrichment already in progress
 - `500 Internal Server Error`: Server error
 
 ### 10. Update a Moment
@@ -471,6 +530,7 @@ Update a specific moment (currently supports updating favorite status).
 
 ```
 Content-Type: application/json
+x-app-token-code: <app_token>
 x-user-id: <user_id>
 ```
 
@@ -496,7 +556,7 @@ x-user-id: <user_id>
 
 #### Error Responses
 
-- `401 Unauthorized`: Missing or invalid user ID
+- `401 Unauthorized`: Invalid or missing app token (INVALID_APP_TOKEN) or user ID (RESTRICTED_ACCESS)
 - `403 Forbidden`: User does not own this moment
 - `404 Not Found`: Moment not found
 - `500 Internal Server Error`: Server error
@@ -514,6 +574,7 @@ Soft delete a moment by setting archivedAt timestamp.
 #### Request Headers
 
 ```
+x-app-token-code: <app_token>
 x-user-id: <user_id>
 ```
 
@@ -527,7 +588,7 @@ x-user-id: <user_id>
 
 #### Error Responses
 
-- `401 Unauthorized`: Missing or invalid user ID
+- `401 Unauthorized`: Invalid or missing app token (INVALID_APP_TOKEN) or user ID (RESTRICTED_ACCESS)
 - `403 Forbidden`: User does not own this moment
 - `404 Not Found`: Moment not found
 - `500 Internal Server Error`: Server error
@@ -546,6 +607,7 @@ Retrieve user day summaries with cursor-based pagination for infinite scrolling 
 #### Request Headers
 
 ```
+x-app-token-code: <app_token>
 x-user-id: <user_id>
 ```
 
@@ -593,7 +655,7 @@ x-user-id: <user_id>
 #### Error Responses
 
 - `400 Bad Request`: Invalid parameters
-- `401 Unauthorized`: Missing or invalid user ID
+- `401 Unauthorized`: Invalid or missing app token (INVALID_APP_TOKEN) or user ID (RESTRICTED_ACCESS)
 - `500 Internal Server Error`: Server error
 
 ## Data Models
@@ -851,6 +913,11 @@ x-user-id: <user_id>
 - `MOMENT_NOT_FOUND`: Moment not found
 - `FORBIDDEN`: User does not own this resource
 - `INVALID_REQUEST`: Invalid request parameters
+- `ENRICHMENT_IN_PROGRESS`: AI enrichment is already being processed for this moment
+- `INVALID_APP_TOKEN`: Missing or invalid app token
+- `VALIDATION_ERROR`: Request validation failed
+- `RATE_LIMIT_EXCEEDED`: Too many requests
+- `CONFLICT`: Resource conflict
 
 **Example:**
 
@@ -980,7 +1047,16 @@ Task.detached {
 ```json
 {
   "error": {
-    "code": "UNAUTHORIZED",
+    "code": "INVALID_APP_TOKEN",
+    "message": "Missing or invalid app token"
+  }
+}
+```
+
+```json
+{
+  "error": {
+    "code": "RESTRICTED_ACCESS",
     "message": "Missing or invalid user ID"
   }
 }
@@ -1004,6 +1080,28 @@ Task.detached {
   "error": {
     "code": "MOMENT_NOT_FOUND",
     "message": "Moment not found"
+  }
+}
+```
+
+### 409 Conflict
+
+```json
+{
+  "error": {
+    "code": "ENRICHMENT_IN_PROGRESS",
+    "message": "Enrichment is already in progress for this moment"
+  }
+}
+```
+
+### 429 Too Many Requests
+
+```json
+{
+  "error": {
+    "code": "RATE_LIMIT_EXCEEDED",
+    "message": "Too many requests. Please try again later."
   }
 }
 ```
@@ -1033,6 +1131,8 @@ Task.detached {
 8. **Offline sync**: Create with clientId, dismiss, resume sync by clientId
 9. **Enrichment idempotency**: Calling enrich multiple times should not re-process
 10. **Ownership**: Should prevent users from accessing others' moments
+11. **App token validation**: Should reject requests without valid app token
+12. **Rate limiting**: Should return 429 when rate limit exceeded
 
 ### Example Test Sequence
 

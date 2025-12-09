@@ -16,11 +16,12 @@
         }
     ],
     "paths": {
-        "/healthcheck": {
+        "/health": {
             "get": {
-                "summary": "Health check endpoint",
-                "description": "Simple health check to verify the API is running",
+                "summary": "API health check endpoint",
+                "description": "Health check endpoint for monitoring. This endpoint does NOT require app token authentication.\nReturns MongoDB connection status and overall API health.\n",
                 "operationId": "healthCheck",
+                "security": [],
                 "responses": {
                     "200": {
                         "description": "API is healthy",
@@ -31,11 +32,49 @@
                                     "properties": {
                                         "status": {
                                             "type": "string",
+                                            "enum": [
+                                                "ok",
+                                                "degraded"
+                                            ],
                                             "example": "ok"
                                         },
-                                        "version": {
-                                            "type": "integer",
-                                            "example": 1
+                                        "checks": {
+                                            "type": "object",
+                                            "properties": {
+                                                "mongodb": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "connected",
+                                                        "disconnected"
+                                                    ],
+                                                    "example": "connected"
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "503": {
+                        "description": "API is degraded (some services unavailable)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "degraded"
+                                        },
+                                        "checks": {
+                                            "type": "object",
+                                            "properties": {
+                                                "mongodb": {
+                                                    "type": "string",
+                                                    "example": "disconnected"
+                                                }
+                                            }
                                         }
                                     }
                                 }
@@ -50,15 +89,12 @@
                 "summary": "Get current user profile",
                 "description": "Retrieve the current user's profile information",
                 "operationId": "getCurrentUser",
-                "headers": {
-                    "x-user-id": {
-                        "description": "User ID for authentication",
-                        "required": true,
-                        "schema": {
-                            "type": "string"
-                        }
+                "security": [
+                    {
+                        "appToken": [],
+                        "userAuth": []
                     }
-                },
+                ],
                 "responses": {
                     "200": {
                         "description": "User profile retrieved successfully",
@@ -71,7 +107,7 @@
                         }
                     },
                     "401": {
-                        "description": "Unauthorized",
+                        "description": "Unauthorized - Invalid or missing app token (INVALID_APP_TOKEN) or user ID (RESTRICTED_ACCESS)",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -98,15 +134,12 @@
                 "summary": "Get user statistics",
                 "description": "Retrieve statistics about user's moment submissions including streaks and totals",
                 "operationId": "getUserStats",
-                "headers": {
-                    "x-user-id": {
-                        "description": "User ID for authentication",
-                        "required": true,
-                        "schema": {
-                            "type": "string"
-                        }
+                "security": [
+                    {
+                        "appToken": [],
+                        "userAuth": []
                     }
-                },
+                ],
                 "responses": {
                     "200": {
                         "description": "User statistics retrieved successfully",
@@ -119,7 +152,7 @@
                         }
                     },
                     "401": {
-                        "description": "Unauthorized",
+                        "description": "Unauthorized - Invalid or missing app token (INVALID_APP_TOKEN) or user ID (RESTRICTED_ACCESS)",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -146,6 +179,12 @@
                 "summary": "Submit user feedback",
                 "description": "Submit feedback from the user including title and description",
                 "operationId": "submitUserFeedback",
+                "security": [
+                    {
+                        "appToken": [],
+                        "userAuth": []
+                    }
+                ],
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -153,15 +192,6 @@
                             "schema": {
                                 "$ref": "#/components/schemas/CreateUserFeedbackRequest"
                             }
-                        }
-                    }
-                },
-                "headers": {
-                    "x-user-id": {
-                        "description": "User ID for authentication",
-                        "required": true,
-                        "schema": {
-                            "type": "string"
                         }
                     }
                 },
@@ -187,7 +217,7 @@
                         }
                     },
                     "401": {
-                        "description": "Unauthorized",
+                        "description": "Unauthorized - Invalid or missing app token (INVALID_APP_TOKEN) or user ID (RESTRICTED_ACCESS)",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -214,6 +244,12 @@
                 "summary": "Get timeline with pagination",
                 "description": "Retrieve user day summaries with cursor-based pagination for infinite scrolling timeline",
                 "operationId": "getTimeline",
+                "security": [
+                    {
+                        "appToken": [],
+                        "userAuth": []
+                    }
+                ],
                 "parameters": [
                     {
                         "name": "cursor",
@@ -240,15 +276,6 @@
                         }
                     }
                 ],
-                "headers": {
-                    "x-user-id": {
-                        "description": "User ID for authentication",
-                        "required": true,
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                },
                 "responses": {
                     "200": {
                         "description": "Successful response",
@@ -271,7 +298,7 @@
                         }
                     },
                     "401": {
-                        "description": "Unauthorized",
+                        "description": "Unauthorized - Invalid or missing app token (INVALID_APP_TOKEN) or user ID (RESTRICTED_ACCESS)",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -298,6 +325,12 @@
                 "summary": "Get moments with pagination",
                 "description": "Retrieve user moments with cursor-based pagination for infinite scrolling",
                 "operationId": "getMoments",
+                "security": [
+                    {
+                        "appToken": [],
+                        "userAuth": []
+                    }
+                ],
                 "parameters": [
                     {
                         "name": "cursor",
@@ -324,15 +357,6 @@
                         }
                     }
                 ],
-                "headers": {
-                    "x-user-id": {
-                        "description": "User ID for authentication",
-                        "required": true,
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                },
                 "responses": {
                     "200": {
                         "description": "Successful response",
@@ -355,7 +379,7 @@
                         }
                     },
                     "401": {
-                        "description": "Unauthorized",
+                        "description": "Unauthorized - Invalid or missing app token (INVALID_APP_TOKEN) or user ID (RESTRICTED_ACCESS)",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -380,6 +404,12 @@
                 "summary": "Create a new moment (without AI enrichment)",
                 "description": "Create a moment record in the database without AI processing.\nThe moment is created immediately with undefined action, tags, and praise.\nUse POST /moments/{id}/enrich to add AI-generated content.\n",
                 "operationId": "createMoment",
+                "security": [
+                    {
+                        "appToken": [],
+                        "userAuth": []
+                    }
+                ],
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -387,15 +417,6 @@
                             "schema": {
                                 "$ref": "#/components/schemas/CreateMomentRequest"
                             }
-                        }
-                    }
-                },
-                "headers": {
-                    "x-user-id": {
-                        "description": "User ID for authentication",
-                        "required": true,
-                        "schema": {
-                            "type": "string"
                         }
                     }
                 },
@@ -411,7 +432,7 @@
                         }
                     },
                     "401": {
-                        "description": "Unauthorized",
+                        "description": "Unauthorized - Invalid or missing app token (INVALID_APP_TOKEN) or user ID (RESTRICTED_ACCESS)",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -438,6 +459,12 @@
                 "summary": "Get a moment by client ID",
                 "description": "Retrieve a specific moment by its client-generated UUID (used for offline sync correlation)",
                 "operationId": "getMomentByClientId",
+                "security": [
+                    {
+                        "appToken": [],
+                        "userAuth": []
+                    }
+                ],
                 "parameters": [
                     {
                         "name": "clientId",
@@ -451,15 +478,6 @@
                         }
                     }
                 ],
-                "headers": {
-                    "x-user-id": {
-                        "description": "User ID for authentication",
-                        "required": true,
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                },
                 "responses": {
                     "200": {
                         "description": "Moment retrieved successfully",
@@ -472,7 +490,7 @@
                         }
                     },
                     "401": {
-                        "description": "Unauthorized",
+                        "description": "Unauthorized - Invalid or missing app token (INVALID_APP_TOKEN) or user ID (RESTRICTED_ACCESS)",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -519,6 +537,12 @@
                 "summary": "Get a specific moment",
                 "description": "Retrieve a specific moment by ID",
                 "operationId": "getMoment",
+                "security": [
+                    {
+                        "appToken": [],
+                        "userAuth": []
+                    }
+                ],
                 "parameters": [
                     {
                         "name": "id",
@@ -530,15 +554,6 @@
                         }
                     }
                 ],
-                "headers": {
-                    "x-user-id": {
-                        "description": "User ID for authentication",
-                        "required": true,
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                },
                 "responses": {
                     "200": {
                         "description": "Moment retrieved successfully",
@@ -551,7 +566,7 @@
                         }
                     },
                     "401": {
-                        "description": "Unauthorized",
+                        "description": "Unauthorized - Invalid or missing app token (INVALID_APP_TOKEN) or user ID (RESTRICTED_ACCESS)",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -596,6 +611,12 @@
                 "summary": "Update a moment",
                 "description": "Update a specific moment (currently supports updating favorite status)",
                 "operationId": "updateMoment",
+                "security": [
+                    {
+                        "appToken": [],
+                        "userAuth": []
+                    }
+                ],
                 "parameters": [
                     {
                         "name": "id",
@@ -617,15 +638,6 @@
                         }
                     }
                 },
-                "headers": {
-                    "x-user-id": {
-                        "description": "User ID for authentication",
-                        "required": true,
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                },
                 "responses": {
                     "200": {
                         "description": "Moment updated successfully",
@@ -638,7 +650,7 @@
                         }
                     },
                     "401": {
-                        "description": "Unauthorized",
+                        "description": "Unauthorized - Invalid or missing app token (INVALID_APP_TOKEN) or user ID (RESTRICTED_ACCESS)",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -683,6 +695,12 @@
                 "summary": "Archive a moment",
                 "description": "Soft delete a moment by setting archivedAt timestamp",
                 "operationId": "archiveMoment",
+                "security": [
+                    {
+                        "appToken": [],
+                        "userAuth": []
+                    }
+                ],
                 "parameters": [
                     {
                         "name": "id",
@@ -694,15 +712,6 @@
                         }
                     }
                 ],
-                "headers": {
-                    "x-user-id": {
-                        "description": "User ID for authentication",
-                        "required": true,
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                },
                 "responses": {
                     "200": {
                         "description": "Moment archived successfully",
@@ -715,7 +724,7 @@
                         }
                     },
                     "401": {
-                        "description": "Unauthorized",
+                        "description": "Unauthorized - Invalid or missing app token (INVALID_APP_TOKEN) or user ID (RESTRICTED_ACCESS)",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -762,6 +771,12 @@
                 "summary": "Enrich a moment with AI-generated content",
                 "description": "Add AI-generated action category, tags, and praise to an existing moment.\nThis endpoint is idempotent - if the moment is already enriched, it returns\nthe existing data without calling the AI again. Checks daily limits before\nprocessing.\n",
                 "operationId": "enrichMoment",
+                "security": [
+                    {
+                        "appToken": [],
+                        "userAuth": []
+                    }
+                ],
                 "parameters": [
                     {
                         "name": "id",
@@ -773,15 +788,6 @@
                         }
                     }
                 ],
-                "headers": {
-                    "x-user-id": {
-                        "description": "User ID for authentication",
-                        "required": true,
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                },
                 "responses": {
                     "200": {
                         "description": "Moment enriched successfully (or already enriched)",
@@ -804,7 +810,7 @@
                         }
                     },
                     "401": {
-                        "description": "Unauthorized",
+                        "description": "Unauthorized - Invalid or missing app token (INVALID_APP_TOKEN) or user ID (RESTRICTED_ACCESS)",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -825,6 +831,16 @@
                     },
                     "404": {
                         "description": "Moment not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "Enrichment already in progress",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -1361,7 +1377,12 @@
                                     "INVALID_CURSOR",
                                     "MOMENT_NOT_FOUND",
                                     "FORBIDDEN",
-                                    "INVALID_REQUEST"
+                                    "INVALID_REQUEST",
+                                    "ENRICHMENT_IN_PROGRESS",
+                                    "INVALID_APP_TOKEN",
+                                    "VALIDATION_ERROR",
+                                    "RATE_LIMIT_EXCEEDED",
+                                    "CONFLICT"
                                 ],
                                 "description": "Machine-readable error code",
                                 "example": "DAILY_LIMIT_REACHED"
@@ -1386,6 +1407,12 @@
             }
         },
         "securitySchemes": {
+            "appToken": {
+                "type": "apiKey",
+                "in": "header",
+                "name": "x-app-token-code",
+                "description": "App token for API access validation. Required for all /api/* endpoints except /api/health."
+            },
             "userAuth": {
                 "type": "apiKey",
                 "in": "header",
@@ -1393,5 +1420,10 @@
                 "description": "User ID for authentication"
             }
         }
-    }
+    },
+    "security": [
+        {
+            "appToken": []
+        }
+    ]
 }

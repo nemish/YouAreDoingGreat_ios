@@ -10,6 +10,7 @@ private let logger = Logger(subsystem: "com.youaredoinggreat", category: "praise
 final class PraiseViewModel: PraiseViewModelProtocol {
     // Dependencies
     private let repository: MomentRepository
+    private let apiClient: APIClient
 
     // Moment data
     let momentText: String
@@ -77,6 +78,7 @@ final class PraiseViewModel: PraiseViewModelProtocol {
 
     init(
         repository: MomentRepository,
+        apiClient: APIClient = DefaultAPIClient(),
         momentText: String,
         happenedAt: Date = Date(),
         timeAgoSeconds: Int? = nil,
@@ -86,6 +88,7 @@ final class PraiseViewModel: PraiseViewModelProtocol {
         timezone: String = TimeZone.current.identifier
     ) {
         self.repository = repository
+        self.apiClient = apiClient
         self.momentText = momentText
         self.happenedAt = happenedAt
         self.timeAgoSeconds = timeAgoSeconds
@@ -250,19 +253,6 @@ final class PraiseViewModel: PraiseViewModelProtocol {
     }
 
     private func createMomentOnServer() async throws -> MomentResponse {
-        // TODO: Replace with actual API client
-        // For now, use URLSession directly
-
-        guard let url = AppConfig.momentsURL else {
-            throw URLError(.badURL)
-        }
-
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        // Add anonymous user ID header
-        request.setValue(UserIDProvider.shared.userID, forHTTPHeaderField: AppConfig.userIdHeaderKey)
-
         let body = CreateMomentRequest(
             clientId: clientId.uuidString,
             text: momentText,
@@ -271,70 +261,24 @@ final class PraiseViewModel: PraiseViewModelProtocol {
             timeAgo: timeAgoSeconds
         )
 
-        request.httpBody = try JSONEncoder().encode(body)
-
-        let (data, response) = try await URLSession.shared.data(for: request)
-
-        guard let httpResponse = response as? HTTPURLResponse else {
-            throw MomentError.invalidResponse
-        }
-
-        // Handle error responses
-        if httpResponse.statusCode == 400 {
-            // Try to parse error response
-            if let errorResponse = try? JSONDecoder().decode(APIErrorResponse.self, from: data) {
-                if errorResponse.error.code == .dailyLimitReached {
-                    throw MomentError.dailyLimitReached(message: errorResponse.error.message)
-                } else {
-                    throw MomentError.serverError(message: errorResponse.error.message)
-                }
-            }
-            throw MomentError.invalidResponse
-        }
-
-        guard (200...299).contains(httpResponse.statusCode) else {
-            // Try to parse error response for other status codes
-            if let errorResponse = try? JSONDecoder().decode(APIErrorResponse.self, from: data) {
-                throw MomentError.serverError(message: errorResponse.error.message)
-            }
-            throw MomentError.invalidResponse
-        }
-
-        do {
-            let decoded = try JSONDecoder().decode(CreateMomentResponseWrapper.self, from: data)
-            return decoded.item
-        } catch {
-            throw MomentError.decodingError(error)
-        }
+        let response: CreateMomentResponseWrapper = try await apiClient.request(
+            endpoint: .createMoment,
+            method: .post,
+            body: body
+        )
+        return response.item
     }
 
     private func enrichMomentOnServer(serverId: String) async throws -> MomentResponse {
-        guard let url = AppConfig.enrichMomentURL(id: serverId) else {
-            throw URLError(.badURL)
-        }
-
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.setValue(UserIDProvider.shared.userID, forHTTPHeaderField: AppConfig.userIdHeaderKey)
-
-        let (data, response) = try await URLSession.shared.data(for: request)
-
-        guard let httpResponse = response as? HTTPURLResponse else {
-            throw MomentError.invalidResponse
-        }
-
-        // Handle daily limit during enrichment
-        if httpResponse.statusCode == 400 {
-            if let errorResponse = try? JSONDecoder().decode(APIErrorResponse.self, from: data) {
-                if errorResponse.error.code == .dailyLimitReached {
-                    throw MomentError.dailyLimitReached(message: errorResponse.error.message)
-                }
-            }
-        }
-
-        // Handle 409 Conflict (enrichment already in progress) gracefully
-        if httpResponse.statusCode == 409 {
+        do {
+            let response: EnrichMomentResponseWrapper = try await apiClient.request(
+                endpoint: .enrichMoment(id: serverId),
+                method: .post,
+                body: EmptyBody?.none
+            )
+            return response.item
+        } catch let error as MomentError where error.isEnrichmentInProgressError {
+            // Handle 409 Conflict (enrichment already in progress) gracefully
             logger.debug("⏳ Enrichment already in progress, will continue polling")
             // Return empty response, polling will continue
             return MomentResponse(
@@ -351,16 +295,6 @@ final class PraiseViewModel: PraiseViewModelProtocol {
                 isFavorite: nil
             )
         }
-
-        guard (200...299).contains(httpResponse.statusCode) else {
-            // Log error response for debugging
-            let responseBody = String(data: data, encoding: .utf8) ?? "Unable to decode response"
-            logger.error("❌ Enrichment failed with status \(httpResponse.statusCode): \(responseBody)")
-            throw MomentError.invalidResponse
-        }
-
-        let decoded = try JSONDecoder().decode(GetMomentResponseWrapper.self, from: data)
-        return decoded.item
     }
 
     private func pollForEnrichment(serverId: String) async {
@@ -399,27 +333,6 @@ final class PraiseViewModel: PraiseViewModelProtocol {
         }
 
         await pollingTask?.value
-    }
-
-    private func fetchMomentFromServer(serverId: String) async throws -> MomentResponse {
-        guard let url = AppConfig.momentURL(id: serverId) else {
-            throw URLError(.badURL)
-        }
-
-        var request = URLRequest(url: url)
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        // Add anonymous user ID header
-        request.setValue(UserIDProvider.shared.userID, forHTTPHeaderField: AppConfig.userIdHeaderKey)
-
-        let (data, response) = try await URLSession.shared.data(for: request)
-
-        guard let httpResponse = response as? HTTPURLResponse,
-              (200...299).contains(httpResponse.statusCode) else {
-            throw URLError(.badServerResponse)
-        }
-
-        let decoded = try JSONDecoder().decode(GetMomentResponseWrapper.self, from: data)
-        return decoded.item
     }
 
     private func updateWithServerResponse(_ response: MomentResponse) async {
@@ -481,49 +394,4 @@ final class PraiseViewModel: PraiseViewModelProtocol {
         ]
         return praises.randomElement() ?? praises[0]
     }
-}
-
-// MARK: - API Models
-
-private struct CreateMomentRequest: Encodable {
-    let clientId: String
-    let text: String
-    let submittedAt: Date
-    let tz: String
-    let timeAgo: Int?
-
-    enum CodingKeys: String, CodingKey {
-        case clientId, text, submittedAt, tz, timeAgo
-    }
-
-    func encode(to encoder: Encoder) throws {
-        var container = encoder.container(keyedBy: CodingKeys.self)
-        try container.encode(clientId, forKey: .clientId)
-        try container.encode(text, forKey: .text)
-        try container.encode(ISO8601DateFormatter().string(from: submittedAt), forKey: .submittedAt)
-        try container.encode(tz, forKey: .tz)
-        try container.encodeIfPresent(timeAgo, forKey: .timeAgo)
-    }
-}
-
-private struct CreateMomentResponseWrapper: Decodable {
-    let item: MomentResponse
-}
-
-private struct GetMomentResponseWrapper: Decodable {
-    let item: MomentResponse
-}
-
-private struct MomentResponse: Decodable {
-    let id: String?
-    let clientId: String?
-    let text: String
-    let submittedAt: String
-    let happenedAt: String
-    let tz: String
-    let timeAgo: Int?
-    let praise: String?
-    let action: String?
-    let tags: [String]?
-    let isFavorite: Bool?
 }

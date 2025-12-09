@@ -24,7 +24,10 @@ enum HTTPMethod: String {
 
 enum APIEndpoint {
     case moments(cursor: String?, limit: Int)
+    case createMoment
     case moment(id: String)
+    case momentByClientId(clientId: String)
+    case enrichMoment(id: String)
     case updateMoment(id: String)
     case deleteMoment(id: String)
     case userProfile
@@ -44,8 +47,17 @@ enum APIEndpoint {
             }
             return components?.url?.absoluteString ?? "\(AppConfig.apiBaseURL)/moments"
 
+        case .createMoment:
+            return "\(AppConfig.apiBaseURL)/moments"
+
         case .moment(let id):
             return "\(AppConfig.apiBaseURL)/moments/\(id)"
+
+        case .momentByClientId(let clientId):
+            return "\(AppConfig.apiBaseURL)/moments/by-client-id/\(clientId)"
+
+        case .enrichMoment(let id):
+            return "\(AppConfig.apiBaseURL)/moments/\(id)/enrich"
 
         case .updateMoment(let id):
             return "\(AppConfig.apiBaseURL)/moments/\(id)"

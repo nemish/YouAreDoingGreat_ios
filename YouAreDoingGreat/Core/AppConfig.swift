@@ -53,6 +53,12 @@ enum AppConfig {
     /// Header key for user authentication
     static let userIdHeaderKey = "x-user-id"
 
+    /// Header key for app token authentication
+    static let appTokenHeaderKey = "x-app-token-code"
+
+    /// App token for API access validation
+    static let appToken = "6459462c25b4c5112e858c0d2befb150a1964a046db17b92fac3e323648e7a0a"
+
     /// Placeholder user ID for development (TODO: Replace with actual auth)
     static let developmentUserId = "test-user-id"
 
