@@ -58,6 +58,14 @@ struct MomentDetailSheet: View {
                                     .multilineTextAlignment(.center)
                                     .fixedSize(horizontal: false, vertical: true)
 
+                                // Loading indicator for AI praise (enrichment in progress)
+                                if viewModel.isLoadingAIPraise {
+                                    MomentSyncLoadingView()
+                                        .transition(.asymmetric(
+                                            insertion: .opacity.combined(with: .scale(scale: 0.8)),
+                                            removal: .opacity.combined(with: .scale(scale: 0.8))
+                                        ))
+                                }
 
                                 // AI praise (shown when available)
                                 if let aiPraise = moment.praise, !aiPraise.isEmpty {
@@ -76,6 +84,8 @@ struct MomentDetailSheet: View {
                                         .multilineTextAlignment(.center)
                                 }
                             }
+                            .animation(.easeInOut(duration: 0.5), value: viewModel.isLoadingAIPraise)
+                            .animation(.easeInOut(duration: 0.5), value: moment.praise)
                             .opacity(showPraise ? 1 : 0)
 
                             // Tags section

@@ -24,9 +24,9 @@ struct WelcomeView: View {
 
             introText
 
-            heroTitle
-
             subHeadline
+
+            heroTitle
 
             Spacer()
 
@@ -57,7 +57,7 @@ struct WelcomeView: View {
     // MARK: - Hero Title
 
     private var heroTitle: some View {
-        Text("You're doing better\nthan you think")
+        Text("You Are Doing Great")
             .font(.appTitle)
             .foregroundStyle(Color.textHighlightOnePrimary)
             .multilineTextAlignment(.center)
@@ -75,7 +75,7 @@ struct WelcomeView: View {
                 .foregroundStyle(Color.textSecondary)
                 .multilineTextAlignment(.center)
 
-            Text("and feel a bit better")
+            Text("because even on weird days")
                 .font(.appBody)
                 .foregroundStyle(.textPrimary)
                 .fontWeight(.bold)

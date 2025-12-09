@@ -94,12 +94,8 @@ final class SubscriptionService {
     /// Observe customer info stream for real-time updates
     private func observeCustomerInfo() {
         Task {
-            do {
-                for try await customerInfo in Purchases.shared.customerInfoStream {
-                    updateSubscriptionState(from: customerInfo)
-                }
-            } catch {
-                logger.error("CustomerInfo stream error: \(error.localizedDescription)")
+            for await customerInfo in Purchases.shared.customerInfoStream {
+                updateSubscriptionState(from: customerInfo)
             }
         }
     }

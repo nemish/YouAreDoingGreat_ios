@@ -6,12 +6,12 @@ private let logger = Logger(subsystem: "ee.required.you-are-doing-great", catego
 // MARK: - Default API Client
 // URLSession-based implementation of APIClient with automatic header injection
 
-final class DefaultAPIClient: APIClient {
+final class DefaultAPIClient: APIClient, @unchecked Sendable {
     private let session: URLSession
     private let jsonEncoder: JSONEncoder
     private let jsonDecoder: JSONDecoder
 
-    init(session: URLSession = .shared) {
+    nonisolated init(session: URLSession = .shared) {
         self.session = session
         self.jsonEncoder = JSONEncoder()
         self.jsonDecoder = JSONDecoder()
