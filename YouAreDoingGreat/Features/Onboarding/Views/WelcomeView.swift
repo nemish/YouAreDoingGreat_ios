@@ -10,10 +10,9 @@ struct WelcomeView: View {
     // Sequential fade-in states
     @State private var showIntro = false
     @State private var showTitle = false
-    @State private var showSubHeadline = false
-    @State private var showFeatures = false
-    @State private var showButton = false
-    @State private var showFooter = false
+    @State private var showSubHeadline1 = false
+    @State private var showSubHeadline2 = false
+    @State private var showCTA = false
 
     var onGetStarted: () -> Void
 
@@ -24,9 +23,12 @@ struct WelcomeView: View {
 
             introText
 
-            subHeadline
+            subHeadline1
+
+            subHeadline2
 
             heroTitle
+                .frame(maxWidth: .infinity, alignment: .center)
 
             Spacer()
 
@@ -66,24 +68,29 @@ struct WelcomeView: View {
             .padding(.bottom, 24)
     }
 
-    // MARK: - Sub-Headline
+    // MARK: - Sub-Headline 1
 
-    private var subHeadline: some View {
-        VStack(spacing: 8) {
-            Text("I help you notice the small wins you usually ignore…")
-                .font(.appBody)
-                .foregroundStyle(Color.textSecondary)
-                .multilineTextAlignment(.center)
+    private var subHeadline1: some View {
+        Text("I help you notice the small wins you usually ignore…")
+            .font(.appBody)
+            .foregroundStyle(Color.textSecondary)
+            .multilineTextAlignment(.center)
+            .opacity(showSubHeadline1 ? 1 : 0)
+            .padding(.horizontal, 8)
+            .padding(.bottom, 24)
+    }
 
-            Text("because even on weird days")
-                .font(.appBody)
-                .foregroundStyle(.textPrimary)
-                .fontWeight(.bold)
-                .multilineTextAlignment(.center)
-        }
-        .opacity(showSubHeadline ? 1 : 0)
-        .padding(.horizontal, 8)
-        .padding(.bottom, 32)
+    // MARK: - Sub-Headline 2
+
+    private var subHeadline2: some View {
+        Text("because even on weird days")
+            .font(.appBody)
+            .foregroundStyle(.textPrimary)
+            .fontWeight(.bold)
+            .multilineTextAlignment(.center)
+            .opacity(showSubHeadline2 ? 1 : 0)
+            .padding(.horizontal, 8)
+            .padding(.bottom, 40)
     }
 
 
@@ -92,7 +99,7 @@ struct WelcomeView: View {
         PrimaryButton(title: "Alright, let's do this", showGlow: true) {
             onGetStarted()
         }
-        .opacity(showButton ? 1 : 0)
+        .opacity(showCTA ? 1 : 0)
         .padding(.bottom, 32)
     }
 
@@ -120,42 +127,38 @@ struct WelcomeView: View {
                     .foregroundStyle(Color.textTertiary)
             }
         }
-        .opacity(showFooter ? 1 : 0)
+        .opacity(showCTA ? 1 : 0)
     }
 
     // MARK: - Private Methods
 
     private func startAnimations() {
-        // Sequential fade-in animations
-        withAnimation(.easeIn(duration: 0.6).delay(0.3)) {
+        // Sequential fade-in animations (slower with bigger delays)
+        withAnimation(.easeIn(duration: 1.2).delay(1.0)) {
             showIntro = true
         }
 
-        withAnimation(.easeIn(duration: 0.6).delay(0.8)) {
+        withAnimation(.easeIn(duration: 1.2).delay(3.5)) {
+            showSubHeadline1 = true
+        }
+
+        withAnimation(.easeIn(duration: 1.2).delay(6.0)) {
+            showSubHeadline2 = true
+        }
+
+        withAnimation(.easeIn(duration: 1.2).delay(8.5)) {
             showTitle = true
         }
 
-        withAnimation(.easeIn(duration: 0.6).delay(1.3)) {
-            showSubHeadline = true
-        }
-
-        withAnimation(.easeIn(duration: 0.6).delay(1.8)) {
-            showFeatures = true
-        }
-
-        withAnimation(.easeIn(duration: 0.6).delay(2.3)) {
-            showButton = true
-        }
-
-        withAnimation(.easeIn(duration: 0.6).delay(2.8)) {
-            showFooter = true
+        withAnimation(.easeIn(duration: 1.2).delay(11.0)) {
+            showCTA = true
         }
 
         // Breathing animation for title
         withAnimation(
             .easeInOut(duration: 3.0)
             .repeatForever(autoreverses: true)
-            .delay(0.8)
+            .delay(8.5)
         ) {
             breathingScale = 1.05
             breathingOpacity = 0.85
