@@ -206,9 +206,12 @@ struct HomeView: View {
     }
 
     private func startBreathingAnimation() {
+        // Delay to allow transition from Welcome view to complete (0.5s)
+        // This prevents animation phase mismatch between the two breathing animations
         withAnimation(
             .easeInOut(duration: 3.0)
             .repeatForever(autoreverses: true)
+            .delay(0.6)
         ) {
             breathingScale = 1.05
             breathingOpacity = 0.85

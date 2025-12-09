@@ -23,32 +23,26 @@ struct YouAreDoingGreatApp: App {
                 if hasCompletedOnboarding {
                     ContentView()
                         .preferredColorScheme(.dark) // Force dark mode for v1
-                        .transition(.asymmetric(
-                            insertion: .opacity.combined(with: .scale(scale: 0.95)),
-                            removal: .opacity
-                        ))
+                        .transition(.opacity)
                         .zIndex(1)
                 } else {
                     WelcomeView {
                         completeOnboarding()
                     }
                     .preferredColorScheme(.dark) // Force dark mode for v1
-                    .transition(.asymmetric(
-                        insertion: .opacity,
-                        removal: .opacity.combined(with: .scale(scale: 1.05))
-                    ))
+                    .transition(.opacity)
                     .zIndex(0)
                 }
             }
-            .animation(.easeInOut(duration: 0.6), value: hasCompletedOnboarding)
+            .animation(.easeOut(duration: 0.5), value: hasCompletedOnboarding)
         }
         .modelContainer(for: Moment.self)
     }
 
     private func completeOnboarding() {
-        withAnimation {
-            hasCompletedOnboarding = true
-        }
+        // State change triggers the .animation modifier on ZStack
+        // No need for withAnimation here - it causes double animation conflict
+        hasCompletedOnboarding = true
     }
 
     private func configureRevenueCat() {
