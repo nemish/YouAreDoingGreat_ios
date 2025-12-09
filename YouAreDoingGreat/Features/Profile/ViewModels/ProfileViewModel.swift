@@ -164,7 +164,10 @@ final class ProfileViewModel {
             userProfile = nil
             userStats = nil
 
-            // 7. Trigger onboarding reset (this will navigate to WelcomeView)
+            // 7. Reset first log hint so it shows again
+            UserDefaults.standard.removeObject(forKey: "hasCompletedFirstLog")
+
+            // 8. Trigger onboarding reset (this will navigate to WelcomeView)
             onComplete()
 
             UIImpactFeedbackGenerator(style: .medium).impactOccurred()
