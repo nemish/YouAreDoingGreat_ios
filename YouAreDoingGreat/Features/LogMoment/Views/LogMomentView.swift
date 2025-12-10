@@ -20,12 +20,17 @@ struct LogMomentView: View {
     // Paywall state
     @State private var showPaywall = false
 
+    // First log hints state
+    @State private var showFirstLogHints = false
+    private var isFirstLog: Bool
+
     // Callbacks
     var onSave: (() -> Void)?
 
     init(isFirstLog: Bool = false, selectedTab: Binding<Int>, onSave: (() -> Void)? = nil) {
         _viewModel = State(initialValue: LogMomentViewModel(isFirstLog: isFirstLog))
         _selectedTab = selectedTab
+        self.isFirstLog = isFirstLog
         self.onSave = onSave
     }
 
@@ -95,8 +100,16 @@ struct LogMomentView: View {
                     // Text input
                     momentTextInput
 
-                    // Time selector
-                    timeSelector
+                    // Time selector with hint
+                    VStack(spacing: 8) {
+                        timeSelector
+
+                        // First log time hint
+                        if isFirstLog && showFirstLogHints {
+                            firstLogTimeHint
+                                .transition(.opacity.combined(with: .offset(y: -10)))
+                        }
+                    }
 
                     Spacer(minLength: 100)
                 }
@@ -105,11 +118,31 @@ struct LogMomentView: View {
             }
 
             // Bottom CTA
-            VStack {
+            VStack(spacing: 8) {
                 Spacer()
+
+                // First log submit hint
+                if isFirstLog && showFirstLogHints {
+                    firstLogSubmitHint
+                        .padding(.horizontal, 24)
+                        .transition(.opacity.combined(with: .offset(y: 10)))
+                }
+
                 saveButton
                     .padding(.horizontal, 24)
                     .padding(.bottom, 40)
+            }
+            .animation(.easeOut(duration: 0.3), value: showFirstLogHints)
+        }
+        .onAppear {
+            // Show hints after delay for first log
+            if isFirstLog {
+                Task {
+                    try? await Task.sleep(for: .seconds(1.5))
+                    withAnimation(.easeOut(duration: 0.3)) {
+                        showFirstLogHints = true
+                    }
+                }
             }
         }
     }
@@ -126,7 +159,7 @@ struct LogMomentView: View {
     // MARK: - Title Section
 
     private var titleSection: some View {
-        Text("Nice — that counts.\nWhat did you do?")
+        Text("Nice — that counts.\nWhat was it?")
             .font(.appTitle2)
             .foregroundStyle(.textHighlightOnePrimary)
             .multilineTextAlignment(.center)
@@ -312,6 +345,14 @@ struct LogMomentView: View {
         }
         .disabled(viewModel.isSubmitting)
         .opacity(viewModel.isSubmitting ? 0.7 : 1)
+        .onChange(of: viewModel.isSubmitting) { _, isSubmitting in
+            // Hide hints when submitting
+            if isSubmitting && showFirstLogHints {
+                withAnimation(.easeOut(duration: 0.2)) {
+                    showFirstLogHints = false
+                }
+            }
+        }
         .fullScreenCover(isPresented: $showPaywall, onDismiss: {
             // Always clear the service flag when paywall is dismissed
             // This handles both programmatic dismissal and interactive gestures
@@ -322,6 +363,31 @@ struct LogMomentView: View {
                 // This closure only runs for programmatic dismissal (button taps)
                 showPaywall = false
             }
+        }
+    }
+    // MARK: - First Log Hints
+
+    private var firstLogTimeHint: some View {
+        HStack(alignment: .top, spacing: 8) {
+            Image(systemName: "arrow.turn.left.up")
+                .font(.system(size: 16))
+                .foregroundStyle(.textPrimary)
+
+            Text("pick the time if needed")
+                .font(.appFootnoteWriting)
+                .foregroundStyle(.textPrimary)
+        }
+    }
+
+    private var firstLogSubmitHint: some View {
+        HStack(alignment: .top, spacing: 8) {
+            Text("and just tap here")
+                .font(.appFootnoteWriting)
+                .foregroundStyle(.textPrimary)
+
+            Image(systemName: "arrow.turn.right.down")
+                .font(.system(size: 16))
+                .foregroundStyle(.textPrimary)
         }
     }
 }
