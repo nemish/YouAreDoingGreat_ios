@@ -17,32 +17,36 @@ struct WelcomeView: View {
     var onGetStarted: () -> Void
 
     var body: some View {
-        VStack(spacing: 0) {
-            Spacer()
-                .frame(height: 100)
+        GeometryReader { geometry in
+            VStack(spacing: 0) {
+                Spacer()
 
-            introText
+                introText
 
-            subHeadline1
+                subHeadline1
 
-            subHeadline2
+                subHeadline2
 
-            heroTitle
-                .frame(maxWidth: .infinity, alignment: .center)
+                heroTitle
+                    .frame(maxWidth: .infinity, alignment: .center)
 
-            Spacer()
+                Spacer()
+                    .frame(height: geometry.size.height * 0.15)
 
-            // CTA Button
-            ctaButton
+                Spacer()
 
-            // Footer with legal links
-            footerSection
-        }
-        .padding(.horizontal, 32)
-        .padding(.bottom, 40)
-        .starfieldBackground()
-        .onAppear {
-            startAnimations()
+                // CTA Button
+                ctaButton
+
+                // Footer with legal links
+                footerSection
+            }
+            .padding(.horizontal, 32)
+            .padding(.bottom, 40)
+            .starfieldBackground()
+            .onAppear {
+                startAnimations()
+            }
         }
     }
 
