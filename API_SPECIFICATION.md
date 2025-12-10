@@ -623,6 +623,7 @@ x-user-id: <user_id>
       "tags": ["exercise", "mindfulness", "productivity"],
       "momentsCount": 12,
       "timesOfDay": ["cloud-sun", "sun-medium", "sunset"],
+      "state": "FINALISED",
       "createdAt": "2024-01-16T02:00:00Z"
     }
   ],
@@ -641,7 +642,7 @@ x-user-id: <user_id>
 
 - `id`: Unique identifier for the day summary
 - `date`: The date this summary represents (start of day, ISO date-time)
-- `text`: AI-generated summary text (null if no moments for this day)
+- `text`: AI-generated summary text (null if INPROGRESS or no moments for this day)
 - `tags`: Top 5 most popular tags from moments on this day
 - `momentsCount`: Total number of moments logged on this day
 - `timesOfDay`: Array of time periods when moments were logged:
@@ -650,6 +651,9 @@ x-user-id: <user_id>
   - `sun-medium`: 12-5pm
   - `sunset`: 5-8pm
   - `moon`: night
+- `state`: Processing state of the day summary:
+  - `INPROGRESS`: Day is ongoing, AI summary not yet generated
+  - `FINALISED`: Summary is complete with AI-generated text
 - `createdAt`: When the summary was created (ISO date-time)
 
 #### Error Responses
@@ -864,6 +868,7 @@ x-user-id: <user_id>
   "tags": "string[]",
   "momentsCount": "integer",
   "timesOfDay": "string[]",
+  "state": "INPROGRESS | FINALISED",
   "createdAt": "string (ISO date-time)"
 }
 ```
@@ -875,11 +880,14 @@ x-user-id: <user_id>
 - `tags`: Top 5 most popular tags from moments on this day
 - `momentsCount`: Total number of moments logged on this day
 - `timesOfDay`: Array of time periods when moments were logged
+- `state`: Processing state of the day summary
+  - `INPROGRESS`: Day is ongoing, AI summary not yet generated
+  - `FINALISED`: Summary is complete with AI-generated text
 - `createdAt`: When the summary was created (ISO date-time)
 
 **Optional Fields:**
 
-- `text`: AI-generated summary text (null if no moments for this day)
+- `text`: AI-generated summary text (null if INPROGRESS or no moments for this day)
 
 ### PaginatedTimelineResponse
 

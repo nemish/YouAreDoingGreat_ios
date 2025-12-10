@@ -1096,6 +1096,7 @@
                     "tags",
                     "momentsCount",
                     "timesOfDay",
+                    "state",
                     "createdAt"
                 ],
                 "properties": {
@@ -1151,6 +1152,15 @@
                             "sun-medium",
                             "sunset"
                         ]
+                    },
+                    "state": {
+                        "type": "string",
+                        "enum": [
+                            "INPROGRESS",
+                            "FINALISED"
+                        ],
+                        "description": "The processing state of the day summary:\n- INPROGRESS: Summary exists but AI text generation has not completed yet\n- FINALISED: Summary is complete with AI-generated text and all metadata\n",
+                        "example": "FINALISED"
                     },
                     "createdAt": {
                         "type": "string",

@@ -10,43 +10,64 @@ struct JourneyView: View {
         _viewModel = State(initialValue: viewModel)
     }
 
+    /// Checks if this is a new journey (only one INPROGRESS item)
+    private var isJourneyJustStarted: Bool {
+        viewModel.items.count == 1 && viewModel.items.first?.state == .inProgress
+    }
+
+    /// Checks if first item is FINALISED (no INPROGRESS today item exists yet)
+    private var needsArtificialTodayMarker: Bool {
+        guard let firstItem = viewModel.items.first else { return false }
+        return firstItem.state == .finalised
+    }
+
     private var itemsWithMarkers: [TimelineItem] {
         var result: [TimelineItem] = []
         let formatter = ISO8601DateFormatter()
 
-        // Always add "You are here" marker at the top
-        let todayMarker = DaySummaryDTO(
-            id: "__today__",
-            date: formatter.string(from: Date()),
-            text: nil,
-            tags: [],
-            momentsCount: 0,
-            timesOfDay: [],
-            createdAt: formatter.string(from: Date())
-        )
-        result.append(.today(todayMarker))
-
-        // Add all actual timeline items (except empty days at the end)
-        for item in viewModel.items {
-            // Skip the very last item if it's empty (has no moments)
-            if item.id == viewModel.items.last?.id && item.momentsCount == 0 {
-                continue
-            }
-            result.append(.day(item))
-        }
-
-        // Add "Journey begins" marker at the bottom if there are items
-        if !viewModel.items.isEmpty {
-            let beginningMarker = DaySummaryDTO(
-                id: "__beginning__",
-                date: viewModel.items.last?.date ?? formatter.string(from: Date()),
+        // If first item is FINALISED, add artificial "You are here" marker for today
+        if needsArtificialTodayMarker {
+            let todayMarker = DaySummaryDTO(
+                id: "__today__",
+                date: formatter.string(from: Date()),
                 text: nil,
                 tags: [],
                 momentsCount: 0,
                 timesOfDay: [],
+                state: .inProgress,
                 createdAt: formatter.string(from: Date())
             )
-            result.append(.beginning(beginningMarker))
+            result.append(.today(todayMarker))
+        }
+
+        // Process timeline items
+        for (index, item) in viewModel.items.enumerated() {
+            // INPROGRESS items are rendered as "You are here" (today marker)
+            if item.state == .inProgress {
+                result.append(.today(item))
+            } else {
+                // Skip the very last item if it's empty (has no moments)
+                if index == viewModel.items.count - 1 && item.momentsCount == 0 {
+                    continue
+                }
+                result.append(.day(item))
+            }
+        }
+
+        // Add "Journey begins" marker at the bottom if there are items
+        // Use "Today" if journey just started (single INPROGRESS item)
+        if !viewModel.items.isEmpty {
+            let beginningMarker = DaySummaryDTO(
+                id: "__beginning__",
+                date: isJourneyJustStarted ? formatter.string(from: Date()) : (viewModel.items.last?.date ?? formatter.string(from: Date())),
+                text: nil,
+                tags: [],
+                momentsCount: 0,
+                timesOfDay: [],
+                state: .finalised,
+                createdAt: formatter.string(from: Date())
+            )
+            result.append(.beginning(beginningMarker, isJourneyStart: isJourneyJustStarted))
         }
 
         return result
@@ -55,20 +76,27 @@ struct JourneyView: View {
     enum TimelineItem: Identifiable {
         case today(DaySummaryDTO)
         case day(DaySummaryDTO)
-        case beginning(DaySummaryDTO)
+        case beginning(DaySummaryDTO, isJourneyStart: Bool)
 
         var id: String {
             switch self {
-            case .today(let item), .day(let item), .beginning(let item):
+            case .today(let item), .day(let item), .beginning(let item, _):
                 return item.id
             }
         }
 
         var daySummary: DaySummaryDTO {
             switch self {
-            case .today(let item), .day(let item), .beginning(let item):
+            case .today(let item), .day(let item), .beginning(let item, _):
                 return item
             }
+        }
+
+        var isJourneyStart: Bool {
+            if case .beginning(_, let isStart) = self {
+                return isStart
+            }
+            return false
         }
     }
 
@@ -115,19 +143,22 @@ struct JourneyView: View {
                         TimelineItemView(
                             item: daySummary,
                             isToday: true,
-                            isBeginning: false
+                            isBeginning: false,
+                            isJourneyStart: false
                         )
                     case .day(let daySummary):
                         TimelineItemView(
                             item: daySummary,
                             isToday: false,
-                            isBeginning: false
+                            isBeginning: false,
+                            isJourneyStart: false
                         )
-                    case .beginning(let daySummary):
+                    case .beginning(let daySummary, let isJourneyStart):
                         TimelineItemView(
                             item: daySummary,
                             isToday: false,
-                            isBeginning: true
+                            isBeginning: true,
+                            isJourneyStart: isJourneyStart
                         )
                     }
                 }
@@ -223,12 +254,23 @@ struct JourneyView: View {
 
     let mockItems = [
         DaySummaryDTO(
+            id: "0",
+            date: formatter.string(from: now),
+            text: nil,
+            tags: [],
+            momentsCount: 2,
+            timesOfDay: ["cloud-sun"],
+            state: .inProgress,
+            createdAt: formatter.string(from: now)
+        ),
+        DaySummaryDTO(
             id: "1",
             date: formatter.string(from: calendar.date(byAdding: .day, value: -1, to: now)!),
             text: "Had a productive morning work session. Called my mom to check in.",
             tags: ["work", "family", "connection"],
             momentsCount: 2,
             timesOfDay: ["cloud-sun", "sunset"],
+            state: .finalised,
             createdAt: formatter.string(from: calendar.date(byAdding: .day, value: -1, to: now)!)
         ),
         DaySummaryDTO(
@@ -238,6 +280,7 @@ struct JourneyView: View {
             tags: ["exercise", "outdoors", "self-care"],
             momentsCount: 3,
             timesOfDay: ["sun.max", "moon"],
+            state: .finalised,
             createdAt: formatter.string(from: calendar.date(byAdding: .day, value: -2, to: now)!)
         ),
         DaySummaryDTO(
@@ -247,6 +290,7 @@ struct JourneyView: View {
             tags: [],
             momentsCount: 0,
             timesOfDay: [],
+            state: .finalised,
             createdAt: formatter.string(from: calendar.date(byAdding: .day, value: -3, to: now)!)
         ),
     ]
@@ -269,6 +313,45 @@ struct JourneyView: View {
     let apiClient = DefaultAPIClient()
     let viewModel = JourneyViewModel(apiClient: apiClient)
     viewModel.isInitialLoading = true
+
+    return JourneyView(viewModel: viewModel)
+        .preferredColorScheme(.dark)
+}
+
+#Preview("Journey - No INPROGRESS Today") {
+    let apiClient = DefaultAPIClient()
+    let viewModel = JourneyViewModel(apiClient: apiClient)
+
+    // Mock data: No moments submitted today, so no INPROGRESS item exists
+    let calendar = Calendar.current
+    let now = Date()
+    let formatter = ISO8601DateFormatter()
+
+    let mockItems = [
+        // First item is FINALISED (yesterday), no INPROGRESS for today
+        DaySummaryDTO(
+            id: "1",
+            date: formatter.string(from: calendar.date(byAdding: .day, value: -1, to: now)!),
+            text: "Had a productive morning work session. Called my mom to check in.",
+            tags: ["work", "family", "connection"],
+            momentsCount: 2,
+            timesOfDay: ["cloud-sun", "sunset"],
+            state: .finalised,
+            createdAt: formatter.string(from: calendar.date(byAdding: .day, value: -1, to: now)!)
+        ),
+        DaySummaryDTO(
+            id: "2",
+            date: formatter.string(from: calendar.date(byAdding: .day, value: -2, to: now)!),
+            text: "Went for a walk in the sunshine.",
+            tags: ["exercise", "outdoors"],
+            momentsCount: 1,
+            timesOfDay: ["sun.max"],
+            state: .finalised,
+            createdAt: formatter.string(from: calendar.date(byAdding: .day, value: -2, to: now)!)
+        ),
+    ]
+
+    viewModel.items = mockItems
 
     return JourneyView(viewModel: viewModel)
         .preferredColorScheme(.dark)
