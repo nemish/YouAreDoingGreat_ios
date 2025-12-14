@@ -1,0 +1,45 @@
+{
+    "0_to_10_min": [
+      "Nice. That one mattered.",
+      "Solid. A good moment to mark.",
+      "That felt right to log.",
+      "Clean entry. Well done.",
+      "Good call noticing that one.",
+      "A simple moment, nicely captured.",
+      "That's a win worth noting.",
+      "Good one. Glad you added it.",
+      "A neat moment. Logged perfectly."
+    ],
+    "10_to_30_min": [
+      "If something else happened, feel free to add it.",
+      "Another thing already? Go ahead.",
+      "If there's another moment, I'm here for it.",
+      "Got more wins? Add whenever.",
+      "If something else showed up, just log it.",
+      "If there's another bit worth noting, tap away.",
+      "More moments happen all the time — add if you want.",
+      "Another moment in the mix? I'm ready.",
+      "If something else popped up, toss it in."
+    ],
+    "30_min_to_2_hour": [
+      "No rush — add something when it feels right.",
+      "Take your time. Log whenever you're ready.",
+      "There's no schedule here. Go at your pace.",
+      "When the next moment shows up, I'm here.",
+      "Move slowly — moments appear on their own.",
+      "Whenever you feel like adding something, just tap.",
+      "Go easy — the next win will show up.",
+      "You're not on a timer — add things naturally.",
+      "Whenever something stands out, log it."
+    ],
+    "2_hour_and_more": [
+      "If nothing comes to mind, try something simple — it counts.",
+      "There's always at least one win hiding somewhere.",
+      "It doesn't have to be big. Whatever moment works.",
+      "Don't overthink it — a simple win is enough.",
+      "If the day feels empty, look again — something's there.",
+      "Something happened. It doesn't need to be impressive.",
+      "A basic everyday moment is still a moment.",
+      "Whatever it is, it's fine. Ordinary is fine. It all counts."
+    ]
+  }

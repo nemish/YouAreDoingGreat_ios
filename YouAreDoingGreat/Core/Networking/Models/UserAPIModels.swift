@@ -15,8 +15,7 @@ struct UserDTO: Decodable {
 // MARK: - User Status
 
 enum UserStatus: String, Decodable {
-    case newcomer
-    case paywallNeeded = "paywall_needed"
+    case free
     case premium
 }
 

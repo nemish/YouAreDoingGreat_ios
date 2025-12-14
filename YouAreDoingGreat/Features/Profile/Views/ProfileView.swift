@@ -470,7 +470,7 @@ private func makePreviewViewModel() -> ProfileViewModel {
     viewModel.userProfile = UserDTO(
         id: "123",
         userId: "user_1234567890abcdef",
-        status: .newcomer
+        status: .free
     )
     viewModel.userStats = UserStatsDTO(
         totalMoments: 127,

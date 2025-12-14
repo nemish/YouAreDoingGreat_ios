@@ -1,4 +1,5 @@
 import SwiftUI
+import SwiftData
 
 // MARK: - Home View
 // Dark mode only for v1
@@ -7,6 +8,31 @@ struct HomeView: View {
     @Binding var selectedTab: Int
     @AppStorage("hasCompletedFirstLog") private var hasCompletedFirstLog = false
     var animatePremiumBadge: Bool = false
+
+    // SwiftData query for moments (sorted newest first)
+    @Query(sort: \Moment.submittedAt, order: .reverse) private var moments: [Moment]
+
+    // Timer since last moment
+    @State private var timerTimeValue: String?  // e.g. "9 minutes" or "Nice. Logged."
+    @State private var timerPhrase: String?
+    @State private var currentTimeBucket: TimeBucket?
+    private let timerPhrases = TimerPhrases.load()
+
+    private enum TimeBucket {
+        case zeroToTen
+        case tenToThirty
+        case thirtyToTwoHours
+        case twoHoursPlus
+
+        static func from(minutes: Int) -> TimeBucket {
+            switch minutes {
+            case 0..<10: return .zeroToTen
+            case 10..<30: return .tenToThirty
+            case 30..<120: return .thirtyToTwoHours
+            default: return .twoHoursPlus
+            }
+        }
+    }
 
     // Premium status
     private var isPremium: Bool {
@@ -23,6 +49,9 @@ struct HomeView: View {
 
     // Navigation state
     @State private var showLogMoment = false
+
+    // Premium thank-you card
+    @State private var showPremiumThankYou = false
 
     // Title phrases - tap to cycle
     private let titlePhrases = [
@@ -75,8 +104,26 @@ struct HomeView: View {
 
                     Spacer()
 
-                    // Primary action button
+                    // Primary action button and thank-you card
                     VStack(spacing: 16) {
+                        // Premium thank-you card (shown after successful subscription)
+                        if showPremiumThankYou {
+                            PremiumThankYouCard {
+                                withAnimation(.easeOut(duration: 0.3)) {
+                                    showPremiumThankYou = false
+                                }
+                            }
+                            .transition(.asymmetric(
+                                insertion: .opacity.combined(with: .move(edge: .bottom)),
+                                removal: .opacity.combined(with: .move(edge: .bottom))
+                            ))
+                        }
+
+                        // Timer since last moment
+                        if let timerTimeValue, let timerPhrase {
+                            LastMomentTimerView(timeValue: timerTimeValue, phrase: timerPhrase)
+                        }
+
                         PrimaryButton(title: "I Did a Thing") {
                             showLogMoment = true
                         }
@@ -101,10 +148,21 @@ struct HomeView: View {
             .onAppear {
                 selectRandomPhrase()
                 startBreathingAnimation()
+                loadTimerData()
             }
             .onChange(of: animatePremiumBadge) { _, newValue in
                 if newValue && isPremium {
                     startPremiumBadgePulse()
+                    // Show thank-you card after successful subscription
+                    withAnimation(.spring(duration: 0.4, bounce: 0.2)) {
+                        showPremiumThankYou = true
+                    }
+                }
+            }
+            .onChange(of: showLogMoment) { _, isShowing in
+                // Refresh timer when returning from LogMomentView
+                if !isShowing {
+                    loadTimerData()
                 }
             }
         }
@@ -190,6 +248,27 @@ struct HomeView: View {
     }
 
     // MARK: - Private Methods
+
+    private func loadTimerData() {
+        guard let lastMoment = moments.first else {
+            timerTimeValue = nil
+            timerPhrase = nil
+            currentTimeBucket = nil
+            return
+        }
+
+        let interval = Date().timeIntervalSince(lastMoment.submittedAt)
+        let totalMinutes = Int(interval / 60)
+
+        timerTimeValue = LastMomentTimerView.formatTimeValue(totalMinutes: totalMinutes)
+
+        // Only update phrase when bucket changes
+        let newBucket = TimeBucket.from(minutes: totalMinutes)
+        if currentTimeBucket != newBucket {
+            currentTimeBucket = newBucket
+            timerPhrase = timerPhrases?.randomPhrase(forMinutesSinceLast: totalMinutes)
+        }
+    }
 
     private func selectRandomPhrase() {
         currentPhraseIndex = Int.random(in: 0..<titlePhrases.count)

@@ -138,7 +138,7 @@ struct LogMomentView: View {
             // Show hints after delay for first log
             if isFirstLog {
                 Task {
-                    try? await Task.sleep(for: .seconds(1.5))
+                    try? await Task.sleep(for: .seconds(0.8))
                     withAnimation(.easeOut(duration: 0.3)) {
                         showFirstLogHints = true
                     }

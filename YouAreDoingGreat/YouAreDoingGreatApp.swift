@@ -34,7 +34,7 @@ struct YouAreDoingGreatApp: App {
                     .zIndex(0)
                 }
             }
-            .animation(.easeOut(duration: 0.5), value: hasCompletedOnboarding)
+            .animation(.easeOut(duration: 1.0), value: hasCompletedOnboarding)
         }
         .modelContainer(for: Moment.self)
     }
