@@ -24,6 +24,22 @@ final class SubscriptionService {
         observeCustomerInfo()
     }
 
+    // MARK: - User Identity
+
+    /// Ensures RevenueCat is using our user ID, not an anonymous ID
+    /// This MUST be called before any purchase to prevent anonymous ID issues
+    func ensureCorrectUserID() async throws {
+        let expectedUserID = UserIDProvider.shared.userID
+        let currentRCUserID = Purchases.shared.appUserID
+
+        // Check if RC is using an anonymous ID or a different user ID
+        if currentRCUserID.hasPrefix("$RCAnonymousID:") || currentRCUserID != expectedUserID {
+            logger.warning("RevenueCat using wrong user ID: \(currentRCUserID), expected: \(expectedUserID)")
+            _ = try await Purchases.shared.logIn(expectedUserID)
+            logger.info("Successfully logged in with correct user ID: \(expectedUserID)")
+        }
+    }
+
     // MARK: - Public API
 
     /// Fetch available offerings from RevenueCat
@@ -49,6 +65,9 @@ final class SubscriptionService {
     func purchase(package: Package) async throws -> CustomerInfo {
         logger.info("Initiating purchase for package: \(package.identifier)")
 
+        // CRITICAL: Ensure correct user ID before purchase to prevent anonymous ID issues
+        try await ensureCorrectUserID()
+
         do {
             let result = try await Purchases.shared.purchase(package: package)
             let customerInfo = result.customerInfo
@@ -68,6 +87,9 @@ final class SubscriptionService {
     func restorePurchases() async throws -> CustomerInfo {
         logger.info("Restoring purchases")
 
+        // Ensure correct user ID before restore
+        try await ensureCorrectUserID()
+
         do {
             let customerInfo = try await Purchases.shared.restorePurchases()
             logger.info("Restore completed successfully")
@@ -82,6 +104,8 @@ final class SubscriptionService {
     /// Refresh subscription status from RevenueCat
     func refreshSubscriptionStatus() async {
         do {
+            // Ensure correct user ID before fetching status
+            try await ensureCorrectUserID()
             let customerInfo = try await Purchases.shared.customerInfo()
             updateSubscriptionState(from: customerInfo)
         } catch {

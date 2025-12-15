@@ -158,7 +158,10 @@ final class ProfileViewModel {
             UserIDProvider.shared.resetUserID()
 
             // 5. Update RevenueCat with new user ID
-            try await Purchases.shared.logOut()
+            // Must logOut first, then logIn with the new ID
+            // logOut alone creates an anonymous $RCAnonymousID which we don't want
+            _ = try await Purchases.shared.logOut()
+            _ = try await Purchases.shared.logIn(UserIDProvider.shared.userID)
 
             // 6. Clear cached profile/stats
             userProfile = nil

@@ -48,13 +48,15 @@ struct YouAreDoingGreatApp: App {
     private func configureRevenueCat() {
         Purchases.logLevel = AppConfig.isDebugBuild ? .debug : .error
 
+        let userID = UserIDProvider.shared.userID
+
         Purchases.configure(
             with: .builder(withAPIKey: AppConfig.revenueCatAPIKey)
-                .with(appUserID: UserIDProvider.shared.userID)
+                .with(appUserID: userID)
                 .build()
         )
 
-        // Refresh subscription status on app launch
+        // Refresh subscription status (also ensures correct user ID)
         Task { @MainActor in
             await SubscriptionService.shared.refreshSubscriptionStatus()
         }
