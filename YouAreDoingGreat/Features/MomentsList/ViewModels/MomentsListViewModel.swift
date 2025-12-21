@@ -150,11 +150,12 @@ final class MomentsListViewModel {
             self.canLoadMore = momentService.hasNextPage
 
             // Update timeline restriction state after background refresh
-            if momentService.isLimitReached {
+            // Only mark as restricted if there's actually more data being restricted
+            if momentService.isLimitReached && momentService.hasNextPage {
                 isTimelineRestricted = true
             }
 
-            logger.info("Reloaded \(self.moments.count) moments after background refresh, limitReached: \(self.momentService.isLimitReached)")
+            logger.info("Reloaded \(self.moments.count) moments after background refresh, limitReached: \(self.momentService.isLimitReached), hasNextPage: \(self.momentService.hasNextPage)")
         } catch {
             logger.error("Failed to reload moments: \(error.localizedDescription)")
         }
@@ -179,13 +180,13 @@ final class MomentsListViewModel {
             canLoadMore = momentService.hasNextPage
 
             // Check if timeline limit is reached (for free users)
-            // On refresh, just set the flag - don't show popup
-            // Popup will be shown when user scrolls to the bottom
-            if momentService.isLimitReached {
+            // Only mark as restricted if there's actually more data being restricted
+            // If limitReached is true but hasNextPage is false, the user has their full data
+            if momentService.isLimitReached && momentService.hasNextPage {
                 isTimelineRestricted = true
             }
 
-            logger.info("Refresh complete, \(self.moments.count) moments, limitReached: \(self.momentService.isLimitReached)")
+            logger.info("Refresh complete, \(self.moments.count) moments, limitReached: \(self.momentService.isLimitReached), hasNextPage: \(self.momentService.hasNextPage)")
 
             // Restart sync service to pick up any unsynced moments
             SyncService.shared.startSyncing(repository: repository)
@@ -210,17 +211,18 @@ final class MomentsListViewModel {
             canLoadMore = momentService.hasNextPage
 
             // Check if timeline limit is reached (for free users)
-            if momentService.isLimitReached {
+            // Only mark as restricted if there's actually more data being restricted
+            if momentService.isLimitReached && momentService.hasNextPage {
                 isTimelineRestricted = true
-                // Show popup when we've exhausted available data
-                if !momentService.hasNextPage {
-                    showTimelineRestrictedPopup = true
-                    canLoadMore = false
-                    logger.info("Timeline limit reached - showing paywall prompt")
-                }
+            } else if momentService.isLimitReached && !momentService.hasNextPage {
+                // Hit the limit boundary - show restriction UI
+                isTimelineRestricted = true
+                showTimelineRestrictedPopup = true
+                canLoadMore = false
+                logger.info("Timeline limit reached - showing paywall prompt")
             }
 
-            logger.info("Loaded \(newMoments.count) more moments, limitReached: \(self.momentService.isLimitReached)")
+            logger.info("Loaded \(newMoments.count) more moments, limitReached: \(self.momentService.isLimitReached), hasNextPage: \(self.momentService.hasNextPage)")
         } catch {
             handleError(error)
         }
