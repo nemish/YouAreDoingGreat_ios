@@ -57,11 +57,17 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "status": { "type": "string", "example": "degraded" },
+                    "status": {
+                      "type": "string",
+                      "example": "degraded"
+                    },
                     "checks": {
                       "type": "object",
                       "properties": {
-                        "mongodb": { "type": "string", "example": "disconnected" }
+                        "mongodb": {
+                          "type": "string",
+                          "example": "disconnected"
+                        }
                       }
                     }
                   }
@@ -77,13 +83,20 @@
         "summary": "Get current user profile",
         "description": "Retrieve the current user's profile information",
         "operationId": "getCurrentUser",
-        "security": [{ "appToken": [], "userAuth": [] }],
+        "security": [
+          {
+            "appToken": [],
+            "userAuth": []
+          }
+        ],
         "responses": {
           "200": {
             "description": "User profile retrieved successfully",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/UserResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponse"
+                }
               }
             }
           },
@@ -91,7 +104,9 @@
             "description": "Unauthorized - Invalid or missing app token (INVALID_APP_TOKEN) or user ID (RESTRICTED_ACCESS)",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
               }
             }
           },
@@ -99,7 +114,9 @@
             "description": "Internal server error",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
               }
             }
           }
@@ -111,13 +128,20 @@
         "summary": "Get user statistics",
         "description": "Retrieve statistics about user's moment submissions including streaks and totals",
         "operationId": "getUserStats",
-        "security": [{ "appToken": [], "userAuth": [] }],
+        "security": [
+          {
+            "appToken": [],
+            "userAuth": []
+          }
+        ],
         "responses": {
           "200": {
             "description": "User statistics retrieved successfully",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/UserStatsResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/UserStatsResponse"
+                }
               }
             }
           },
@@ -125,7 +149,9 @@
             "description": "Unauthorized - Invalid or missing app token (INVALID_APP_TOKEN) or user ID (RESTRICTED_ACCESS)",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
               }
             }
           },
@@ -133,7 +159,9 @@
             "description": "Internal server error",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
               }
             }
           }
@@ -145,12 +173,19 @@
         "summary": "Submit user feedback",
         "description": "Submit feedback from the user including title and description",
         "operationId": "submitUserFeedback",
-        "security": [{ "appToken": [], "userAuth": [] }],
+        "security": [
+          {
+            "appToken": [],
+            "userAuth": []
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
-              "schema": { "$ref": "#/components/schemas/CreateUserFeedbackRequest" }
+              "schema": {
+                "$ref": "#/components/schemas/CreateUserFeedbackRequest"
+              }
             }
           }
         },
@@ -159,7 +194,9 @@
             "description": "Feedback submitted successfully",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/CreateUserFeedbackResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/CreateUserFeedbackResponse"
+                }
               }
             }
           },
@@ -167,7 +204,9 @@
             "description": "Bad request (invalid input)",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
               }
             }
           },
@@ -175,7 +214,9 @@
             "description": "Unauthorized - Invalid or missing app token (INVALID_APP_TOKEN) or user ID (RESTRICTED_ACCESS)",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
               }
             }
           },
@@ -183,7 +224,9 @@
             "description": "Internal server error",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
               }
             }
           }
@@ -195,7 +238,12 @@
         "summary": "Get timeline with pagination",
         "description": "Retrieve user day summaries with cursor-based pagination for infinite scrolling timeline.\n\n**Timeline Restriction:** Free users can only access data from the last 14 days.\nData older than 14 days is filtered out and `limitReached` is set to true.\nPremium users have unlimited access to their full history.\n",
         "operationId": "getTimeline",
-        "security": [{ "appToken": [], "userAuth": [] }],
+        "security": [
+          {
+            "appToken": [],
+            "userAuth": []
+          }
+        ],
         "parameters": [
           {
             "name": "cursor",
@@ -227,7 +275,9 @@
             "description": "Successful response",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/PaginatedTimelineResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedTimelineResponse"
+                }
               }
             }
           },
@@ -235,7 +285,9 @@
             "description": "Bad request",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
               }
             }
           },
@@ -243,7 +295,9 @@
             "description": "Unauthorized - Invalid or missing app token (INVALID_APP_TOKEN) or user ID (RESTRICTED_ACCESS)",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
               }
             }
           },
@@ -251,7 +305,9 @@
             "description": "Internal server error",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
               }
             }
           }
@@ -263,7 +319,12 @@
         "summary": "Get moments with pagination",
         "description": "Retrieve user moments with cursor-based pagination for infinite scrolling.\n\n**Timeline Restriction:** Free users can only access data from the last 14 days.\nData older than 14 days is filtered out and `limitReached` is set to true.\nPremium users have unlimited access to their full history.\n",
         "operationId": "getMoments",
-        "security": [{ "appToken": [], "userAuth": [] }],
+        "security": [
+          {
+            "appToken": [],
+            "userAuth": []
+          }
+        ],
         "parameters": [
           {
             "name": "cursor",
@@ -295,7 +356,9 @@
             "description": "Successful response",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/PaginatedMomentsResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedMomentsResponse"
+                }
               }
             }
           },
@@ -303,7 +366,9 @@
             "description": "Bad request",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
               }
             }
           },
@@ -311,7 +376,9 @@
             "description": "Unauthorized - Invalid or missing app token (INVALID_APP_TOKEN) or user ID (RESTRICTED_ACCESS)",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
               }
             }
           },
@@ -319,7 +386,9 @@
             "description": "Internal server error",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
               }
             }
           }
@@ -329,12 +398,19 @@
         "summary": "Create a new moment (without AI enrichment)",
         "description": "Create a moment record in the database without AI processing.\nThe moment is created immediately with undefined action, tags, and praise.\nUse POST /moments/{id}/enrich to add AI-generated content.\n",
         "operationId": "createMoment",
-        "security": [{ "appToken": [], "userAuth": [] }],
+        "security": [
+          {
+            "appToken": [],
+            "userAuth": []
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
-              "schema": { "$ref": "#/components/schemas/CreateMomentRequest" }
+              "schema": {
+                "$ref": "#/components/schemas/CreateMomentRequest"
+              }
             }
           }
         },
@@ -343,7 +419,34 @@
             "description": "Moment created successfully (without enrichment)",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/CreateMomentResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/CreateMomentResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request - total or daily limit reached",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "totalLimitReached": {
+                    "summary": "Total limit reached",
+                    "value": {
+                      "error": {
+                        "code": "TOTAL_LIMIT_REACHED",
+                        "message": "You've reached your limit of 10 total moments. Upgrade to premium for unlimited moments!"
+                      },
+                      "meta": {
+                        "limit": 10,
+                        "isPremium": false
+                      }
+                    }
+                  }
+                }
               }
             }
           },
@@ -351,7 +454,9 @@
             "description": "Unauthorized - Invalid or missing app token (INVALID_APP_TOKEN) or user ID (RESTRICTED_ACCESS)",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
               }
             }
           },
@@ -359,7 +464,9 @@
             "description": "Internal server error",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
               }
             }
           }
@@ -371,7 +478,12 @@
         "summary": "Get a moment by client ID",
         "description": "Retrieve a specific moment by its client-generated UUID (used for offline sync correlation).\nNo timeline restriction applies when fetching individual moments.\n",
         "operationId": "getMomentByClientId",
-        "security": [{ "appToken": [], "userAuth": [] }],
+        "security": [
+          {
+            "appToken": [],
+            "userAuth": []
+          }
+        ],
         "parameters": [
           {
             "name": "clientId",
@@ -390,7 +502,9 @@
             "description": "Moment retrieved successfully",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/GetMomentResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/GetMomentResponse"
+                }
               }
             }
           },
@@ -398,7 +512,9 @@
             "description": "Unauthorized - Invalid or missing app token (INVALID_APP_TOKEN) or user ID (RESTRICTED_ACCESS)",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
               }
             }
           },
@@ -406,7 +522,9 @@
             "description": "Forbidden - User does not own this moment",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
               }
             }
           },
@@ -414,7 +532,9 @@
             "description": "Moment not found",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
               }
             }
           },
@@ -422,7 +542,9 @@
             "description": "Internal server error",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
               }
             }
           }
@@ -434,14 +556,21 @@
         "summary": "Get a specific moment",
         "description": "Retrieve a specific moment by ID.\nNo timeline restriction applies when fetching individual moments.\n",
         "operationId": "getMoment",
-        "security": [{ "appToken": [], "userAuth": [] }],
+        "security": [
+          {
+            "appToken": [],
+            "userAuth": []
+          }
+        ],
         "parameters": [
           {
             "name": "id",
             "in": "path",
             "description": "Moment ID",
             "required": true,
-            "schema": { "type": "string" }
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -449,7 +578,9 @@
             "description": "Moment retrieved successfully",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/GetMomentResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/GetMomentResponse"
+                }
               }
             }
           },
@@ -457,7 +588,9 @@
             "description": "Unauthorized - Invalid or missing app token (INVALID_APP_TOKEN) or user ID (RESTRICTED_ACCESS)",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
               }
             }
           },
@@ -465,7 +598,9 @@
             "description": "Forbidden - User does not own this moment",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
               }
             }
           },
@@ -473,7 +608,9 @@
             "description": "Moment not found",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
               }
             }
           },
@@ -481,7 +618,9 @@
             "description": "Internal server error",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
               }
             }
           }
@@ -491,21 +630,30 @@
         "summary": "Update a moment",
         "description": "Update a specific moment (currently supports updating favorite status)",
         "operationId": "updateMoment",
-        "security": [{ "appToken": [], "userAuth": [] }],
+        "security": [
+          {
+            "appToken": [],
+            "userAuth": []
+          }
+        ],
         "parameters": [
           {
             "name": "id",
             "in": "path",
             "description": "Moment ID",
             "required": true,
-            "schema": { "type": "string" }
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
-              "schema": { "$ref": "#/components/schemas/UpdateMomentRequest" }
+              "schema": {
+                "$ref": "#/components/schemas/UpdateMomentRequest"
+              }
             }
           }
         },
@@ -514,7 +662,9 @@
             "description": "Moment updated successfully",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/UpdateMomentResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateMomentResponse"
+                }
               }
             }
           },
@@ -522,7 +672,9 @@
             "description": "Unauthorized - Invalid or missing app token (INVALID_APP_TOKEN) or user ID (RESTRICTED_ACCESS)",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
               }
             }
           },
@@ -530,7 +682,9 @@
             "description": "Forbidden - User does not own this moment",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
               }
             }
           },
@@ -538,7 +692,9 @@
             "description": "Moment not found",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
               }
             }
           },
@@ -546,7 +702,9 @@
             "description": "Internal server error",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
               }
             }
           }
@@ -556,14 +714,21 @@
         "summary": "Archive a moment",
         "description": "Soft delete a moment by setting archivedAt timestamp",
         "operationId": "archiveMoment",
-        "security": [{ "appToken": [], "userAuth": [] }],
+        "security": [
+          {
+            "appToken": [],
+            "userAuth": []
+          }
+        ],
         "parameters": [
           {
             "name": "id",
             "in": "path",
             "description": "Moment ID",
             "required": true,
-            "schema": { "type": "string" }
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -571,7 +736,9 @@
             "description": "Moment archived successfully",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ArchiveMomentResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ArchiveMomentResponse"
+                }
               }
             }
           },
@@ -579,7 +746,9 @@
             "description": "Unauthorized - Invalid or missing app token (INVALID_APP_TOKEN) or user ID (RESTRICTED_ACCESS)",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
               }
             }
           },
@@ -587,7 +756,9 @@
             "description": "Forbidden - User does not own this moment",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
               }
             }
           },
@@ -595,7 +766,9 @@
             "description": "Moment not found",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
               }
             }
           },
@@ -603,7 +776,9 @@
             "description": "Internal server error",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
               }
             }
           }
@@ -615,14 +790,21 @@
         "summary": "Enrich a moment with AI-generated content",
         "description": "Add AI-generated action category, tags, and praise to an existing moment.\nThis endpoint is idempotent - if the moment is already enriched, it returns\nthe existing data without calling the AI again. Checks daily limits before\nprocessing.\n",
         "operationId": "enrichMoment",
-        "security": [{ "appToken": [], "userAuth": [] }],
+        "security": [
+          {
+            "appToken": [],
+            "userAuth": []
+          }
+        ],
         "parameters": [
           {
             "name": "id",
             "in": "path",
             "description": "Moment ID to enrich",
             "required": true,
-            "schema": { "type": "string" }
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -630,7 +812,9 @@
             "description": "Moment enriched successfully (or already enriched)",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/EnrichMomentResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/EnrichMomentResponse"
+                }
               }
             }
           },
@@ -638,7 +822,9 @@
             "description": "Bad request (e.g., daily limit reached)",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
               }
             }
           },
@@ -646,7 +832,9 @@
             "description": "Unauthorized - Invalid or missing app token (INVALID_APP_TOKEN) or user ID (RESTRICTED_ACCESS)",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
               }
             }
           },
@@ -654,7 +842,9 @@
             "description": "Forbidden - User does not own this moment",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
               }
             }
           },
@@ -662,7 +852,9 @@
             "description": "Moment not found",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
               }
             }
           },
@@ -670,7 +862,9 @@
             "description": "Enrichment already in progress",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
               }
             }
           },
@@ -678,7 +872,9 @@
             "description": "Internal server error",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
               }
             }
           }
@@ -690,12 +886,18 @@
         "summary": "RevenueCat webhook endpoint",
         "description": "Webhook endpoint for RevenueCat subscription events. Updates user subscription\nstatus based on purchase, renewal, and expiration events.\n\n**Authentication:** Requires `Authorization` header with RevenueCat webhook secret.\nDoes NOT use x-app-token-code or x-user-id headers.\n\n**Events that grant premium status:**\n- INITIAL_PURCHASE\n- RENEWAL\n- UNCANCELLATION\n- SUBSCRIPTION_EXTENDED\n\n**Events that revoke premium status:**\n- EXPIRATION\n\n**Events logged but no status change:**\n- CANCELLATION (user keeps access until expiration)\n- BILLING_ISSUE (grace period)\n- PRODUCT_CHANGE\n- SUBSCRIPTION_PAUSED\n- TRANSFER\n- TEST\n",
         "operationId": "revenueCatWebhook",
-        "security": [{ "revenueCatAuth": [] }],
+        "security": [
+          {
+            "revenueCatAuth": []
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
-              "schema": { "$ref": "#/components/schemas/RevenueCatWebhookPayload" }
+              "schema": {
+                "$ref": "#/components/schemas/RevenueCatWebhookPayload"
+              }
             }
           }
         },
@@ -707,7 +909,10 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "received": { "type": "boolean", "example": true }
+                    "received": {
+                      "type": "boolean",
+                      "example": true
+                    }
                   }
                 }
               }
@@ -720,7 +925,10 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "error": { "type": "string", "example": "Invalid payload" }
+                    "error": {
+                      "type": "string",
+                      "example": "Invalid payload"
+                    }
                   }
                 }
               }
@@ -730,7 +938,9 @@
             "description": "Unauthorized - Invalid or missing webhook auth",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
               }
             }
           }
@@ -808,7 +1018,9 @@
           },
           "tags": {
             "type": "array",
-            "items": { "type": "string" },
+            "items": {
+              "type": "string"
+            },
             "nullable": true,
             "description": "Tags from normalization (null/empty until enriched)",
             "example": ["milestone", "writing", "streak"]
@@ -872,14 +1084,18 @@
         "type": "object",
         "required": ["item"],
         "properties": {
-          "item": { "$ref": "#/components/schemas/Moment" }
+          "item": {
+            "$ref": "#/components/schemas/Moment"
+          }
         }
       },
       "GetMomentResponse": {
         "type": "object",
         "required": ["item"],
         "properties": {
-          "item": { "$ref": "#/components/schemas/Moment" }
+          "item": {
+            "$ref": "#/components/schemas/Moment"
+          }
         }
       },
       "UpdateMomentRequest": {
@@ -919,7 +1135,9 @@
         "type": "object",
         "required": ["item"],
         "properties": {
-          "item": { "$ref": "#/components/schemas/Moment" }
+          "item": {
+            "$ref": "#/components/schemas/Moment"
+          }
         }
       },
       "DaySummary": {
@@ -945,7 +1163,9 @@
           },
           "tags": {
             "type": "array",
-            "items": { "type": "string" },
+            "items": {
+              "type": "string"
+            },
             "description": "Top 5 most popular tags from moments on this day",
             "example": ["exercise", "mindfulness", "productivity"]
           },
@@ -983,7 +1203,9 @@
         "properties": {
           "data": {
             "type": "array",
-            "items": { "$ref": "#/components/schemas/DaySummary" },
+            "items": {
+              "$ref": "#/components/schemas/DaySummary"
+            },
             "description": "Array of day summaries"
           },
           "nextCursor": {
@@ -1011,7 +1233,9 @@
         "properties": {
           "data": {
             "type": "array",
-            "items": { "$ref": "#/components/schemas/Moment" },
+            "items": {
+              "$ref": "#/components/schemas/Moment"
+            },
             "description": "Array of moments"
           },
           "nextCursor": {
@@ -1037,7 +1261,9 @@
         "type": "object",
         "required": ["item"],
         "properties": {
-          "item": { "$ref": "#/components/schemas/User" }
+          "item": {
+            "$ref": "#/components/schemas/User"
+          }
         }
       },
       "UserStats": {
@@ -1087,7 +1313,9 @@
         "type": "object",
         "required": ["item"],
         "properties": {
-          "item": { "$ref": "#/components/schemas/UserStats" }
+          "item": {
+            "$ref": "#/components/schemas/UserStats"
+          }
         }
       },
       "UserFeedback": {
@@ -1141,7 +1369,9 @@
         "type": "object",
         "required": ["item"],
         "properties": {
-          "item": { "$ref": "#/components/schemas/UserFeedback" }
+          "item": {
+            "$ref": "#/components/schemas/UserFeedback"
+          }
         }
       },
       "RevenueCatWebhookPayload": {
@@ -1159,19 +1389,7 @@
             "properties": {
               "type": {
                 "type": "string",
-                "enum": [
-                  "INITIAL_PURCHASE",
-                  "RENEWAL",
-                  "EXPIRATION",
-                  "CANCELLATION",
-                  "BILLING_ISSUE",
-                  "PRODUCT_CHANGE",
-                  "UNCANCELLATION",
-                  "SUBSCRIPTION_PAUSED",
-                  "SUBSCRIPTION_EXTENDED",
-                  "TRANSFER",
-                  "TEST"
-                ],
+                "enum": ["INITIAL_PURCHASE", "RENEWAL", "EXPIRATION", "CANCELLATION", "BILLING_ISSUE", "PRODUCT_CHANGE", "UNCANCELLATION", "SUBSCRIPTION_PAUSED", "SUBSCRIPTION_EXTENDED", "TRANSFER", "TEST"],
                 "description": "Type of RevenueCat event",
                 "example": "INITIAL_PURCHASE"
               },
@@ -1197,7 +1415,9 @@
               },
               "entitlement_ids": {
                 "type": "array",
-                "items": { "type": "string" },
+                "items": {
+                  "type": "string"
+                },
                 "description": "Entitlements granted",
                 "example": ["premium"]
               },
@@ -1225,22 +1445,7 @@
             "properties": {
               "code": {
                 "type": "string",
-                "enum": [
-                  "UNAUTHORIZED",
-                  "RESTRICTED_ACCESS",
-                  "INTERNAL_SERVER_ERROR",
-                  "DAILY_LIMIT_REACHED",
-                  "INVALID_CURSOR",
-                  "MOMENT_NOT_FOUND",
-                  "FORBIDDEN",
-                  "INVALID_REQUEST",
-                  "ENRICHMENT_IN_PROGRESS",
-                  "INVALID_APP_TOKEN",
-                  "INVALID_WEBHOOK_AUTH",
-                  "VALIDATION_ERROR",
-                  "RATE_LIMIT_EXCEEDED",
-                  "CONFLICT"
-                ],
+                "enum": ["UNAUTHORIZED", "RESTRICTED_ACCESS", "INTERNAL_SERVER_ERROR", "DAILY_LIMIT_REACHED", "TOTAL_LIMIT_REACHED", "INVALID_CURSOR", "MOMENT_NOT_FOUND", "FORBIDDEN", "INVALID_REQUEST", "ENRICHMENT_IN_PROGRESS", "INVALID_APP_TOKEN", "INVALID_WEBHOOK_AUTH", "VALIDATION_ERROR", "RATE_LIMIT_EXCEEDED", "CONFLICT"],
                 "description": "Machine-readable error code",
                 "example": "DAILY_LIMIT_REACHED"
               },
@@ -1255,7 +1460,10 @@
             "type": "object",
             "description": "Optional additional metadata about the error",
             "additionalProperties": true,
-            "example": { "limit": 10, "isPremium": false }
+            "example": {
+              "limit": 10,
+              "isPremium": false
+            }
           }
         }
       }
@@ -1280,5 +1488,9 @@
       }
     }
   },
-  "security": [{ "appToken": [] }]
+  "security": [
+    {
+      "appToken": []
+    }
+  ]
 }
