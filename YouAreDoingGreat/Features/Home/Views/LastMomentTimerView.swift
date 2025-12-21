@@ -54,12 +54,7 @@ struct LastMomentTimerView: View {
             components.append("\(minutes) minute\(minutes != 1 ? "s" : "")")
         }
 
-        // Edge case: if all components are 0 but totalMinutes > 0, show minutes
-        // This shouldn't happen mathematically, but handle it gracefully
-        if components.isEmpty {
-            return "\(minutes) minute\(minutes != 1 ? "s" : "")"
-        }
-
+        // At least one component is guaranteed to be > 0 since totalMinutes > 0
         return components.joined(separator: " ")
     }
 }
