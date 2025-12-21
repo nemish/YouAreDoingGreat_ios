@@ -71,9 +71,10 @@ final class DefaultAPIClient: APIClient, @unchecked Sendable {
         guard (200...299).contains(httpResponse.statusCode) || httpResponse.statusCode == 304 else {
             // Try to parse error response
             if let errorResponse = try? jsonDecoder.decode(APIErrorResponse.self, from: data) {
-                if errorResponse.error.code == .dailyLimitReached {
+                switch errorResponse.error.code {
+                case .dailyLimitReached:
                     throw MomentError.dailyLimitReached(message: errorResponse.error.message)
-                } else {
+                default:
                     throw MomentError.serverError(message: errorResponse.error.message)
                 }
             }

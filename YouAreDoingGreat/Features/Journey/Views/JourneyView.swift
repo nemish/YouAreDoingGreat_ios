@@ -56,7 +56,8 @@ struct JourneyView: View {
 
         // Add "Journey begins" marker at the bottom if there are items
         // Use "Today" if journey just started (single INPROGRESS item)
-        if !viewModel.items.isEmpty {
+        // Don't show if timeline is restricted (banner will be shown instead)
+        if !viewModel.items.isEmpty && !viewModel.isTimelineRestricted {
             let beginningMarker = DaySummaryDTO(
                 id: "__beginning__",
                 date: isJourneyJustStarted ? formatter.string(from: Date()) : (viewModel.items.last?.date ?? formatter.string(from: Date())),
@@ -129,6 +130,18 @@ struct JourneyView: View {
             } message: {
                 Text(viewModel.error ?? "An error occurred")
             }
+            // Timeline Restriction Alert
+            .alert(
+                NSLocalizedString("timeline_restriction_alert_title", comment: ""),
+                isPresented: $viewModel.showTimelineRestrictedPopup
+            ) {
+                Button(NSLocalizedString("timeline_restriction_alert_upgrade_button", comment: "")) {
+                    PaywallService.shared.showPaywallForTimelineRestriction()
+                }
+                Button(NSLocalizedString("timeline_restriction_alert_cancel_button", comment: ""), role: .cancel) { }
+            } message: {
+                Text(NSLocalizedString("timeline_restriction_alert_message_journey", comment: ""))
+            }
         }
     }
 
@@ -163,11 +176,17 @@ struct JourneyView: View {
                     }
                 }
 
+                // Show loading indicator or restriction banner
                 if viewModel.canLoadMore {
                     loadMoreView
                         .onAppear {
                             Task { await viewModel.loadNextPage() }
                         }
+                } else if viewModel.isTimelineRestricted {
+                    // Show the restriction banner at the end of the timeline
+                    TimelineRestrictedBanner {
+                        PaywallService.shared.showPaywallForTimelineRestriction()
+                    }
                 }
             }
             .padding(.horizontal, 16)
@@ -352,6 +371,89 @@ struct JourneyView: View {
     ]
 
     viewModel.items = mockItems
+
+    return JourneyView(viewModel: viewModel)
+        .preferredColorScheme(.dark)
+}
+
+#Preview("Journey - Timeline Restricted (Banner)") {
+    let apiClient = DefaultAPIClient()
+    let viewModel = JourneyViewModel(apiClient: apiClient)
+
+    let calendar = Calendar.current
+    let now = Date()
+    let formatter = ISO8601DateFormatter()
+
+    // Create 14 days of mock data to simulate hitting the limit
+    var mockItems: [DaySummaryDTO] = []
+
+    // Today (INPROGRESS)
+    mockItems.append(DaySummaryDTO(
+        id: "0",
+        date: formatter.string(from: now),
+        text: nil,
+        tags: [],
+        momentsCount: 1,
+        timesOfDay: ["cloud-sun"],
+        state: .inProgress,
+        createdAt: formatter.string(from: now)
+    ))
+
+    // Past 14 days
+    for i in 1...14 {
+        mockItems.append(DaySummaryDTO(
+            id: "\(i)",
+            date: formatter.string(from: calendar.date(byAdding: .day, value: -i, to: now)!),
+            text: "Day \(i) summary - Some great moments happened.",
+            tags: ["daily", "wins"],
+            momentsCount: i % 3 + 1,
+            timesOfDay: ["sun.max"],
+            state: .finalised,
+            createdAt: formatter.string(from: calendar.date(byAdding: .day, value: -i, to: now)!)
+        ))
+    }
+
+    viewModel.items = mockItems
+    viewModel.isTimelineRestricted = true
+
+    return JourneyView(viewModel: viewModel)
+        .preferredColorScheme(.dark)
+}
+
+#Preview("Journey - Timeline Restricted (Popup)") {
+    let apiClient = DefaultAPIClient()
+    let viewModel = JourneyViewModel(apiClient: apiClient)
+
+    let calendar = Calendar.current
+    let now = Date()
+    let formatter = ISO8601DateFormatter()
+
+    let mockItems = [
+        DaySummaryDTO(
+            id: "0",
+            date: formatter.string(from: now),
+            text: nil,
+            tags: [],
+            momentsCount: 2,
+            timesOfDay: ["cloud-sun"],
+            state: .inProgress,
+            createdAt: formatter.string(from: now)
+        ),
+        DaySummaryDTO(
+            id: "1",
+            date: formatter.string(from: calendar.date(byAdding: .day, value: -1, to: now)!),
+            text: "Had a productive day.",
+            tags: ["work"],
+            momentsCount: 2,
+            timesOfDay: ["cloud-sun", "sunset"],
+            state: .finalised,
+            createdAt: formatter.string(from: calendar.date(byAdding: .day, value: -1, to: now)!)
+        ),
+    ]
+
+    viewModel.items = mockItems
+    viewModel.isTimelineRestricted = true
+    viewModel.showTimelineRestrictedPopup = true
 
     return JourneyView(viewModel: viewModel)
         .preferredColorScheme(.dark)

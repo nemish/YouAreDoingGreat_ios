@@ -22,6 +22,10 @@ final class JourneyViewModel {
     var error: String?
     var showError = false
 
+    // Timeline restriction state (true when limitReached flag is set in API response)
+    var isTimelineRestricted = false
+    var showTimelineRestrictedPopup = false
+
     // Pagination
     private var nextCursor: String?
     var canLoadMore: Bool {
@@ -54,7 +58,14 @@ final class JourneyViewModel {
             items = response.data
             nextCursor = response.nextCursor
 
-            logger.info("Loaded \(response.data.count) timeline items")
+            // Check if timeline limit is reached (for free users)
+            // On initial load, just set the flag - don't show popup yet
+            // Popup will be shown when user scrolls to the bottom
+            if response.limitReached {
+                isTimelineRestricted = true
+            }
+
+            logger.info("Loaded \(response.data.count) timeline items, limitReached: \(response.limitReached)")
         } catch {
             handleError(error)
         }
@@ -69,6 +80,8 @@ final class JourneyViewModel {
         isRefreshing = true
         error = nil
         showError = false
+        isTimelineRestricted = false
+        showTimelineRestrictedPopup = false
 
         do {
             let response: TimelineResponseDTO = try await apiClient.request(
@@ -80,7 +93,14 @@ final class JourneyViewModel {
             items = response.data
             nextCursor = response.nextCursor
 
-            logger.info("Refreshed timeline with \(response.data.count) items")
+            // Check if timeline limit is reached (for free users)
+            // On refresh, just set the flag - don't show popup
+            // Popup will be shown when user scrolls to the bottom
+            if response.limitReached {
+                isTimelineRestricted = true
+            }
+
+            logger.info("Refreshed timeline with \(response.data.count) items, limitReached: \(response.limitReached)")
         } catch {
             handleError(error)
         }
@@ -104,7 +124,19 @@ final class JourneyViewModel {
             items.append(contentsOf: response.data)
             nextCursor = response.nextCursor
 
-            logger.info("Loaded \(response.data.count) more timeline items")
+            // Check if timeline limit is reached (for free users)
+            if response.limitReached {
+                isTimelineRestricted = true
+                // Show popup when we've exhausted available data
+                if !response.hasNextPage {
+                    showTimelineRestrictedPopup = true
+                    // Stop pagination - we've hit the paywall limit
+                    nextCursor = nil
+                    logger.info("Timeline limit reached - showing paywall prompt")
+                }
+            }
+
+            logger.info("Loaded \(response.data.count) more timeline items, limitReached: \(response.limitReached)")
         } catch {
             handleError(error)
         }

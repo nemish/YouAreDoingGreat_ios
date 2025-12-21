@@ -49,6 +49,18 @@ Content-Type: application/json
 
 ## Key Changes in Latest Version
 
+### Timeline Restriction (Premium Feature) - Simplified Response
+
+Free users can only access data from the last 14 days. Premium users have unlimited access to their full history.
+
+**New behavior**: Instead of returning a 403 error, the API now:
+- Filters out data older than 14 days for free users
+- Sets `limitReached: true` in paginated responses when older data exists
+- Individual moment endpoints (`/moments/{id}`, `/moments/by-client-id/{clientId}`) have **no timeline restriction**
+
+**Affected endpoints**: `/moments`, `/timeline`
+**Response field**: `limitReached` boolean in paginated responses
+
 ### App Token Authentication
 
 All endpoints now require `x-app-token-code` header for API access validation (except `/health`).
@@ -57,9 +69,19 @@ All endpoints now require `x-app-token-code` header for API access validation (e
 
 The `/health` endpoint now returns MongoDB connection status and does NOT require app token authentication.
 
-### New Error Codes
+### Error Codes
 
+- `UNAUTHORIZED`: Missing or invalid authentication
+- `RESTRICTED_ACCESS`: User does not have access to resource
+- `INTERNAL_SERVER_ERROR`: Server error
+- `DAILY_LIMIT_REACHED`: User has reached their daily moment limit
+- `INVALID_CURSOR`: Invalid pagination cursor
+- `MOMENT_NOT_FOUND`: Moment not found
+- `FORBIDDEN`: User does not own this resource
+- `INVALID_REQUEST`: Invalid request parameters
+- `ENRICHMENT_IN_PROGRESS`: AI enrichment is already being processed for this moment
 - `INVALID_APP_TOKEN`: Missing or invalid app token
+- `INVALID_WEBHOOK_AUTH`: Invalid or missing webhook auth
 - `VALIDATION_ERROR`: Request validation failed
 - `RATE_LIMIT_EXCEEDED`: Too many requests
 - `CONFLICT`: Resource conflict
@@ -132,7 +154,7 @@ x-user-id: <user_id>
   "item": {
     "id": "user_123",
     "userId": "auth0|123456789",
-    "status": "newcomer"
+    "status": "free"
   }
 }
 ```
@@ -142,7 +164,7 @@ x-user-id: <user_id>
 - `item`: User object containing:
   - `id`: Unique identifier for the user
   - `userId`: External user ID from authentication system
-  - `status`: User subscription status (`newcomer`, `paywall_needed`, `premium`)
+  - `status`: User subscription status (`free`, `premium`)
 
 #### Error Responses
 
@@ -247,6 +269,8 @@ x-user-id: <user_id>
 
 Retrieve user moments with cursor-based pagination for infinite scrolling.
 
+**Timeline Restriction:** Free users can only access data from the last 14 days. Data older than 14 days is filtered out and `limitReached` is set to true. Premium users have unlimited access to their full history.
+
 #### Query Parameters
 
 - `cursor` (optional): Timestamp cursor for pagination (ISO date-time format)
@@ -279,7 +303,8 @@ x-user-id: <user_id>
     }
   ],
   "nextCursor": "2024-01-15T10:30:00Z",
-  "hasNextPage": true
+  "hasNextPage": true,
+  "limitReached": false
 }
 ```
 
@@ -288,6 +313,7 @@ x-user-id: <user_id>
 - `data`: Array of moment objects
 - `nextCursor`: Cursor for the next page (timestamp, null if no more pages)
 - `hasNextPage`: Boolean indicating if there are more pages
+- `limitReached`: Boolean indicating if the user has reached their timeline limit (true for free users when older data exists, always false for premium)
 
 #### Error Responses
 
@@ -300,6 +326,8 @@ x-user-id: <user_id>
 **GET** `/moments/{id}`
 
 Retrieve a specific moment by server ID.
+
+**No timeline restriction applies when fetching individual moments.**
 
 #### Path Parameters
 
@@ -339,7 +367,7 @@ x-user-id: <user_id>
 #### Error Responses
 
 - `401 Unauthorized`: Invalid or missing app token (INVALID_APP_TOKEN) or user ID (RESTRICTED_ACCESS)
-- `403 Forbidden`: User does not own this moment
+- `403 Forbidden`: User does not own this moment (FORBIDDEN)
 - `404 Not Found`: Moment not found
 - `500 Internal Server Error`: Server error
 
@@ -348,6 +376,8 @@ x-user-id: <user_id>
 **GET** `/moments/by-client-id/{clientId}`
 
 Retrieve a specific moment by its client-generated UUID. This endpoint is essential for offline sync correlation.
+
+**No timeline restriction applies when fetching individual moments.**
 
 #### Path Parameters
 
@@ -389,7 +419,7 @@ x-user-id: <user_id>
 #### Error Responses
 
 - `401 Unauthorized`: Invalid or missing app token (INVALID_APP_TOKEN) or user ID (RESTRICTED_ACCESS)
-- `403 Forbidden`: User does not own this moment
+- `403 Forbidden`: User does not own this moment (FORBIDDEN)
 - `404 Not Found`: Moment with this clientId not found
 - `500 Internal Server Error`: Server error
 
@@ -599,6 +629,8 @@ x-user-id: <user_id>
 
 Retrieve user day summaries with cursor-based pagination for infinite scrolling timeline.
 
+**Timeline Restriction:** Free users can only access data from the last 14 days. Data older than 14 days is filtered out and `limitReached` is set to true. Premium users have unlimited access to their full history.
+
 #### Query Parameters
 
 - `cursor` (optional): Date cursor for pagination (ISO date-time format)
@@ -628,7 +660,8 @@ x-user-id: <user_id>
     }
   ],
   "nextCursor": "2024-01-15T00:00:00Z",
-  "hasNextPage": true
+  "hasNextPage": true,
+  "limitReached": false
 }
 ```
 
@@ -637,6 +670,7 @@ x-user-id: <user_id>
 - `data`: Array of day summary objects
 - `nextCursor`: Date cursor for the next page (null if no more pages)
 - `hasNextPage`: Boolean indicating if there are more pages
+- `limitReached`: Boolean indicating if the user has reached their timeline limit (true for free users when older data exists, always false for premium)
 
 **Day Summary Object:**
 
@@ -662,6 +696,62 @@ x-user-id: <user_id>
 - `401 Unauthorized`: Invalid or missing app token (INVALID_APP_TOKEN) or user ID (RESTRICTED_ACCESS)
 - `500 Internal Server Error`: Server error
 
+### 13. RevenueCat Webhook
+
+**POST** `/webhooks/revenuecat`
+
+Webhook endpoint for RevenueCat subscription events. Updates user subscription status based on purchase, renewal, and expiration events.
+
+**Authentication:** Requires `Authorization` header with RevenueCat webhook secret. Does NOT use x-app-token-code or x-user-id headers.
+
+#### Events that grant premium status:
+- INITIAL_PURCHASE
+- RENEWAL
+- UNCANCELLATION
+- SUBSCRIPTION_EXTENDED
+
+#### Events that revoke premium status:
+- EXPIRATION
+
+#### Events logged but no status change:
+- CANCELLATION (user keeps access until expiration)
+- BILLING_ISSUE (grace period)
+- PRODUCT_CHANGE
+- SUBSCRIPTION_PAUSED
+- TRANSFER
+- TEST
+
+#### Request Body
+
+```json
+{
+  "api_version": "1.0",
+  "event": {
+    "type": "INITIAL_PURCHASE",
+    "id": "event_123456",
+    "app_user_id": "user_123",
+    "original_app_user_id": "user_123",
+    "product_id": "premium_monthly",
+    "entitlement_ids": ["premium"],
+    "expiration_at_ms": 1704067200000,
+    "store": "APP_STORE"
+  }
+}
+```
+
+#### Response
+
+```json
+{
+  "received": true
+}
+```
+
+#### Error Responses
+
+- `400 Bad Request`: Invalid payload
+- `401 Unauthorized`: Invalid or missing webhook auth
+
 ## Data Models
 
 ### User
@@ -670,7 +760,7 @@ x-user-id: <user_id>
 {
   "id": "string",
   "userId": "string",
-  "status": "newcomer" | "paywall_needed" | "premium"
+  "status": "free" | "premium"
 }
 ```
 
@@ -743,7 +833,19 @@ x-user-id: <user_id>
 {
   "data": "Moment[]",
   "nextCursor": "string (ISO date-time) | null",
-  "hasNextPage": "boolean"
+  "hasNextPage": "boolean",
+  "limitReached": "boolean"
+}
+```
+
+### PaginatedTimelineResponse
+
+```json
+{
+  "data": "DaySummary[]",
+  "nextCursor": "string (ISO date-time) | null",
+  "hasNextPage": "boolean",
+  "limitReached": "boolean"
 }
 ```
 
@@ -889,16 +991,6 @@ x-user-id: <user_id>
 
 - `text`: AI-generated summary text (null if INPROGRESS or no moments for this day)
 
-### PaginatedTimelineResponse
-
-```json
-{
-  "data": "DaySummary[]",
-  "nextCursor": "string (ISO date-time) | null",
-  "hasNextPage": "boolean"
-}
-```
-
 ### ErrorResponse
 
 ```json
@@ -923,6 +1015,7 @@ x-user-id: <user_id>
 - `INVALID_REQUEST`: Invalid request parameters
 - `ENRICHMENT_IN_PROGRESS`: AI enrichment is already being processed for this moment
 - `INVALID_APP_TOKEN`: Missing or invalid app token
+- `INVALID_WEBHOOK_AUTH`: Invalid or missing webhook auth
 - `VALIDATION_ERROR`: Request validation failed
 - `RATE_LIMIT_EXCEEDED`: Too many requests
 - `CONFLICT`: Resource conflict
@@ -964,6 +1057,17 @@ The API uses cursor-based pagination for efficient infinite scrolling:
 
 - Moments are sorted by `submittedAt` in **descending order** (newest first)
 - This ensures the most recent moments appear at the top of the list
+
+### Timeline Restriction Handling
+
+Check the `limitReached` field in paginated responses to determine if the user has restrictions:
+
+```swift
+if response.limitReached {
+    // User is on free plan and has reached their 14-day limit
+    // Show upgrade prompt
+}
+```
 
 ## Offline-First Implementation Guide
 
@@ -1141,36 +1245,49 @@ Task.detached {
 10. **Ownership**: Should prevent users from accessing others' moments
 11. **App token validation**: Should reject requests without valid app token
 12. **Rate limiting**: Should return 429 when rate limit exceeded
+13. **Timeline restriction (free user)**: Should filter old data and set `limitReached: true`
+14. **Timeline restriction (premium user)**: Should allow access to full history with `limitReached: false`
+15. **Individual moment access**: Should allow free users to access any moment by ID (no restriction)
 
 ### Example Test Sequence
 
 ```
 1. POST /moments (with clientId)
-   → Returns moment with id, clientId, null praise
+   -> Returns moment with id, clientId, null praise
 
 2. POST /moments/{id}/enrich
-   → Returns 200 (processing started)
+   -> Returns 200 (processing started)
 
 3. Poll POST /moments/{id}/enrich
-   → Returns moment with praise when ready
+   -> Returns moment with praise when ready
 
 4. GET /moments/by-client-id/{clientId}
-   → Returns same moment
+   -> Returns same moment (no timeline restriction)
 
 5. GET /moments?limit=5
-   → Returns first 5 moments, hasNextPage: true
+   -> Returns first 5 moments, hasNextPage: true, limitReached: false
 
 6. GET /moments?cursor=2024-01-15T10:30:00Z&limit=5
-   → Returns next 5 moments
+   -> Returns next 5 moments
+
+7. Continue paginating for free user
+   -> Eventually returns data with limitReached: true when 14-day boundary reached
 ```
 
 ## Business Rules
 
 ### User Status
 
-- **newcomer**: New user with basic access
-- **paywall_needed**: User needs to upgrade for premium features
-- **premium**: Full access to all features
+- **free**: Basic access with timeline restricted to last 14 days in list views
+- **premium**: Full access to all features and unlimited history
+
+### Timeline Restriction
+
+- Free users can only access data from the last 14 days in paginated list endpoints
+- Premium users have unlimited access to their full history
+- Data older than 14 days is filtered (not returned as error)
+- `limitReached: true` indicates free user has more data beyond the 14-day window
+- Individual moment endpoints (`/moments/{id}`, `/moments/by-client-id/{clientId}`) have no timeline restriction
 
 ### Moment Lifecycle
 

@@ -43,89 +43,81 @@ struct PraiseContentView<ViewModel: PraiseViewModelProtocol>: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            Spacer()
+            // Scrollable content area
+            ScrollView(showsIndicators: false) {
+                VStack(spacing: 32) {
+                    // Top spacing
+                    Spacer()
+                        .frame(height: 40)
 
-            // Main content area
-            VStack(spacing: 32) {
-                // Celebration icon
-//                celebrationIcon
-//                    .opacity(viewModel.showContent ? 1 : 0)
-//                    .scaleEffect(viewModel.showContent ? 1 : 0.5)
+                    // Moment text display
+                    VStack(spacing: 12) {
+                        Text(viewModel.momentText)
+                            .font(.appTitle3)
+                            .foregroundStyle(.textPrimary)
+                            .multilineTextAlignment(.center)
+                            .lineLimit(4)
 
-                // Moment text display
-                VStack(spacing: 12) {
-                    Text(viewModel.momentText)
-                        .font(.appTitle3)
-                        .foregroundStyle(.textPrimary)
-                        .multilineTextAlignment(.center)
-                        .lineLimit(4)
-
-                    Text(viewModel.timeDisplayText)
-                        .font(.appCaption)
-                        .foregroundStyle(.textTertiary)
-                }
-                .opacity(viewModel.showContent ? 1 : 0)
-                .offset(y: viewModel.showContent ? 0 : 20)
-
-                // Praise message with loading indicator
-                VStack(spacing: 16) {
-                    // Offline praise text (always shown) with word-by-word animation
-                    AnimatedTextView(
-                        text: viewModel.offlinePraise,
-                        font: .appHeadline,
-                        foregroundStyle: Color.textHighlightOnePrimary,
-                        multilineTextAlignment: .center,
-                        wordDelay: 0.08
-                    )
-
-                    // Loading indicator for AI praise
-                    if viewModel.isLoadingAIPraise {
-                        MomentSyncLoadingView()
-                            .transition(.asymmetric(
-                                insertion: .opacity.combined(with: .scale(scale: 0.8)),
-                                removal: .opacity.combined(with: .scale(scale: 0.8))
-                            ))
-                    }
-
-                    // AI praise text (shown below offline praise when available) with word-by-word animation
-                    if let aiPraise = viewModel.aiPraise, !aiPraise.isEmpty {
-                        AnimatedTextView(
-                            text: aiPraise,
-                            font: .appBody,
-                            foregroundStyle: Color.textSecondary,
-                            multilineTextAlignment: .center,
-                            wordDelay: 0.08
-                        )
-                        .transition(.asymmetric(
-                            insertion: .opacity.combined(with: .scale(scale: 0.9).combined(with: .move(edge: .top))),
-                            removal: .opacity.combined(with: .scale(scale: 0.9))
-                        ))
-                    }
-
-                    // Error message
-                    if let error = viewModel.syncError, !viewModel.isLoadingAIPraise {
-                        Text(error)
+                        Text(viewModel.timeDisplayText)
                             .font(.appCaption)
                             .foregroundStyle(.textTertiary)
-                            .multilineTextAlignment(.center)
-                            .transition(.opacity)
+                    }
+                    .opacity(viewModel.showContent ? 1 : 0)
+                    .offset(y: viewModel.showContent ? 0 : 20)
+
+                    // Praise message with loading indicator
+                    VStack(spacing: 16) {
+                        // Offline praise text (always shown) with word-by-word animation
+                        AnimatedTextView(
+                            text: viewModel.offlinePraise,
+                            font: .appHeadline,
+                            foregroundStyle: Color.textHighlightOnePrimary,
+                            multilineTextAlignment: .center,
+                            wordDelay: 0.05
+                        )
+
+                        // Loading indicator for AI praise - fades out when praise arrives
+                        if viewModel.isLoadingAIPraise {
+                            MomentSyncLoadingView()
+                                .transition(.opacity.combined(with: .scale(scale: 0.8)))
+                        }
+
+                        // AI praise text with smooth word-by-word animation (no layout jumps)
+                        if let aiPraise = viewModel.aiPraise, !aiPraise.isEmpty {
+                            SmoothAnimatedTextView(
+                                text: aiPraise,
+                                font: .appBody,
+                                foregroundStyle: Color.textSecondary,
+                                multilineTextAlignment: .center,
+                                wordDelay: 0.04
+                            )
+                            .transition(.opacity.combined(with: .scale(scale: 0.95)))
+                        }
+
+                        // Error message
+                        if let error = viewModel.syncError, !viewModel.isLoadingAIPraise {
+                            Text(error)
+                                .font(.appCaption)
+                                .foregroundStyle(.textTertiary)
+                                .multilineTextAlignment(.center)
+                                .transition(.opacity)
+                        }
+                    }
+                    .opacity(viewModel.showPraise ? 1 : 0)
+                    .offset(y: viewModel.showPraise ? 0 : 10)
+                    .animation(.easeInOut(duration: 0.4), value: viewModel.isLoadingAIPraise)
+                    .animation(.easeInOut(duration: 0.4), value: viewModel.aiPraise != nil)
+
+                    // Tags section
+                    if !viewModel.tags.isEmpty {
+                        tagsSection
+                            .opacity(viewModel.showTags ? 1 : 0)
+                            .offset(y: viewModel.showTags ? 0 : 10)
+                            .padding(.bottom, 24)
                     }
                 }
-                .opacity(viewModel.showPraise ? 1 : 0)
-                .offset(y: viewModel.showPraise ? 0 : 10)
-                .animation(.easeInOut(duration: 0.5), value: viewModel.isLoadingAIPraise)
-                .animation(.easeInOut(duration: 0.5), value: viewModel.aiPraise)
-
-                // Tags section
-                if !viewModel.tags.isEmpty {
-                    tagsSection
-                        .opacity(viewModel.showTags ? 1 : 0)
-                        .offset(y: viewModel.showTags ? 0 : 10)
-                }
+                .padding(.horizontal, 32)
             }
-            .padding(.horizontal, 32)
-
-            Spacer()
 
             // Done button
             PrimaryButton(title: "Nice") {

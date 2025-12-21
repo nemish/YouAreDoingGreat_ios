@@ -1,0 +1,12 @@
+/* Timeline Restriction - Alert */
+"timeline_restriction_alert_title" = "Unlock Your Full Journey";
+"timeline_restriction_alert_message_journey" = "Free accounts can only view the last 14 days. Upgrade to premium for unlimited access to your complete journey history.";
+"timeline_restriction_alert_message_moments" = "Free accounts can only view the last 14 days. Upgrade to premium for unlimited access to all your moments.";
+"timeline_restriction_alert_upgrade_button" = "Upgrade to Premium";
+"timeline_restriction_alert_cancel_button" = "Maybe Later";
+
+/* Timeline Restriction - Banner */
+"timeline_restriction_banner_title" = "Your journey doesn't end here.";
+"timeline_restriction_banner_message" = "You can always see your recent moments. Premium keeps your full story — all the way back.";
+"timeline_restriction_banner_button" = "Keep my full journey";
+"timeline_restriction_banner_button_accessibility" = "Upgrade to premium to keep full journey history";
