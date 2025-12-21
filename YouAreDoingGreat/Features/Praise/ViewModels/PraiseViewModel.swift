@@ -3,6 +3,21 @@ import OSLog
 
 private let logger = Logger(subsystem: "com.youaredoinggreat", category: "praise")
 
+// MARK: - Sync Error Messages
+// Centralized error messages for consistent limit detection
+
+enum SyncErrorMessages {
+    static let dailyLimitReached = "Daily limit reached"
+    static let totalLimitReached = "Total limit reached"
+    static let upgradeRequired = "Limit reached"  // Generic for retry blocked state
+
+    /// Check if an error message indicates a limit error
+    static func isLimitError(_ errorMessage: String) -> Bool {
+        let lowercased = errorMessage.lowercased()
+        return lowercased.contains("limit")
+    }
+}
+
 // MARK: - Praise ViewModel
 
 @MainActor
@@ -31,6 +46,24 @@ final class PraiseViewModel: PraiseViewModelProtocol {
     var isCreatingMoment: Bool = false      // Phase 1: POST /moments
     var isEnrichingMoment: Bool = false     // Phase 2: POST /enrich
 
+    // Sync failure state (blocked by limit) - check both local state AND moment's syncError
+    var isLimitBlocked: Bool {
+        get {
+            // Check local moment's syncError first (set by SyncService)
+            if let moment = localMoment, let syncError = moment.syncError {
+                let lowercased = syncError.lowercased()
+                if lowercased.contains("limit") {
+                    return true
+                }
+            }
+            return _isLimitBlocked
+        }
+        set {
+            _isLimitBlocked = newValue
+        }
+    }
+    private var _isLimitBlocked: Bool = false
+
     // Animation state
     var showContent: Bool = false
     var showPraise: Bool = false
@@ -38,10 +71,13 @@ final class PraiseViewModel: PraiseViewModelProtocol {
     var showButton: Bool = false
 
     // Polling state
-    private var pollingTask: Task<Void, Never>?
+    nonisolated(unsafe) private var pollingTask: Task<Void, Never>?
     private var pollCount: Int = 0
     private let maxPolls: Int = AppConfig.maxPraisePolls
     private let pollInterval: UInt64 = UInt64(AppConfig.praisePollingInterval * 1_000_000_000)
+
+    // Save task (for cancellation in deinit)
+    nonisolated(unsafe) private var saveTask: Task<Void, Never>?
 
     // Local moment reference
     private var localMoment: Moment?
@@ -57,6 +93,11 @@ final class PraiseViewModel: PraiseViewModelProtocol {
 
     var isNiceButtonDisabled: Bool {
         isCreatingMoment  // Only disabled during Phase 1
+    }
+
+    var isSyncFailed: Bool {
+        // Sync failed if limit blocked or has sync error (but not still loading)
+        (isLimitBlocked || syncError != nil) && !isLoadingAIPraise
     }
 
     var timeDisplayText: String {
@@ -98,9 +139,14 @@ final class PraiseViewModel: PraiseViewModelProtocol {
         self.timezone = timezone
 
         // Save moment to local storage immediately
-        Task {
+        saveTask = Task {
             await saveLocalMoment()
         }
+    }
+
+    deinit {
+        saveTask?.cancel()
+        pollingTask?.cancel()
     }
 
     private func saveLocalMoment() async {
@@ -243,13 +289,62 @@ final class PraiseViewModel: PraiseViewModelProtocol {
     private func handleMomentError(_ error: MomentError) {
         if error.isDailyLimitError {
             logger.warning("Daily limit reached, showing paywall")
+            _isLimitBlocked = true
+            syncError = SyncErrorMessages.dailyLimitReached
             PaywallService.shared.markDailyLimitReached()
             PaywallService.shared.showPaywall()
+            markLocalMomentSyncFailed(error: SyncErrorMessages.dailyLimitReached)
+        } else if error.isTotalLimitError {
+            logger.warning("Total limit reached, showing paywall")
+            _isLimitBlocked = true
+            syncError = SyncErrorMessages.totalLimitReached
+            PaywallService.shared.markTotalLimitReached()
+            PaywallService.shared.showPaywall()
+            markLocalMomentSyncFailed(error: SyncErrorMessages.totalLimitReached)
         } else {
             logger.error("Moment error: \(error.localizedDescription)")
             syncError = error.localizedDescription
         }
         isLoadingAIPraise = false
+    }
+
+    private func markLocalMomentSyncFailed(error: String) {
+        guard let moment = localMoment else { return }
+        moment.isSynced = false
+        moment.syncError = error
+        Task {
+            try? await repository.update(moment)
+        }
+    }
+
+    /// Retry syncing moment (called after user upgrades or limit resets)
+    func retrySyncMoment() async {
+        // Check if we should still be blocked BEFORE clearing state
+        if PaywallService.shared.shouldBlockMomentCreation() {
+            logger.warning("Still blocked, showing paywall")
+            _isLimitBlocked = true
+            syncError = SyncErrorMessages.upgradeRequired
+            // Persist to storage to prevent SyncService retry loops
+            if let moment = localMoment {
+                moment.syncError = SyncErrorMessages.upgradeRequired
+                try? await repository.update(moment)
+            }
+            PaywallService.shared.showPaywall()
+            return
+        }
+
+        // Reset error state
+        _isLimitBlocked = false
+        syncError = nil
+
+        // Clear moment's sync error
+        if let moment = localMoment {
+            moment.syncError = nil
+            try? await repository.update(moment)
+        }
+
+        // Retry the sync
+        await syncMomentAndFetchPraise()
     }
 
     private func createMomentOnServer() async throws -> MomentResponse {

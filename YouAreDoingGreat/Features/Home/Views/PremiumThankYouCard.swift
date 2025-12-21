@@ -22,9 +22,9 @@ struct PremiumThankYouCard: View {
 
     // Benefits list
     private let benefits = [
-        "up to 30 moments a day",
-        "full journey history",
-        "priority support (yep, I’m listening)"
+        "up to 10 moments a day",
+        "unlimited total moments",
+        "full journey history"
     ]
 
     var body: some View {

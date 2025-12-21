@@ -38,33 +38,40 @@ struct MomentCard: View {
                 Spacer()
 
                 HStack(spacing: 8) {
-                    // Enrichment status indicator
-                    if moment.serverId != nil && !moment.isSynced {
-                        // Has serverId but not synced = enriching
-                        if let praise = moment.praise, !praise.isEmpty {
-                            // Just enriched - show checkmark briefly
-                            Image(systemName: "checkmark.circle.fill")
+                    // Sync/enrichment status indicator
+                    if !moment.isSynced {
+                        if let syncError = moment.syncError, !syncError.isEmpty {
+                            // Sync blocked by limit error - show warning icon
+                            Image(systemName: "exclamationmark.icloud.fill")
                                 .font(.system(size: 12))
-                                .foregroundStyle(.green)
-                                .symbolEffect(.bounce, value: moment.praise)
-                        } else {
-                            // Enriching in progress
-                            Image(systemName: "sparkles")
-                                .font(.system(size: 12))
-                                .foregroundStyle(.appPrimary)
-                                .symbolEffect(.pulse, options: .repeating)
-                        }
-                    } else if moment.serverId == nil && !moment.isSynced {
-                        // No serverId yet = creating on server
-                        Image(systemName: "arrow.triangle.2.circlepath")
-                            .font(.system(size: 12))
-                            .foregroundStyle(.textTertiary)
-                            .rotationEffect(.degrees(syncRotation))
-                            .onAppear {
-                                withAnimation(.linear(duration: 1).repeatForever(autoreverses: false)) {
-                                    syncRotation = 360
-                                }
+                                .foregroundStyle(.orange)
+                        } else if moment.serverId != nil {
+                            // Has serverId but not synced = enriching
+                            if let praise = moment.praise, !praise.isEmpty {
+                                // Just enriched - show checkmark briefly
+                                Image(systemName: "checkmark.circle.fill")
+                                    .font(.system(size: 12))
+                                    .foregroundStyle(.green)
+                                    .symbolEffect(.bounce, value: moment.praise)
+                            } else {
+                                // Enriching in progress
+                                Image(systemName: "sparkles")
+                                    .font(.system(size: 12))
+                                    .foregroundStyle(.appPrimary)
+                                    .symbolEffect(.pulse, options: .repeating)
                             }
+                        } else {
+                            // No serverId yet = creating on server
+                            Image(systemName: "arrow.triangle.2.circlepath")
+                                .font(.system(size: 12))
+                                .foregroundStyle(.textTertiary)
+                                .rotationEffect(.degrees(syncRotation))
+                                .onAppear {
+                                    withAnimation(.linear(duration: 1).repeatForever(autoreverses: false)) {
+                                        syncRotation = 360
+                                    }
+                                }
+                        }
                     }
 
                     if moment.isFavorite {

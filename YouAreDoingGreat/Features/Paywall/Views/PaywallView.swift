@@ -33,7 +33,19 @@ struct PaywallView: View {
 
     // Random quote selection
     private let randomQuote = quotes.randomElement() ?? quotes[0]
-    private let isDailyLimitReached = PaywallService.shared.isDailyLimitReached
+
+    // Limit state based on trigger
+    private var isDailyLimitReached: Bool {
+        PaywallService.shared.paywallTrigger == .dailyLimitReached
+    }
+
+    private var isTotalLimitReached: Bool {
+        PaywallService.shared.paywallTrigger == .totalLimitReached
+    }
+
+    private var isAnyLimitReached: Bool {
+        isDailyLimitReached || isTotalLimitReached
+    }
 
     init(viewModel: PaywallViewModel, onDismiss: @escaping () -> Void) {
         self.viewModel = viewModel
@@ -59,14 +71,14 @@ struct PaywallView: View {
                     .padding(.trailing, 20)
                 }
 
-                // Daily limit banner (if applicable)
-                if isDailyLimitReached {
-                    dailyLimitBanner
+                // Limit banner (if applicable)
+                if isAnyLimitReached {
+                    limitBanner
                         .padding(.horizontal, 32)
                         .padding(.top, 8)
                 }
 
-                Spacer(minLength: isDailyLimitReached ? 32 : 80)
+                Spacer(minLength: isAnyLimitReached ? 32 : 80)
 
                 // Main content
                 VStack(spacing: 32) {
@@ -98,7 +110,7 @@ struct PaywallView: View {
                 // Plans and CTA section
                 VStack(spacing: 24) {
                     // Header
-                    Text("Unlock up to 30 praises per day")
+                    Text("Unlock up to 10 moments per day")
                         .font(.appHeadline)
                         .foregroundStyle(Color(red: 0.75, green: 0.85, blue: 1.0))
                         .multilineTextAlignment(.center)
@@ -260,15 +272,15 @@ struct PaywallView: View {
         }
     }
 
-    // MARK: - Daily Limit Banner
+    // MARK: - Limit Banner
 
-    private var dailyLimitBanner: some View {
+    private var limitBanner: some View {
         HStack(spacing: 12) {
             Image(systemName: "exclamationmark.triangle.fill")
                 .font(.system(size: 20))
                 .foregroundStyle(Color(red: 0.86, green: 0.93, blue: 1.0)) // blue-50
 
-            Text("Daily limit reached. Go premium to continue without interruptions.")
+            Text(limitBannerText)
                 .font(.appBody)
                 .fontWeight(.semibold)
                 .foregroundStyle(Color(red: 0.86, green: 0.93, blue: 1.0))
@@ -282,6 +294,14 @@ struct PaywallView: View {
         )
         .scaleEffect(showContent ? 1 : 0.8)
         .opacity(showContent ? 1 : 0)
+    }
+
+    private var limitBannerText: String {
+        if isTotalLimitReached {
+            return "Wow! You've logged 10 moments. Go premium to keep celebrating your wins."
+        } else {
+            return "Daily limit reached. Go premium to continue without interruptions."
+        }
     }
 
     // MARK: - Quote Section
@@ -461,7 +481,7 @@ struct PaywallView: View {
 
             if success {
                 UINotificationFeedbackGenerator().notificationOccurred(.success)
-                PaywallService.shared.resetDailyLimit()
+                PaywallService.shared.resetAllLimits()
                 dismiss()
                 onDismiss()
             } else if viewModel.errorMessage != nil {
@@ -478,7 +498,7 @@ struct PaywallView: View {
 
             if success {
                 UINotificationFeedbackGenerator().notificationOccurred(.success)
-                PaywallService.shared.resetDailyLimit()
+                PaywallService.shared.resetAllLimits()
                 dismiss()
                 onDismiss()
             } else if viewModel.errorMessage != nil {

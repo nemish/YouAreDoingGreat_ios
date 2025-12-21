@@ -18,6 +18,7 @@ enum APIErrorCode: String, Decodable {
     case restrictedAccess = "RESTRICTED_ACCESS"
     case internalServerError = "INTERNAL_SERVER_ERROR"
     case dailyLimitReached = "DAILY_LIMIT_REACHED"
+    case totalLimitReached = "TOTAL_LIMIT_REACHED"
     case invalidCursor = "INVALID_CURSOR"
     case momentNotFound = "MOMENT_NOT_FOUND"
     case forbidden = "FORBIDDEN"
@@ -86,6 +87,7 @@ struct AnyCodable: Codable {
 
 enum MomentError: LocalizedError {
     case dailyLimitReached(message: String)
+    case totalLimitReached(message: String)
     case networkError(Error)
     case decodingError(Error)
     case invalidResponse
@@ -95,6 +97,8 @@ enum MomentError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .dailyLimitReached(let message):
+            return message
+        case .totalLimitReached(let message):
             return message
         case .networkError(let error):
             return "Network error: \(error.localizedDescription)"
@@ -114,5 +118,16 @@ enum MomentError: LocalizedError {
             return true
         }
         return false
+    }
+
+    var isTotalLimitError: Bool {
+        if case .totalLimitReached = self {
+            return true
+        }
+        return false
+    }
+
+    var isLimitError: Bool {
+        isDailyLimitError || isTotalLimitError
     }
 }

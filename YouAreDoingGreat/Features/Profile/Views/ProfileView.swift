@@ -275,7 +275,7 @@ struct ProfileView: View {
                             .font(.appHeadline)
                             .foregroundStyle(.textPrimary)
 
-                        Text(isPremium ? "Enjoy 50 moments per day and advanced analytics" : "Limited to 3 moments per day")
+                        Text(isPremium ? "Up to 10 moments per day, unlimited history" : "3 moments per day, 10 total")
                             .font(.appFootnote)
                             .foregroundStyle(.textSecondary)
                     }

@@ -13,7 +13,7 @@ final class MomentsListViewModel {
     // MARK: - Dependencies
 
     private let momentService: MomentService
-    private let repository: MomentRepository
+    let repository: MomentRepository
     private var loadTask: Task<Void, Never>?
     private var syncMonitorTask: Task<Void, Never>?
 
@@ -86,14 +86,15 @@ final class MomentsListViewModel {
         // Cancel existing monitor if any
         syncMonitorTask?.cancel()
 
-        let initialUnsyncedCount = moments.filter { !$0.isSynced }.count
+        // Filter to only count syncable moments (exclude limit-blocked ones)
+        let initialUnsyncedCount = moments.filter { !$0.isSynced && !isLimitBlocked($0) }.count
 
         guard initialUnsyncedCount > 0 else {
-            logger.info("No unsynced moments, skipping sync monitoring")
+            logger.info("No syncable unsynced moments, skipping sync monitoring")
             return
         }
 
-        logger.info("Starting sync monitoring with \(initialUnsyncedCount) unsynced moments")
+        logger.info("Starting sync monitoring with \(initialUnsyncedCount) syncable unsynced moments")
 
         syncMonitorTask = Task { @MainActor in
             var previousUnsyncedCount = initialUnsyncedCount
@@ -104,25 +105,33 @@ final class MomentsListViewModel {
 
                 // Fetch current unsynced moments from storage
                 if let unsyncedMoments = try? await repository.fetchUnsyncedMoments() {
-                    let currentUnsyncedCount = unsyncedMoments.count
+                    // Filter to only count syncable moments (exclude limit-blocked ones)
+                    let syncableMoments = unsyncedMoments.filter { !isLimitBlocked($0) }
+                    let currentUnsyncedCount = syncableMoments.count
 
-                    logger.debug("Sync monitor check: \(currentUnsyncedCount) unsynced moments (was \(previousUnsyncedCount))")
+                    logger.debug("Sync monitor check: \(currentUnsyncedCount) syncable unsynced moments (was \(previousUnsyncedCount))")
 
                     // If the count changed, it means something got synced
                     if currentUnsyncedCount != previousUnsyncedCount {
-                        logger.info("Sync status changed: \(previousUnsyncedCount) -> \(currentUnsyncedCount) unsynced moments - reloading")
+                        logger.info("Sync status changed: \(previousUnsyncedCount) -> \(currentUnsyncedCount) syncable unsynced moments - reloading")
                         await reloadFromLocalStorage()
                         previousUnsyncedCount = currentUnsyncedCount
                     }
 
-                    // Stop monitoring if there are no more unsynced moments
+                    // Stop monitoring if there are no more syncable unsynced moments
                     if currentUnsyncedCount == 0 {
-                        logger.info("All moments synced, stopping monitor")
+                        logger.info("All syncable moments synced, stopping monitor")
                         break
                     }
                 }
             }
         }
+    }
+
+    /// Check if a moment is blocked by limits (won't be retried)
+    private func isLimitBlocked(_ moment: Moment) -> Bool {
+        guard let syncError = moment.syncError else { return false }
+        return SyncErrorMessages.isLimitError(syncError)
     }
 
     /// Stop monitoring for sync updates
@@ -141,11 +150,12 @@ final class MomentsListViewModel {
             self.canLoadMore = momentService.hasNextPage
 
             // Update timeline restriction state after background refresh
-            if momentService.isLimitReached {
+            // Only mark as restricted if there's actually more data being restricted
+            if momentService.isLimitReached && momentService.hasNextPage {
                 isTimelineRestricted = true
             }
 
-            logger.info("Reloaded \(self.moments.count) moments after background refresh, limitReached: \(self.momentService.isLimitReached)")
+            logger.info("Reloaded \(self.moments.count) moments after background refresh, limitReached: \(self.momentService.isLimitReached), hasNextPage: \(self.momentService.hasNextPage)")
         } catch {
             logger.error("Failed to reload moments: \(error.localizedDescription)")
         }
@@ -170,13 +180,17 @@ final class MomentsListViewModel {
             canLoadMore = momentService.hasNextPage
 
             // Check if timeline limit is reached (for free users)
-            // On refresh, just set the flag - don't show popup
-            // Popup will be shown when user scrolls to the bottom
-            if momentService.isLimitReached {
+            // Only mark as restricted if there's actually more data being restricted
+            // If limitReached is true but hasNextPage is false, the user has their full data
+            if momentService.isLimitReached && momentService.hasNextPage {
                 isTimelineRestricted = true
             }
 
-            logger.info("Refresh complete, \(self.moments.count) moments, limitReached: \(self.momentService.isLimitReached)")
+            logger.info("Refresh complete, \(self.moments.count) moments, limitReached: \(self.momentService.isLimitReached), hasNextPage: \(self.momentService.hasNextPage)")
+
+            // Restart sync service to pick up any unsynced moments
+            SyncService.shared.startSyncing(repository: repository)
+            startSyncMonitoring()
         } catch {
             handleError(error)
         }
@@ -197,17 +211,18 @@ final class MomentsListViewModel {
             canLoadMore = momentService.hasNextPage
 
             // Check if timeline limit is reached (for free users)
-            if momentService.isLimitReached {
+            // Only mark as restricted if there's actually more data being restricted
+            if momentService.isLimitReached && momentService.hasNextPage {
                 isTimelineRestricted = true
-                // Show popup when we've exhausted available data
-                if !momentService.hasNextPage {
-                    showTimelineRestrictedPopup = true
-                    canLoadMore = false
-                    logger.info("Timeline limit reached - showing paywall prompt")
-                }
+            } else if momentService.isLimitReached && !momentService.hasNextPage {
+                // Hit the limit boundary - show restriction UI
+                isTimelineRestricted = true
+                showTimelineRestrictedPopup = true
+                canLoadMore = false
+                logger.info("Timeline limit reached - showing paywall prompt")
             }
 
-            logger.info("Loaded \(newMoments.count) more moments, limitReached: \(self.momentService.isLimitReached)")
+            logger.info("Loaded \(newMoments.count) more moments, limitReached: \(self.momentService.isLimitReached), hasNextPage: \(self.momentService.hasNextPage)")
         } catch {
             handleError(error)
         }

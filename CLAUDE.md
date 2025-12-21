@@ -19,7 +19,6 @@ Key endpoints: `/moments` (CRUD), `/timeline`, `/user/stats`, `/user/me`
 When the user asks to "refresh API schema" or "refresh api" or similar:
 1. Fetch the latest schema from `http://1test1.xyz/docs/as_json`
 2. Update `API_SCHEMA.json` with the fetched OpenAPI schema
-3. Update `API_SPECIFICATION.md` with human-readable documentation based on the schema
 
 ## Reference Implementation
 
