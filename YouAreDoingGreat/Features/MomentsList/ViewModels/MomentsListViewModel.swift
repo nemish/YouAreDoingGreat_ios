@@ -13,7 +13,7 @@ final class MomentsListViewModel {
     // MARK: - Dependencies
 
     private let momentService: MomentService
-    private let repository: MomentRepository
+    let repository: MomentRepository
     private var loadTask: Task<Void, Never>?
     private var syncMonitorTask: Task<Void, Never>?
 
@@ -86,14 +86,15 @@ final class MomentsListViewModel {
         // Cancel existing monitor if any
         syncMonitorTask?.cancel()
 
-        let initialUnsyncedCount = moments.filter { !$0.isSynced }.count
+        // Filter to only count syncable moments (exclude limit-blocked ones)
+        let initialUnsyncedCount = moments.filter { !$0.isSynced && !isLimitBlocked($0) }.count
 
         guard initialUnsyncedCount > 0 else {
-            logger.info("No unsynced moments, skipping sync monitoring")
+            logger.info("No syncable unsynced moments, skipping sync monitoring")
             return
         }
 
-        logger.info("Starting sync monitoring with \(initialUnsyncedCount) unsynced moments")
+        logger.info("Starting sync monitoring with \(initialUnsyncedCount) syncable unsynced moments")
 
         syncMonitorTask = Task { @MainActor in
             var previousUnsyncedCount = initialUnsyncedCount
@@ -104,25 +105,34 @@ final class MomentsListViewModel {
 
                 // Fetch current unsynced moments from storage
                 if let unsyncedMoments = try? await repository.fetchUnsyncedMoments() {
-                    let currentUnsyncedCount = unsyncedMoments.count
+                    // Filter to only count syncable moments (exclude limit-blocked ones)
+                    let syncableMoments = unsyncedMoments.filter { !isLimitBlocked($0) }
+                    let currentUnsyncedCount = syncableMoments.count
 
-                    logger.debug("Sync monitor check: \(currentUnsyncedCount) unsynced moments (was \(previousUnsyncedCount))")
+                    logger.debug("Sync monitor check: \(currentUnsyncedCount) syncable unsynced moments (was \(previousUnsyncedCount))")
 
                     // If the count changed, it means something got synced
                     if currentUnsyncedCount != previousUnsyncedCount {
-                        logger.info("Sync status changed: \(previousUnsyncedCount) -> \(currentUnsyncedCount) unsynced moments - reloading")
+                        logger.info("Sync status changed: \(previousUnsyncedCount) -> \(currentUnsyncedCount) syncable unsynced moments - reloading")
                         await reloadFromLocalStorage()
                         previousUnsyncedCount = currentUnsyncedCount
                     }
 
-                    // Stop monitoring if there are no more unsynced moments
+                    // Stop monitoring if there are no more syncable unsynced moments
                     if currentUnsyncedCount == 0 {
-                        logger.info("All moments synced, stopping monitor")
+                        logger.info("All syncable moments synced, stopping monitor")
                         break
                     }
                 }
             }
         }
+    }
+
+    /// Check if a moment is blocked by limits (won't be retried)
+    private func isLimitBlocked(_ moment: Moment) -> Bool {
+        guard let syncError = moment.syncError else { return false }
+        let lowercased = syncError.lowercased()
+        return lowercased.contains("limit") || lowercased.contains("upgrade")
     }
 
     /// Stop monitoring for sync updates

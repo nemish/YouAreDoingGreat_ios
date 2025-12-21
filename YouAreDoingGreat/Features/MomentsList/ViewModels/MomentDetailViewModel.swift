@@ -13,6 +13,7 @@ final class MomentDetailViewModel: PraiseViewModelProtocol {
     // MARK: - Dependencies
 
     private let moment: Moment
+    private let repository: MomentRepository
     private let onFavoriteToggle: (Moment) async -> Void
     private let onDelete: (Moment) async -> Void
 
@@ -70,14 +71,29 @@ final class MomentDetailViewModel: PraiseViewModelProtocol {
         false  // Detail view never disables button
     }
 
+    // Sync failure state - derived from moment's sync error
+    var isLimitBlocked: Bool {
+        get {
+            guard let error = moment.syncError else { return false }
+            return error.contains("limit")
+        }
+        set { }  // No-op for detail view
+    }
+
+    var isSyncFailed: Bool {
+        !moment.isSynced && moment.syncError != nil
+    }
+
     // MARK: - Initialization
 
     init(
         moment: Moment,
+        repository: MomentRepository,
         onFavoriteToggle: @escaping (Moment) async -> Void,
         onDelete: @escaping (Moment) async -> Void
     ) {
         self.moment = moment
+        self.repository = repository
         self.onFavoriteToggle = onFavoriteToggle
         self.onDelete = onDelete
 
@@ -97,6 +113,29 @@ final class MomentDetailViewModel: PraiseViewModelProtocol {
 
     func syncMomentAndFetchPraise() async {
         // No-op - moment already synced or syncing in background
+    }
+
+    func retrySyncMoment() async {
+        logger.info("Retry sync requested for moment: \(self.clientId)")
+
+        // Check if still blocked
+        if PaywallService.shared.shouldBlockMomentCreation() {
+            logger.warning("Still blocked by paywall, showing paywall")
+            PaywallService.shared.showPaywall()
+            return
+        }
+
+        // Clear the sync error to allow retry
+        moment.syncError = nil
+        do {
+            try await repository.update(moment)
+            logger.info("Cleared sync error for moment: \(self.clientId)")
+
+            // Trigger SyncService to pick up this moment
+            SyncService.shared.startSyncing(repository: repository)
+        } catch {
+            logger.error("Failed to clear sync error: \(error.localizedDescription)")
+        }
     }
 
     // MARK: - Action Handlers

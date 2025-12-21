@@ -37,17 +37,27 @@ final class SyncService {
                     // Fetch all unsynced moments
                     let unsyncedMoments = try await repository.fetchUnsyncedMoments()
 
-                    if !unsyncedMoments.isEmpty {
-                        logger.info("🔄 Found \(unsyncedMoments.count) unsynced moment(s)")
+                    // Filter out limit-blocked moments (they won't be retried)
+                    let syncableMoments = unsyncedMoments.filter { moment in
+                        guard let syncError = moment.syncError else { return true }
+                        return !isLimitError(syncError)
+                    }
 
-                        // Try to sync each unsynced moment
-                        for moment in unsyncedMoments {
+                    if !syncableMoments.isEmpty {
+                        logger.info("🔄 Found \(syncableMoments.count) syncable moment(s) (\(unsyncedMoments.count - syncableMoments.count) blocked by limits)")
+
+                        // Try to sync each syncable moment
+                        for moment in syncableMoments {
                             if Task.isCancelled { break }
                             await syncMoment(moment, repository: repository)
                         }
-                    } else {
-                        // No unsynced moments - stop the service
+                    } else if unsyncedMoments.isEmpty {
+                        // No unsynced moments at all - stop the service
                         logger.info("✅ All moments synced - stopping sync service")
+                        break
+                    } else {
+                        // All unsynced moments are limit-blocked - stop the service
+                        logger.info("⏹️ All unsynced moments are blocked by limits - stopping sync service")
                         break
                     }
 
@@ -79,6 +89,12 @@ final class SyncService {
 
     /// Sync a single moment with the server
     private func syncMoment(_ moment: Moment, repository: MomentRepository) async {
+        // Skip moments that are blocked by limits (no point retrying)
+        if let syncError = moment.syncError, isLimitError(syncError) {
+            logger.debug("⏭️ Skipping moment \(moment.clientId.uuidString) - blocked by limit")
+            return
+        }
+
         // Check if moment has serverId
         if let serverId = moment.serverId {
             // Moment exists on server, just fetch latest state
@@ -177,9 +193,33 @@ final class SyncService {
 
             try await repository.update(moment)
 
+        } catch let error as MomentError {
+            // Check if it's a limit error
+            if error.isLimitError {
+                // Limit reached - mark moment with error and stop retrying
+                logger.warning("⚠️ Limit reached for moment \(moment.clientId.uuidString) - stopping sync attempts")
+                moment.syncError = error.isDailyLimitError ? "Daily limit reached" : "Total limit reached"
+                try? await repository.update(moment)
+
+                // Show paywall
+                if error.isDailyLimitError {
+                    PaywallService.shared.markDailyLimitReached()
+                } else {
+                    PaywallService.shared.markTotalLimitReached()
+                }
+                PaywallService.shared.showPaywall()
+            } else {
+                logger.error("❌ Moment error: \(error.localizedDescription)")
+            }
         } catch {
             logger.error("❌ Failed to create moment on server: \(error.localizedDescription)")
         }
+    }
+
+    /// Check if a sync error message indicates a limit error
+    private func isLimitError(_ errorMessage: String) -> Bool {
+        let lowercased = errorMessage.lowercased()
+        return lowercased.contains("limit") || lowercased.contains("upgrade")
     }
 
     /// Request enrichment for a moment (Phase 2: POST /moments/:id/enrich)

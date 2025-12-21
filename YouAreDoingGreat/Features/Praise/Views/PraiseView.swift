@@ -19,9 +19,14 @@ protocol PraiseViewModelProtocol: AnyObject, Observable {
     var clientId: UUID { get }
     var isNiceButtonDisabled: Bool { get }
 
+    // Sync failure state
+    var isLimitBlocked: Bool { get set }
+    var isSyncFailed: Bool { get }
+
     func cancelPolling()
     func startEntranceAnimation() async
     func syncMomentAndFetchPraise() async
+    func retrySyncMoment() async
 }
 
 // MARK: - Praise Content View
@@ -33,10 +38,6 @@ struct PraiseContentView<ViewModel: PraiseViewModelProtocol>: View {
     @Binding var selectedTab: Int
     var onDismiss: () -> Void
 
-    // Paywall state
-    @State private var paywallService = PaywallService.shared
-    @State private var showPaywall = false
-    @State private var paywallViewModel = PaywallViewModel(subscriptionService: SubscriptionService.shared)
 
     // Highlight service
     @State private var highlightService = HighlightService.shared
@@ -94,8 +95,44 @@ struct PraiseContentView<ViewModel: PraiseViewModelProtocol>: View {
                             .transition(.opacity.combined(with: .scale(scale: 0.95)))
                         }
 
-                        // Error message
-                        if let error = viewModel.syncError, !viewModel.isLoadingAIPraise {
+                        // Sync failure indicator with retry button
+                        if viewModel.isLimitBlocked && !viewModel.isLoadingAIPraise {
+                            VStack(spacing: 12) {
+                                HStack(spacing: 8) {
+                                    Image(systemName: "exclamationmark.icloud.fill")
+                                        .font(.system(size: 16))
+                                        .foregroundStyle(.orange)
+
+                                    Text("Not synced")
+                                        .font(.appCaption)
+                                        .foregroundStyle(.textSecondary)
+                                }
+
+                                Button {
+                                    Task {
+                                        await viewModel.retrySyncMoment()
+                                    }
+                                } label: {
+                                    HStack(spacing: 6) {
+                                        Image(systemName: "arrow.clockwise")
+                                            .font(.system(size: 12, weight: .semibold))
+                                        Text("Retry Sync")
+                                            .font(.appCaption)
+                                            .fontWeight(.semibold)
+                                    }
+                                    .foregroundStyle(.appPrimary)
+                                    .padding(.horizontal, 16)
+                                    .padding(.vertical, 8)
+                                    .background(
+                                        Capsule()
+                                            .strokeBorder(Color.appPrimary.opacity(0.5), lineWidth: 1)
+                                    )
+                                }
+                            }
+                            .transition(.opacity)
+                        }
+                        // Other error message (non-limit errors)
+                        else if let error = viewModel.syncError, !viewModel.isLoadingAIPraise && !viewModel.isLimitBlocked {
                             Text(error)
                                 .font(.appCaption)
                                 .foregroundStyle(.textTertiary)
@@ -142,27 +179,6 @@ struct PraiseContentView<ViewModel: PraiseViewModelProtocol>: View {
             await viewModel.startEntranceAnimation()
             // Start syncing and fetching AI praise
             await viewModel.syncMomentAndFetchPraise()
-        }
-        .onChange(of: paywallService.shouldShowPaywall) { _, shouldShow in
-            showPaywall = shouldShow
-        }
-        .fullScreenCover(isPresented: $showPaywall, onDismiss: {
-            // Always clear the service flag when paywall is dismissed
-            // This handles both programmatic dismissal and interactive gestures
-            paywallService.dismissPaywall()
-
-            // Navigate to Home tab after successful purchase
-            if SubscriptionService.shared.hasActiveSubscription {
-                selectedTab = 0
-            }
-
-            viewModel.cancelPolling()
-            onDismiss()
-        }) {
-            PaywallView(viewModel: paywallViewModel) {
-                // This closure only runs for programmatic dismissal (button taps)
-                showPaywall = false
-            }
         }
     }
 
@@ -267,6 +283,9 @@ private final class MockPraiseViewModel: PraiseViewModelProtocol {
     var isLoadingAIPraise: Bool = false
     var syncError: String?
 
+    // Sync failure state
+    var isLimitBlocked: Bool = false
+
     // Animation state
     var showContent: Bool = false
     var showPraise: Bool = false
@@ -283,6 +302,10 @@ private final class MockPraiseViewModel: PraiseViewModelProtocol {
 
     var isNiceButtonDisabled: Bool {
         false  // Mock never disables button
+    }
+
+    var isSyncFailed: Bool {
+        (isLimitBlocked || syncError != nil) && !isLoadingAIPraise
     }
 
     var timeDisplayText: String {
@@ -329,6 +352,10 @@ private final class MockPraiseViewModel: PraiseViewModelProtocol {
     }
 
     func syncMomentAndFetchPraise() async {
+        // No-op for mock - state is set manually
+    }
+
+    func retrySyncMoment() async {
         // No-op for mock - state is set manually
     }
 }

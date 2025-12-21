@@ -133,8 +133,8 @@ final class SubscriptionService {
             logger.info("Subscription status updated: \(isPremium)")
 
             if isPremium {
-                // Reset daily limit when premium activates
-                PaywallService.shared.resetDailyLimit()
+                // Reset all limits when premium activates
+                PaywallService.shared.resetAllLimits()
             }
         }
     }

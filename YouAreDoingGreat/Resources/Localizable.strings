@@ -10,3 +10,16 @@
 "timeline_restriction_banner_message" = "You can always see your recent moments. Premium keeps your full story — all the way back.";
 "timeline_restriction_banner_button" = "Keep my full journey";
 "timeline_restriction_banner_button_accessibility" = "Upgrade to premium to keep full journey history";
+
+/* Limit Banners */
+"total_limit_banner_text" = "You've logged 10 moments. Go premium to keep celebrating your wins.";
+"daily_limit_banner_text" = "Daily limit reached. Go premium to continue without interruptions.";
+
+/* Subscription Descriptions */
+"subscription_premium_description" = "Up to 10 moments per day, unlimited history";
+"subscription_free_description" = "3 moments per day, 10 total";
+
+/* Premium Benefits */
+"premium_benefit_moments" = "up to 10 moments a day";
+"premium_benefit_unlimited" = "unlimited total moments";
+"premium_benefit_history" = "full journey history";

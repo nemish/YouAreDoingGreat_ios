@@ -1,4 +1,5 @@
 import SwiftUI
+import SwiftData
 
 // MARK: - Moment Detail Sheet
 // Bottom sheet that displays full moment details with praise
@@ -76,12 +77,41 @@ struct MomentDetailSheet: View {
                                         .fixedSize(horizontal: false, vertical: true)
                                 }
 
-                                // Error message
-                                if let error = moment.syncError, moment.isSynced == false {
-                                    Text(error)
-                                        .font(.appCaption)
-                                        .foregroundStyle(.textTertiary)
-                                        .multilineTextAlignment(.center)
+                                // Sync error with retry button
+                                if moment.syncError != nil, !moment.isSynced {
+                                    VStack(spacing: 12) {
+                                        HStack(spacing: 8) {
+                                            Image(systemName: "exclamationmark.icloud.fill")
+                                                .font(.system(size: 16))
+                                                .foregroundStyle(.orange)
+
+                                            Text("Not synced")
+                                                .font(.appCaption)
+                                                .foregroundStyle(.textSecondary)
+                                        }
+
+                                        Button {
+                                            Task {
+                                                await viewModel.retrySyncMoment()
+                                            }
+                                        } label: {
+                                            HStack(spacing: 6) {
+                                                Image(systemName: "arrow.clockwise")
+                                                    .font(.system(size: 12, weight: .semibold))
+                                                Text("Retry Sync")
+                                                    .font(.appCaption)
+                                                    .fontWeight(.semibold)
+                                            }
+                                            .foregroundStyle(.appPrimary)
+                                            .padding(.horizontal, 16)
+                                            .padding(.vertical, 8)
+                                            .background(
+                                                Capsule()
+                                                    .strokeBorder(Color.appPrimary.opacity(0.5), lineWidth: 1)
+                                            )
+                                        }
+                                    }
+                                    .transition(.opacity)
                                 }
                             }
                             .animation(.easeInOut(duration: 0.5), value: viewModel.isLoadingAIPraise)
@@ -222,6 +252,10 @@ struct MomentDetailSheet: View {
 // MARK: - Preview
 
 #Preview("Moment Detail Sheet") {
+    let config = ModelConfiguration(isStoredInMemoryOnly: true)
+    let container = try! ModelContainer(for: Moment.self, configurations: config)
+    let context = container.mainContext
+
     let moment = Moment(
         text: "I finally cleaned my desk after three weeks",
         submittedAt: Date(),
@@ -232,14 +266,19 @@ struct MomentDetailSheet: View {
     )
     moment.praise = "That's awesome! Taking care of your space is taking care of yourself."
     moment.tags = ["self_care", "productivity"]
+    context.insert(moment)
+
+    let repository = SwiftDataMomentRepository(modelContext: context)
 
     return MomentDetailSheet(
         viewModel: MomentDetailViewModel(
             moment: moment,
+            repository: repository,
             onFavoriteToggle: { _ in },
             onDelete: { _ in }
         ),
         moment: moment
     )
     .preferredColorScheme(.dark)
+    .modelContainer(container)
 }

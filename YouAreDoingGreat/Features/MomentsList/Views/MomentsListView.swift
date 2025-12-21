@@ -42,6 +42,7 @@ struct MomentsListView: View {
                     MomentDetailSheet(
                         viewModel: MomentDetailViewModel(
                             moment: moment,
+                            repository: viewModel.repository,
                             onFavoriteToggle: { m in
                                 await viewModel.toggleFavorite(m)
                             },

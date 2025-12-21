@@ -74,6 +74,8 @@ final class DefaultAPIClient: APIClient, @unchecked Sendable {
                 switch errorResponse.error.code {
                 case .dailyLimitReached:
                     throw MomentError.dailyLimitReached(message: errorResponse.error.message)
+                case .totalLimitReached:
+                    throw MomentError.totalLimitReached(message: errorResponse.error.message)
                 default:
                     throw MomentError.serverError(message: errorResponse.error.message)
                 }
