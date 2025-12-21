@@ -8,12 +8,8 @@ struct TimelineResponseDTO: Decodable {
     let data: [DaySummaryDTO]
     let nextCursor: String?
     let hasNextPage: Bool
-
-    enum CodingKeys: String, CodingKey {
-        case data
-        case nextCursor
-        case hasNextPage
-    }
+    /// Whether the user has reached their timeline limit (true for free users when older data exists)
+    let limitReached: Bool
 }
 
 /// Day summary state indicating processing status

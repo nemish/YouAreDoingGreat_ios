@@ -57,17 +57,11 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "status": {
-                      "type": "string",
-                      "example": "degraded"
-                    },
+                    "status": { "type": "string", "example": "degraded" },
                     "checks": {
                       "type": "object",
                       "properties": {
-                        "mongodb": {
-                          "type": "string",
-                          "example": "disconnected"
-                        }
+                        "mongodb": { "type": "string", "example": "disconnected" }
                       }
                     }
                   }
@@ -199,14 +193,14 @@
     "/timeline": {
       "get": {
         "summary": "Get timeline with pagination",
-        "description": "Retrieve user day summaries with cursor-based pagination for infinite scrolling timeline",
+        "description": "Retrieve user day summaries with cursor-based pagination for infinite scrolling timeline.\n\n**Timeline Restriction:** Free users can only access data from the last 14 days.\nData older than 14 days is filtered out and `limitReached` is set to true.\nPremium users have unlimited access to their full history.\n",
         "operationId": "getTimeline",
         "security": [{ "appToken": [], "userAuth": [] }],
         "parameters": [
           {
             "name": "cursor",
             "in": "query",
-            "description": "Date cursor for pagination (ISO date)",
+            "description": "Date cursor for pagination (ISO date).",
             "required": false,
             "schema": {
               "type": "string",
@@ -267,14 +261,14 @@
     "/moments": {
       "get": {
         "summary": "Get moments with pagination",
-        "description": "Retrieve user moments with cursor-based pagination for infinite scrolling",
+        "description": "Retrieve user moments with cursor-based pagination for infinite scrolling.\n\n**Timeline Restriction:** Free users can only access data from the last 14 days.\nData older than 14 days is filtered out and `limitReached` is set to true.\nPremium users have unlimited access to their full history.\n",
         "operationId": "getMoments",
         "security": [{ "appToken": [], "userAuth": [] }],
         "parameters": [
           {
             "name": "cursor",
             "in": "query",
-            "description": "Timestamp cursor for pagination",
+            "description": "Timestamp cursor for pagination.",
             "required": false,
             "schema": {
               "type": "string",
@@ -375,7 +369,7 @@
     "/moments/by-client-id/{clientId}": {
       "get": {
         "summary": "Get a moment by client ID",
-        "description": "Retrieve a specific moment by its client-generated UUID (used for offline sync correlation)",
+        "description": "Retrieve a specific moment by its client-generated UUID (used for offline sync correlation).\nNo timeline restriction applies when fetching individual moments.\n",
         "operationId": "getMomentByClientId",
         "security": [{ "appToken": [], "userAuth": [] }],
         "parameters": [
@@ -438,7 +432,7 @@
     "/moments/{id}": {
       "get": {
         "summary": "Get a specific moment",
-        "description": "Retrieve a specific moment by ID",
+        "description": "Retrieve a specific moment by ID.\nNo timeline restriction applies when fetching individual moments.\n",
         "operationId": "getMoment",
         "security": [{ "appToken": [], "userAuth": [] }],
         "parameters": [
@@ -694,7 +688,7 @@
     "/webhooks/revenuecat": {
       "post": {
         "summary": "RevenueCat webhook endpoint",
-        "description": "Webhook endpoint for RevenueCat subscription events. Updates user subscription status based on purchase, renewal, and expiration events.",
+        "description": "Webhook endpoint for RevenueCat subscription events. Updates user subscription\nstatus based on purchase, renewal, and expiration events.\n\n**Authentication:** Requires `Authorization` header with RevenueCat webhook secret.\nDoes NOT use x-app-token-code or x-user-id headers.\n\n**Events that grant premium status:**\n- INITIAL_PURCHASE\n- RENEWAL\n- UNCANCELLATION\n- SUBSCRIPTION_EXTENDED\n\n**Events that revoke premium status:**\n- EXPIRATION\n\n**Events logged but no status change:**\n- CANCELLATION (user keeps access until expiration)\n- BILLING_ISSUE (grace period)\n- PRODUCT_CHANGE\n- SUBSCRIPTION_PAUSED\n- TRANSFER\n- TEST\n",
         "operationId": "revenueCatWebhook",
         "security": [{ "revenueCatAuth": [] }],
         "requestBody": {
@@ -966,13 +960,13 @@
               "type": "string",
               "enum": ["sunrise", "cloud-sun", "sun-medium", "sunset", "moon"]
             },
-            "description": "Array of time periods when moments were logged",
+            "description": "Array of time periods when moments were logged (sunrise=5-8am, cloud-sun=8am-12pm, sun-medium=12-5pm, sunset=5-8pm, moon=night)",
             "example": ["cloud-sun", "sun-medium", "sunset"]
           },
           "state": {
             "type": "string",
             "enum": ["INPROGRESS", "FINALISED"],
-            "description": "The processing state of the day summary",
+            "description": "The processing state of the day summary:\n- INPROGRESS: Summary exists but AI text generation has not completed yet\n- FINALISED: Summary is complete with AI-generated text and all metadata\n",
             "example": "FINALISED"
           },
           "createdAt": {
@@ -985,7 +979,7 @@
       },
       "PaginatedTimelineResponse": {
         "type": "object",
-        "required": ["data", "hasNextPage"],
+        "required": ["data", "hasNextPage", "limitReached"],
         "properties": {
           "data": {
             "type": "array",
@@ -1003,12 +997,17 @@
             "type": "boolean",
             "description": "Whether there are more pages available",
             "example": true
+          },
+          "limitReached": {
+            "type": "boolean",
+            "description": "Whether the user has reached their timeline limit (true for free users when older data exists, always false for premium)",
+            "example": false
           }
         }
       },
       "PaginatedMomentsResponse": {
         "type": "object",
-        "required": ["data", "hasNextPage"],
+        "required": ["data", "hasNextPage", "limitReached"],
         "properties": {
           "data": {
             "type": "array",
@@ -1026,6 +1025,11 @@
             "type": "boolean",
             "description": "Whether there are more pages available",
             "example": true
+          },
+          "limitReached": {
+            "type": "boolean",
+            "description": "Whether the user has reached their timeline limit (true for free users when older data exists, always false for premium)",
+            "example": false
           }
         }
       },
@@ -1156,9 +1160,17 @@
               "type": {
                 "type": "string",
                 "enum": [
-                  "INITIAL_PURCHASE", "RENEWAL", "EXPIRATION", "CANCELLATION",
-                  "BILLING_ISSUE", "PRODUCT_CHANGE", "UNCANCELLATION",
-                  "SUBSCRIPTION_PAUSED", "SUBSCRIPTION_EXTENDED", "TRANSFER", "TEST"
+                  "INITIAL_PURCHASE",
+                  "RENEWAL",
+                  "EXPIRATION",
+                  "CANCELLATION",
+                  "BILLING_ISSUE",
+                  "PRODUCT_CHANGE",
+                  "UNCANCELLATION",
+                  "SUBSCRIPTION_PAUSED",
+                  "SUBSCRIPTION_EXTENDED",
+                  "TRANSFER",
+                  "TEST"
                 ],
                 "description": "Type of RevenueCat event",
                 "example": "INITIAL_PURCHASE"
@@ -1214,11 +1226,20 @@
               "code": {
                 "type": "string",
                 "enum": [
-                  "UNAUTHORIZED", "RESTRICTED_ACCESS", "INTERNAL_SERVER_ERROR",
-                  "DAILY_LIMIT_REACHED", "INVALID_CURSOR", "MOMENT_NOT_FOUND",
-                  "FORBIDDEN", "INVALID_REQUEST", "ENRICHMENT_IN_PROGRESS",
-                  "INVALID_APP_TOKEN", "INVALID_WEBHOOK_AUTH", "VALIDATION_ERROR",
-                  "RATE_LIMIT_EXCEEDED", "CONFLICT"
+                  "UNAUTHORIZED",
+                  "RESTRICTED_ACCESS",
+                  "INTERNAL_SERVER_ERROR",
+                  "DAILY_LIMIT_REACHED",
+                  "INVALID_CURSOR",
+                  "MOMENT_NOT_FOUND",
+                  "FORBIDDEN",
+                  "INVALID_REQUEST",
+                  "ENRICHMENT_IN_PROGRESS",
+                  "INVALID_APP_TOKEN",
+                  "INVALID_WEBHOOK_AUTH",
+                  "VALIDATION_ERROR",
+                  "RATE_LIMIT_EXCEEDED",
+                  "CONFLICT"
                 ],
                 "description": "Machine-readable error code",
                 "example": "DAILY_LIMIT_REACHED"

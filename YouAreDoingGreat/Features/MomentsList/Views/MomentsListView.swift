@@ -60,6 +60,15 @@ struct MomentsListView: View {
             } message: {
                 Text(viewModel.error ?? "An error occurred")
             }
+            // Timeline Restriction Alert
+            .alert("Unlock Your Full History", isPresented: $viewModel.showTimelineRestrictedPopup) {
+                Button("Upgrade to Premium") {
+                    PaywallService.shared.showPaywallForTimelineRestriction()
+                }
+                Button("Maybe Later", role: .cancel) { }
+            } message: {
+                Text("Free accounts can only view the last 14 days. Upgrade to premium for unlimited access to all your moments.")
+            }
         }
     }
 
@@ -79,11 +88,17 @@ struct MomentsListView: View {
                     .transition(.opacity.combined(with: .scale(scale: 0.95)))
                 }
 
+                // Show loading indicator or restriction banner
                 if viewModel.canLoadMore {
                     loadMoreView
                         .onAppear {
                             Task { await viewModel.loadNextPage() }
                         }
+                } else if viewModel.isTimelineRestricted {
+                    // Show the restriction banner at the end of the list
+                    TimelineRestrictedBanner {
+                        PaywallService.shared.showPaywallForTimelineRestriction()
+                    }
                 }
             }
             .padding(.horizontal, 16)
@@ -401,6 +416,85 @@ struct MomentsListView: View {
     // Set the syncing moment as highlighted to simulate navigation from PraiseView
     let highlightService = HighlightService.shared
     highlightService.highlightedMomentId = syncingMoment.clientId
+
+    return MomentsListView(viewModel: viewModel)
+        .preferredColorScheme(.dark)
+        .modelContainer(container)
+}
+
+#Preview("Moments List - Timeline Restricted (Banner)") {
+    let config = ModelConfiguration(isStoredInMemoryOnly: true)
+    let container = try! ModelContainer(for: Moment.self, configurations: config)
+    let context = container.mainContext
+
+    let calendar = Calendar.current
+    let now = Date()
+
+    // Create moments spanning 14 days to simulate hitting the limit
+    for i in 0..<20 {
+        let date = calendar.date(byAdding: .day, value: -i, to: now)!
+        let moment = Moment(
+            text: "Day \(i + 1) moment - Something good happened today.",
+            submittedAt: date,
+            happenedAt: date,
+            timezone: TimeZone.current.identifier,
+            timeAgo: i * 86400,
+            offlinePraise: "Nice work!"
+        )
+        moment.tags = ["daily"]
+        moment.isSynced = true
+        moment.praise = "You're doing great! Keep it up."
+        context.insert(moment)
+    }
+
+    let repository = SwiftDataMomentRepository(modelContext: context)
+    let apiClient = DefaultAPIClient()
+    let service = MomentService(apiClient: apiClient, repository: repository)
+    let viewModel = MomentsListViewModel(momentService: service, repository: repository)
+
+    // Set timeline restriction state
+    viewModel.isTimelineRestricted = true
+    viewModel.canLoadMore = false
+
+    return MomentsListView(viewModel: viewModel)
+        .preferredColorScheme(.dark)
+        .modelContainer(container)
+}
+
+#Preview("Moments List - Timeline Restricted (Popup)") {
+    let config = ModelConfiguration(isStoredInMemoryOnly: true)
+    let container = try! ModelContainer(for: Moment.self, configurations: config)
+    let context = container.mainContext
+
+    let calendar = Calendar.current
+    let now = Date()
+
+    // Create a few moments
+    for i in 0..<5 {
+        let date = calendar.date(byAdding: .day, value: -i, to: now)!
+        let moment = Moment(
+            text: "Day \(i + 1) moment - Something good happened.",
+            submittedAt: date,
+            happenedAt: date,
+            timezone: TimeZone.current.identifier,
+            timeAgo: i * 86400,
+            offlinePraise: "Nice work!"
+        )
+        moment.tags = ["daily"]
+        moment.isSynced = true
+        moment.praise = "You're doing great!"
+        context.insert(moment)
+    }
+
+    let repository = SwiftDataMomentRepository(modelContext: context)
+    let apiClient = DefaultAPIClient()
+    let service = MomentService(apiClient: apiClient, repository: repository)
+    let viewModel = MomentsListViewModel(momentService: service, repository: repository)
+
+    // Set timeline restriction state with popup shown
+    viewModel.isTimelineRestricted = true
+    viewModel.showTimelineRestrictedPopup = true
+    viewModel.canLoadMore = false
 
     return MomentsListView(viewModel: viewModel)
         .preferredColorScheme(.dark)

@@ -21,6 +21,9 @@ final class MomentService {
     var nextCursor: String?
     var hasNextPage: Bool = false
 
+    // Timeline restriction state (true when limitReached flag is set in API response)
+    var isLimitReached: Bool = false
+
     // MARK: - Initialization
 
     init(apiClient: APIClient, repository: MomentRepository) {
@@ -131,8 +134,9 @@ final class MomentService {
         // Update pagination state
         nextCursor = response.nextCursor
         hasNextPage = response.hasNextPage
+        isLimitReached = response.limitReached
 
-        logger.info("Refreshed \(response.data.count) moments, hasNextPage: \(response.hasNextPage)")
+        logger.info("Refreshed \(response.data.count) moments, hasNextPage: \(response.hasNextPage), limitReached: \(response.limitReached)")
     }
 
     /// Load next page of moments
@@ -160,8 +164,9 @@ final class MomentService {
         // Update pagination state
         nextCursor = response.nextCursor
         hasNextPage = response.hasNextPage
+        isLimitReached = response.limitReached
 
-        logger.info("Loaded \(moments.count) moments from next page")
+        logger.info("Loaded \(moments.count) moments from next page, limitReached: \(response.limitReached)")
 
         return moments
     }

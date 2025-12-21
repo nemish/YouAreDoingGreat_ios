@@ -4,6 +4,15 @@ import OSLog
 
 private let logger = Logger(subsystem: "com.youaredoinggreat", category: "paywall")
 
+// MARK: - Paywall Trigger
+// Identifies why the paywall is being shown
+
+enum PaywallTrigger {
+    case dailyLimitReached
+    case timelineRestricted
+    case manualTrigger
+}
+
 // MARK: - Paywall Service
 // Manages daily limit state and determines when to show paywall
 
@@ -16,6 +25,10 @@ final class PaywallService {
     // Paywall presentation state
     var shouldShowPaywall: Bool = false
     var dailyLimitReachedDate: Date?
+    var paywallTrigger: PaywallTrigger = .manualTrigger
+
+    // Timeline restriction state
+    var isTimelineRestricted: Bool = false
 
     // UserDefaults keys
     private let dailyLimitDateKey = "com.youaredoinggreat.dailyLimitDate"
@@ -41,6 +54,7 @@ final class PaywallService {
     func markDailyLimitReached() {
         let now = Date()
         dailyLimitReachedDate = now
+        paywallTrigger = .dailyLimitReached
         saveState()
 
         logger.info("Daily limit reached, paywall activated until next day")
@@ -60,12 +74,29 @@ final class PaywallService {
 
     /// Show the paywall
     func showPaywall() {
+        paywallTrigger = .manualTrigger
         shouldShowPaywall = true
     }
 
     /// Dismiss the paywall
     func dismissPaywall() {
         shouldShowPaywall = false
+    }
+
+    // MARK: - Timeline Restriction Methods
+
+    /// Show paywall due to timeline restriction
+    func showPaywallForTimelineRestriction() {
+        paywallTrigger = .timelineRestricted
+        isTimelineRestricted = true
+        shouldShowPaywall = true
+        logger.info("Showing paywall for timeline restriction")
+    }
+
+    /// Clear timeline restriction (after premium upgrade)
+    func clearTimelineRestriction() {
+        isTimelineRestricted = false
+        logger.info("Timeline restriction cleared")
     }
 
     /// Reset daily limit (for testing or premium upgrade)

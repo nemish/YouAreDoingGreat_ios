@@ -6,6 +6,8 @@ struct PaginatedMomentsResponse: Decodable {
     let data: [MomentDTO]
     let nextCursor: String?
     let hasNextPage: Bool
+    /// Whether the user has reached their timeline limit (true for free users when older data exists)
+    let limitReached: Bool
 }
 
 struct MomentDTO: Decodable {
