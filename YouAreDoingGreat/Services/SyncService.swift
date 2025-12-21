@@ -198,7 +198,9 @@ final class SyncService {
             if error.isLimitError {
                 // Limit reached - mark moment with error and stop retrying
                 logger.warning("⚠️ Limit reached for moment \(moment.clientId.uuidString) - stopping sync attempts")
-                moment.syncError = error.isDailyLimitError ? "Daily limit reached" : "Total limit reached"
+                moment.syncError = error.isDailyLimitError
+                    ? SyncErrorMessages.dailyLimitReached
+                    : SyncErrorMessages.totalLimitReached
                 try? await repository.update(moment)
 
                 // Show paywall
@@ -218,8 +220,7 @@ final class SyncService {
 
     /// Check if a sync error message indicates a limit error
     private func isLimitError(_ errorMessage: String) -> Bool {
-        let lowercased = errorMessage.lowercased()
-        return lowercased.contains("limit") || lowercased.contains("upgrade")
+        SyncErrorMessages.isLimitError(errorMessage)
     }
 
     /// Request enrichment for a moment (Phase 2: POST /moments/:id/enrich)

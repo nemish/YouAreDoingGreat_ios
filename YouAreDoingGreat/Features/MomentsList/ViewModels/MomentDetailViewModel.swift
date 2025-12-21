@@ -118,9 +118,12 @@ final class MomentDetailViewModel: PraiseViewModelProtocol {
     func retrySyncMoment() async {
         logger.info("Retry sync requested for moment: \(self.clientId)")
 
-        // Check if still blocked
+        // Check if still blocked BEFORE clearing state
         if PaywallService.shared.shouldBlockMomentCreation() {
             logger.warning("Still blocked by paywall, showing paywall")
+            // Persist error to storage to prevent SyncService retry loops
+            moment.syncError = SyncErrorMessages.upgradeRequired
+            try? await repository.update(moment)
             PaywallService.shared.showPaywall()
             return
         }

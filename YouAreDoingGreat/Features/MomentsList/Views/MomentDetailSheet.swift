@@ -84,11 +84,14 @@ struct MomentDetailSheet: View {
                                             Image(systemName: "exclamationmark.icloud.fill")
                                                 .font(.system(size: 16))
                                                 .foregroundStyle(.orange)
+                                                .accessibilityHidden(true)
 
                                             Text("Not synced")
                                                 .font(.appCaption)
                                                 .foregroundStyle(.textSecondary)
                                         }
+                                        .accessibilityElement(children: .combine)
+                                        .accessibilityLabel("Moment not synced due to limit")
 
                                         Button {
                                             Task {
@@ -110,6 +113,8 @@ struct MomentDetailSheet: View {
                                                     .strokeBorder(Color.appPrimary.opacity(0.5), lineWidth: 1)
                                             )
                                         }
+                                        .accessibilityLabel("Retry syncing moment")
+                                        .accessibilityHint("Double tap to try syncing this moment again")
                                     }
                                     .transition(.opacity)
                                 }

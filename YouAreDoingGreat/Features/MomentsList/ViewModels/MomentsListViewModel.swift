@@ -131,8 +131,7 @@ final class MomentsListViewModel {
     /// Check if a moment is blocked by limits (won't be retried)
     private func isLimitBlocked(_ moment: Moment) -> Bool {
         guard let syncError = moment.syncError else { return false }
-        let lowercased = syncError.lowercased()
-        return lowercased.contains("limit") || lowercased.contains("upgrade")
+        return SyncErrorMessages.isLimitError(syncError)
     }
 
     /// Stop monitoring for sync updates
@@ -187,6 +186,10 @@ final class MomentsListViewModel {
             }
 
             logger.info("Refresh complete, \(self.moments.count) moments, limitReached: \(self.momentService.isLimitReached)")
+
+            // Restart sync service to pick up any unsynced moments
+            SyncService.shared.startSyncing(repository: repository)
+            startSyncMonitoring()
         } catch {
             handleError(error)
         }
