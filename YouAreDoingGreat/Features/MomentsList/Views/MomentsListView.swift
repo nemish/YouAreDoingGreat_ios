@@ -61,13 +61,16 @@ struct MomentsListView: View {
                 Text(viewModel.error ?? "An error occurred")
             }
             // Timeline Restriction Alert
-            .alert("Unlock Your Full History", isPresented: $viewModel.showTimelineRestrictedPopup) {
-                Button("Upgrade to Premium") {
+            .alert(
+                NSLocalizedString("timeline_restriction_alert_title", comment: ""),
+                isPresented: $viewModel.showTimelineRestrictedPopup
+            ) {
+                Button(NSLocalizedString("timeline_restriction_alert_upgrade_button", comment: "")) {
                     PaywallService.shared.showPaywallForTimelineRestriction()
                 }
-                Button("Maybe Later", role: .cancel) { }
+                Button(NSLocalizedString("timeline_restriction_alert_cancel_button", comment: ""), role: .cancel) { }
             } message: {
-                Text("Free accounts can only view the last 14 days. Upgrade to premium for unlimited access to all your moments.")
+                Text(NSLocalizedString("timeline_restriction_alert_message_moments", comment: ""))
             }
         }
     }

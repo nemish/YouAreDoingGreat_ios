@@ -39,13 +39,13 @@ struct TimelineRestrictedBanner: View {
             }
 
             // Title
-            Text("Your journey doesn't end here.")
+            Text(NSLocalizedString("timeline_restriction_banner_title", comment: ""))
                 .font(.appTitle3)
                 .foregroundStyle(.textPrimary)
                 .multilineTextAlignment(.center)
 
             // Description
-            Text("You can always see your recent moments. Premium keeps your full story — all the way back.")
+            Text(NSLocalizedString("timeline_restriction_banner_message", comment: ""))
                 .font(.appBody)
                 .foregroundStyle(.textSecondary)
                 .multilineTextAlignment(.center)
@@ -60,7 +60,7 @@ struct TimelineRestrictedBanner: View {
                     Image(systemName: "lock.open.fill")
                         .font(.system(size: 14, weight: .semibold))
 
-                    Text("Keep my full journey")
+                    Text(NSLocalizedString("timeline_restriction_banner_button", comment: ""))
                         .font(.appHeadline)
                 }
                 .foregroundStyle(.white)
@@ -79,6 +79,7 @@ struct TimelineRestrictedBanner: View {
                 )
             }
             .buttonStyle(.plain)
+            .accessibilityLabel(NSLocalizedString("timeline_restriction_banner_button_accessibility", comment: ""))
         }
         .padding(28)
         .background(
