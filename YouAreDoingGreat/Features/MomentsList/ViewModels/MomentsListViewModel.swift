@@ -139,7 +139,13 @@ final class MomentsListViewModel {
             )
             self.groupedMoments = groupMomentsByDate(self.moments)
             self.canLoadMore = momentService.hasNextPage
-            logger.info("Reloaded \(self.moments.count) moments after background refresh")
+
+            // Update timeline restriction state after background refresh
+            if momentService.isLimitReached {
+                isTimelineRestricted = true
+            }
+
+            logger.info("Reloaded \(self.moments.count) moments after background refresh, limitReached: \(self.momentService.isLimitReached)")
         } catch {
             logger.error("Failed to reload moments: \(error.localizedDescription)")
         }
@@ -164,12 +170,10 @@ final class MomentsListViewModel {
             canLoadMore = momentService.hasNextPage
 
             // Check if timeline limit is reached (for free users)
+            // On refresh, just set the flag - don't show popup
+            // Popup will be shown when user scrolls to the bottom
             if momentService.isLimitReached {
                 isTimelineRestricted = true
-                // Show popup only when we've exhausted available data
-                if !momentService.hasNextPage {
-                    showTimelineRestrictedPopup = true
-                }
             }
 
             logger.info("Refresh complete, \(self.moments.count) moments, limitReached: \(self.momentService.isLimitReached)")

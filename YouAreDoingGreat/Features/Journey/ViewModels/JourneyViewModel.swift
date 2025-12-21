@@ -59,12 +59,10 @@ final class JourneyViewModel {
             nextCursor = response.nextCursor
 
             // Check if timeline limit is reached (for free users)
+            // On initial load, just set the flag - don't show popup yet
+            // Popup will be shown when user scrolls to the bottom
             if response.limitReached {
                 isTimelineRestricted = true
-                // Show popup only when we've exhausted available data
-                if !response.hasNextPage {
-                    showTimelineRestrictedPopup = true
-                }
             }
 
             logger.info("Loaded \(response.data.count) timeline items, limitReached: \(response.limitReached)")
@@ -96,12 +94,10 @@ final class JourneyViewModel {
             nextCursor = response.nextCursor
 
             // Check if timeline limit is reached (for free users)
+            // On refresh, just set the flag - don't show popup
+            // Popup will be shown when user scrolls to the bottom
             if response.limitReached {
                 isTimelineRestricted = true
-                // Show popup only when we've exhausted available data
-                if !response.hasNextPage {
-                    showTimelineRestrictedPopup = true
-                }
             }
 
             logger.info("Refreshed timeline with \(response.data.count) items, limitReached: \(response.limitReached)")

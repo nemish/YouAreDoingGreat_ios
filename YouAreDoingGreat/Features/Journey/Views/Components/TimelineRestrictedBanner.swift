@@ -39,12 +39,13 @@ struct TimelineRestrictedBanner: View {
             }
 
             // Title
-            Text("Your journey continues...")
+            Text("Your journey doesn't end here.")
                 .font(.appTitle3)
                 .foregroundStyle(.textPrimary)
+                .multilineTextAlignment(.center)
 
             // Description
-            Text("Free accounts show the last 14 days. Unlock your full history with premium.")
+            Text("You can always see your recent moments. Premium keeps your full story — all the way back.")
                 .font(.appBody)
                 .foregroundStyle(.textSecondary)
                 .multilineTextAlignment(.center)
@@ -59,7 +60,7 @@ struct TimelineRestrictedBanner: View {
                     Image(systemName: "lock.open.fill")
                         .font(.system(size: 14, weight: .semibold))
 
-                    Text("Unlock Full History")
+                    Text("Keep my full journey")
                         .font(.appHeadline)
                 }
                 .foregroundStyle(.white)
