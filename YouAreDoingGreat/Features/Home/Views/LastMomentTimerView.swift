@@ -40,13 +40,27 @@ struct LastMomentTimerView: View {
         let hours = (totalMinutes % (60 * 24)) / 60
         let minutes = totalMinutes % 60
 
+        var components: [String] = []
+
         if days > 0 {
-            return "\(days) day\(days != 1 ? "s" : "") \(hours) hour\(hours != 1 ? "s" : "") \(minutes) minute\(minutes != 1 ? "s" : "")"
-        } else if hours > 0 {
-            return "\(hours) hour\(hours != 1 ? "s" : "") \(minutes) minute\(minutes != 1 ? "s" : "")"
-        } else {
+            components.append("\(days) day\(days != 1 ? "s" : "")")
+        }
+
+        if hours > 0 {
+            components.append("\(hours) hour\(hours != 1 ? "s" : "")")
+        }
+
+        if minutes > 0 {
+            components.append("\(minutes) minute\(minutes != 1 ? "s" : "")")
+        }
+
+        // Edge case: if all components are 0 but totalMinutes > 0, show minutes
+        // This shouldn't happen mathematically, but handle it gracefully
+        if components.isEmpty {
             return "\(minutes) minute\(minutes != 1 ? "s" : "")"
         }
+
+        return components.joined(separator: " ")
     }
 }
 
@@ -107,22 +121,33 @@ struct LastMomentTimerView: View {
     .preferredColorScheme(.dark)
 }
 
-#Preview("1 day 15h 55m") {
+#Preview("1 day 15 minutes (0 hours)") {
     ZStack {
         Color.background.ignoresSafeArea()
         LastMomentTimerView(
-            timeValue: LastMomentTimerView.formatTimeValue(totalMinutes: 2395),
+            timeValue: LastMomentTimerView.formatTimeValue(totalMinutes: 1455), // 1 day + 15 minutes
             phrase: "It doesn't have to be big. Whatever moment works."
         )
     }
     .preferredColorScheme(.dark)
 }
 
-#Preview("12 days 22h 15m") {
+#Preview("2 days 2 hours (0 minutes)") {
     ZStack {
         Color.background.ignoresSafeArea()
         LastMomentTimerView(
-            timeValue: LastMomentTimerView.formatTimeValue(totalMinutes: 18615),
+            timeValue: LastMomentTimerView.formatTimeValue(totalMinutes: 3000), // 2 days + 2 hours
+            phrase: "Whatever it is, it's fine. Ordinary is fine. It all counts."
+        )
+    }
+    .preferredColorScheme(.dark)
+}
+
+#Preview("3 days (0 hours 0 minutes)") {
+    ZStack {
+        Color.background.ignoresSafeArea()
+        LastMomentTimerView(
+            timeValue: LastMomentTimerView.formatTimeValue(totalMinutes: 4320), // 3 days exactly
             phrase: "Whatever it is, it's fine. Ordinary is fine. It all counts."
         )
     }
