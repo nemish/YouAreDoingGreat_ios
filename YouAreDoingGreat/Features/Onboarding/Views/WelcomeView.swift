@@ -103,6 +103,7 @@ struct WelcomeView: View {
         PrimaryButton(title: "Alright, let's do this", showGlow: true) {
             onGetStarted()
         }
+        .iPadContentWidth()
         .opacity(showCTA ? 1 : 0)
         .padding(.bottom, 32)
     }

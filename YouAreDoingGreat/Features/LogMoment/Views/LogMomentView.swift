@@ -113,6 +113,7 @@ struct LogMomentView: View {
 
                     Spacer(minLength: 100)
                 }
+                .iPadContentWidth()
                 .padding(.horizontal, 24)
                 .padding(.top, 24)
             }
@@ -129,6 +130,7 @@ struct LogMomentView: View {
                 }
 
                 saveButton
+                    .iPadContentWidth()
                     .padding(.horizontal, 24)
                     .padding(.bottom, 40)
             }

@@ -175,6 +175,7 @@ struct PraiseContentView<ViewModel: PraiseViewModelProtocol>: View {
                 // to update the moment with AI praise when ready
             }
             .disabled(viewModel.isNiceButtonDisabled)  // Disable during Phase 1 (POST /moments)
+            .iPadContentWidth()
             .padding(.horizontal, 32)
             .padding(.bottom, 40)
             .opacity(viewModel.showButton ? 1 : 0)

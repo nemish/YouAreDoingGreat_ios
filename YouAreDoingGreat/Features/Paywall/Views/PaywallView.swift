@@ -158,6 +158,7 @@ struct PaywallView: View {
                     .opacity(showPlans ? 1 : 0)
                     .padding(.bottom, 20)
                 }
+                .iPadContentWidth()
                 .padding(.horizontal, 32)
             }
         }
