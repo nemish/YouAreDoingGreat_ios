@@ -1,0 +1,155 @@
+{
+  "fill" : {
+    "linear-gradient" : [
+      "display-p3:0.26986,0.21629,0.28893,1.00000",
+      "display-p3:0.11296,0.08934,0.13214,1.00000"
+    ],
+    "orientation" : {
+      "start" : {
+        "x" : 0.5,
+        "y" : 0
+      },
+      "stop" : {
+        "x" : 0.5,
+        "y" : 0.7
+      }
+    }
+  },
+  "groups" : [
+    {
+      "layers" : [
+        {
+          "fill" : {
+            "solid" : "display-p3:0.96783,0.70232,0.24459,1.00000"
+          },
+          "hidden" : true,
+          "image-name" : "smile.png",
+          "name" : "smile",
+          "position" : {
+            "scale" : 2.53,
+            "translation-in-points" : [
+              0,
+              0
+            ]
+          }
+        },
+        {
+          "fill" : {
+            "solid" : "display-p3:0.96783,0.81726,0.39508,1.00000"
+          },
+          "image-name" : "005-fireworks.png",
+          "name" : "005-fireworks",
+          "position" : {
+            "scale" : 0.9,
+            "translation-in-points" : [
+              0,
+              316.4
+            ]
+          }
+        },
+        {
+          "fill" : {
+            "solid" : "display-p3:0.96783,0.75215,0.35490,1.00000"
+          },
+          "hidden" : false,
+          "image-name" : "smile (1).png",
+          "name" : "smile (1)",
+          "position" : {
+            "scale" : 1.65,
+            "translation-in-points" : [
+              0.8249999999999318,
+              -185.02218749999997
+            ]
+          }
+        },
+        {
+          "fill" : {
+            "solid" : "display-p3:0.96783,0.69591,0.30401,1.00000"
+          },
+          "hidden" : true,
+          "image-name" : "stars.png",
+          "name" : "stars",
+          "position" : {
+            "scale" : 1.13,
+            "translation-in-points" : [
+              0,
+              0
+            ]
+          }
+        },
+        {
+          "fill" : {
+            "solid" : "display-p3:0.96783,0.85631,0.45998,1.00000"
+          },
+          "hidden" : true,
+          "image-name" : "study.png",
+          "name" : "study",
+          "position" : {
+            "scale" : 1.4,
+            "translation-in-points" : [
+              0,
+              0
+            ]
+          }
+        },
+        {
+          "fill" : {
+            "solid" : "display-p3:0.96783,0.86787,0.51705,1.00000"
+          },
+          "hidden" : true,
+          "image-name" : "feedback.png",
+          "name" : "feedback",
+          "position" : {
+            "scale" : 1.51,
+            "translation-in-points" : [
+              0,
+              0
+            ]
+          }
+        },
+        {
+          "fill" : "none",
+          "hidden" : true,
+          "image-name" : "sticker.png",
+          "name" : "sticker",
+          "position" : {
+            "scale" : 1.3,
+            "translation-in-points" : [
+              0,
+              0
+            ]
+          }
+        },
+        {
+          "fill" : {
+            "solid" : "display-p3:0.82385,0.64989,0.29134,1.00000"
+          },
+          "hidden" : true,
+          "image-name" : "output-onlinepngtools.png",
+          "name" : "output-onlinepngtools",
+          "position" : {
+            "scale" : 0.49,
+            "translation-in-points" : [
+              0,
+              0
+            ]
+          }
+        }
+      ],
+      "shadow" : {
+        "kind" : "neutral",
+        "opacity" : 0.5
+      },
+      "translucency" : {
+        "enabled" : true,
+        "value" : 0.5
+      }
+    }
+  ],
+  "supported-platforms" : {
+    "circles" : [
+      "watchOS"
+    ],
+    "squares" : "shared"
+  }
+}

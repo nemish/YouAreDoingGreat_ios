@@ -133,6 +133,7 @@ struct HomeView: View {
                             firstLogHint
                         }
                     }
+                    .iPadContentWidth()
                     .padding(.horizontal, 32)
                     .padding(.bottom, 40)
                 }
