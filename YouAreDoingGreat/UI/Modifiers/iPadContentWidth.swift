@@ -7,9 +7,12 @@ struct iPadContentWidthModifier: ViewModifier {
     var maxWidth: CGFloat = 500
 
     func body(content: Content) -> some View {
-        content
-            .frame(maxWidth: maxWidth)
-            .frame(maxWidth: .infinity)
+        HStack {
+            Spacer(minLength: 0)
+            content
+                .frame(maxWidth: maxWidth)
+            Spacer(minLength: 0)
+        }
     }
 }
 

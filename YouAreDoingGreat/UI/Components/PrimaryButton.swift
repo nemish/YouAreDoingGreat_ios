@@ -38,7 +38,6 @@ struct PrimaryButton: View {
                 )
         }
         .buttonStyle(ScaleButtonStyle())
-        .iPadContentWidth()
     }
 
     private func handleTap() {
