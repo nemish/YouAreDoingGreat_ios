@@ -207,6 +207,7 @@ private enum StarfieldData {
 
 struct StarfieldBackground: ViewModifier {
     var isPaused: Bool = false
+    var showParticles: Bool = true
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var pausedTime: TimeInterval = 0
@@ -271,6 +272,12 @@ struct StarfieldBackground: ViewModifier {
                             // Fog/nebula layers on top (not transformed)
                             fogLayer(fog1Progress: fog1Progress, fog2Progress: fog2Progress)
                         }
+                        .overlay {
+                            // Meditative particles layer (ambient floating orbs)
+                            if showParticles {
+                                MeditativeParticlesView(isPaused: isPaused)
+                            }
+                        }
                     }
                 }
             }
@@ -334,9 +341,9 @@ struct StarfieldBackground: ViewModifier {
 // MARK: - View Extension
 
 extension View {
-    /// Applies cosmic gradient background with calm animated starfield and fog
-    func starfieldBackground(isPaused: Bool = false) -> some View {
-        modifier(StarfieldBackground(isPaused: isPaused))
+    /// Applies cosmic gradient background with calm animated starfield, fog, and meditative particles
+    func starfieldBackground(isPaused: Bool = false, showParticles: Bool = true) -> some View {
+        modifier(StarfieldBackground(isPaused: isPaused, showParticles: showParticles))
     }
 }
 
