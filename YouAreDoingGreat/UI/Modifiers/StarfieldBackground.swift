@@ -63,7 +63,7 @@ private enum StarColor: CaseIterable {
 
     var color: Color {
         switch self {
-        case .warmGold:  return Color(red: 1.0, green: 0.92, blue: 0.7)   // #FFEBb3
+        case .warmGold:  return Color(red: 1.0, green: 0.92, blue: 0.7)   // #FFEBB3
         case .paleGold:  return Color(red: 1.0, green: 0.96, blue: 0.85)  // #FFF5D9
         case .pureWhite: return Color.white
         case .coolWhite: return Color(red: 0.93, green: 0.95, blue: 1.0)  // #EDF2FF
@@ -90,7 +90,7 @@ private enum StarColor: CaseIterable {
 private enum StarfieldData {
     enum StarShape {
         case dot                       // Tiny stars - simple circles
-        case pointed(Int, CGFloat)     // (pointCount: 3-6, sharpness: 0.3-0.5)
+        case pointed(Int, CGFloat)     // (pointCount: 3-6, sharpness: 0.25-0.5)
     }
 
     struct Star {
@@ -275,6 +275,7 @@ struct StarfieldBackground: ViewModifier {
                 }
             }
             .ignoresSafeArea()
+            .accessibilityHidden(true)
 
             // Content on top
             content
