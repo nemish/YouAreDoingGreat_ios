@@ -14,7 +14,7 @@ enum AppConfig {
         return "https://1test1.xyz/api/v1"
         #else
         // Production API URL
-        return "https://1test1.xyz/api/v1"
+        return "https://app.you-are-doing-great.com/api/v1"
         #endif
     }()
 
@@ -57,7 +57,13 @@ enum AppConfig {
     static let appTokenHeaderKey = "x-app-token-code"
 
     /// App token for API access validation
-    static let appToken = "6459462c25b4c5112e858c0d2befb150a1964a046db17b92fac3e323648e7a0a"
+    static let appToken: String = {
+        #if DEBUG
+        return "6459462c25b4c5112e858c0d2befb150a1964a046db17b92fac3e323648e7a0a"
+        #else
+        return "U4wmDyJDXYlk8j704oz5ZUeGSIeVr9DL9+FhRYV7mdk="
+        #endif
+    }()
 
     /// Placeholder user ID for development (TODO: Replace with actual auth)
     static let developmentUserId = "test-user-id"
