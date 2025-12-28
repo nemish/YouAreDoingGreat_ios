@@ -111,10 +111,10 @@ private enum DepthLayer {
     // Larger amplitude for closer particles
     var driftAmplitudeRange: ClosedRange<CGFloat> {
         switch self {
-        case .distant:    return 15...30
-        case .mid:        return 25...50
-        case .near:       return 40...80
-        case .foreground: return 60...120  // Large, languid movement
+        case .distant:    return 30...60
+        case .mid:        return 50...100
+        case .near:       return 80...150
+        case .foreground: return 150...280  // Large, languid movement across screen
         }
     }
 
@@ -129,12 +129,11 @@ private enum DepthLayer {
     }
 }
 
-// MARK: - Shared Particle Data
+// MARK: - Particle Generator
 
-private enum MeditativeParticleData {
+private enum ParticleGenerator {
 
-    // Pre-generated particles (created once at launch)
-    static let shared: [MeditativeParticle] = {
+    static func generateParticles() -> [MeditativeParticle] {
         var particles: [MeditativeParticle] = []
 
         // Foreground orbs (1-2) - huge, floating in front of eyes
@@ -168,9 +167,7 @@ private enum MeditativeParticleData {
         }
 
         return particles
-    }()
-
-    static let startTime = Date()
+    }
 
     private static func createOrbParticle(depth: DepthLayer) -> MeditativeParticle {
         MeditativeParticle(
@@ -221,6 +218,8 @@ struct MeditativeParticlesView: View {
     var isPaused: Bool = false
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var particles: [MeditativeParticle] = []
+    @State private var startTime: Date = Date()
     @State private var pausedTime: TimeInterval = 0
     @State private var timeOffset: TimeInterval = 0
 
@@ -228,21 +227,28 @@ struct MeditativeParticlesView: View {
         TimelineView(.animation(paused: isPaused || reduceMotion)) { timeline in
             let elapsed = (isPaused || reduceMotion)
                 ? pausedTime
-                : timeline.date.timeIntervalSince(MeditativeParticleData.startTime) + timeOffset
+                : timeline.date.timeIntervalSince(startTime) + timeOffset
 
             Canvas { context, size in
-                for particle in MeditativeParticleData.shared {
+                for particle in particles {
                     drawParticle(particle, context: context, size: size, elapsed: elapsed)
                 }
             }
         }
         .allowsHitTesting(false)
         .accessibilityHidden(true)
+        .onAppear {
+            // Generate new random particles each time the view appears
+            particles = ParticleGenerator.generateParticles()
+            startTime = Date()
+            timeOffset = 0
+            pausedTime = 0
+        }
         .onChange(of: isPaused) { _, paused in
             if paused {
-                pausedTime = Date().timeIntervalSince(MeditativeParticleData.startTime) + timeOffset
+                pausedTime = Date().timeIntervalSince(startTime) + timeOffset
             } else {
-                timeOffset = pausedTime - Date().timeIntervalSince(MeditativeParticleData.startTime)
+                timeOffset = pausedTime - Date().timeIntervalSince(startTime)
             }
         }
     }
