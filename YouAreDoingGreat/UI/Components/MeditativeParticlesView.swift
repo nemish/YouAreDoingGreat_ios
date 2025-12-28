@@ -111,10 +111,10 @@ private enum DepthLayer {
     // Larger amplitude for closer particles
     var driftAmplitudeRange: ClosedRange<CGFloat> {
         switch self {
-        case .distant:    return 15...30
-        case .mid:        return 25...50
-        case .near:       return 40...80
-        case .foreground: return 60...120  // Large, languid movement
+        case .distant:    return 30...60
+        case .mid:        return 50...100
+        case .near:       return 80...150
+        case .foreground: return 150...280  // Large, languid movement across screen
         }
     }
 
