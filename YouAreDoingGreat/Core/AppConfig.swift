@@ -113,4 +113,29 @@ enum AppConfig {
         return "appl_yxHvlKNyslQKbgTsDayWLVtkEjn"
         #endif
     }()
+
+    // MARK: - Subscription Limits
+
+    /// Subscription limit configuration for free and premium tiers
+    enum SubscriptionLimits {
+        /// Free tier limits
+        enum Free {
+            /// Maximum moments per day for free users
+            static let momentsPerDay = 3
+            /// Maximum total moments for free users
+            static let totalMoments = 10
+            /// Timeline retention period in days
+            static let timelineRetentionDays = 14
+        }
+
+        /// Premium tier limits
+        enum Premium {
+            /// Maximum moments per day for premium users
+            static let momentsPerDay = 10
+            /// Total moments limit (nil = unlimited)
+            static let totalMoments: Int? = nil
+            /// Timeline retention period (nil = unlimited)
+            static let timelineRetentionDays: Int? = nil
+        }
+    }
 }
