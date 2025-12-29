@@ -8,6 +8,7 @@ struct TimelineItemView: View {
     let isToday: Bool
     let isBeginning: Bool
     let isJourneyStart: Bool  // When true, "Journey begins" shows "Today" instead of date
+    var descriptionText: String? = nil  // Optional description shown below "You are here"
 
     @State private var appear = false
 
@@ -133,34 +134,43 @@ struct TimelineItemView: View {
     }
 
     private var todayCard: some View {
-        HStack(spacing: 12) {
-            Image(systemName: "location.fill")
-                .font(.system(size: 16))
-                .foregroundStyle(.appPrimary)
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 12) {
+                Image(systemName: "location.fill")
+                    .font(.system(size: 16))
+                    .foregroundStyle(.appPrimary)
 
-            Text("You are here")
-                .font(.appHeadline)
-                .foregroundStyle(.appPrimary)
+                Text("You are here")
+                    .font(.appHeadline)
+                    .foregroundStyle(.appPrimary)
 
-            Spacer()
+                Spacer()
 
-            // Show moments count if any
-            if item.momentsCount > 0 {
-                HStack(spacing: 6) {
-                    Image(systemName: "sparkles")
-                        .font(.system(size: 12))
+                // Show moments count if any
+                if item.momentsCount > 0 {
+                    HStack(spacing: 6) {
+                        Image(systemName: "sparkles")
+                            .font(.system(size: 12))
 
-                    Text("\(item.momentsCount)")
-                        .font(.appFootnote)
-                        .fontWeight(.semibold)
+                        Text("\(item.momentsCount)")
+                            .font(.appFootnote)
+                            .fontWeight(.semibold)
+                    }
+                    .foregroundStyle(.appPrimary.opacity(0.8))
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 6)
+                    .background(
+                        Capsule()
+                            .fill(Color.appPrimary.opacity(0.2))
+                    )
                 }
-                .foregroundStyle(.appPrimary.opacity(0.8))
-                .padding(.horizontal, 10)
-                .padding(.vertical, 6)
-                .background(
-                    Capsule()
-                        .fill(Color.appPrimary.opacity(0.2))
-                )
+            }
+
+            // Description text below "You are here"
+            if let description = descriptionText {
+                Text(description)
+                    .font(.appCaption)
+                    .foregroundStyle(.appPrimary.opacity(0.7))
             }
         }
         .padding(16)
@@ -310,7 +320,13 @@ struct TimelineItemView: View {
 
         ScrollView {
             VStack(spacing: 0) {
-                TimelineItemView(item: todayItem, isToday: true, isBeginning: false, isJourneyStart: false)
+                TimelineItemView(
+                    item: todayItem,
+                    isToday: true,
+                    isBeginning: false,
+                    isJourneyStart: false,
+                    descriptionText: "Keep going. Today will come together."
+                )
                 TimelineItemView(item: yesterdayItem, isToday: false, isBeginning: false, isJourneyStart: false)
                 TimelineItemView(item: twoDaysAgoItem, isToday: false, isBeginning: true, isJourneyStart: false)
             }
@@ -352,7 +368,13 @@ struct TimelineItemView: View {
 
         ScrollView {
             VStack(spacing: 0) {
-                TimelineItemView(item: todayItem, isToday: true, isBeginning: false, isJourneyStart: false)
+                TimelineItemView(
+                    item: todayItem,
+                    isToday: true,
+                    isBeginning: false,
+                    isJourneyStart: false,
+                    descriptionText: "This is your timeline. Today will settle in by tomorrow."
+                )
                 TimelineItemView(item: beginningItem, isToday: false, isBeginning: true, isJourneyStart: true)
             }
             .padding(.horizontal, 16)

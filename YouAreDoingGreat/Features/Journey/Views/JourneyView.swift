@@ -21,6 +21,27 @@ struct JourneyView: View {
         return firstItem.state == .finalised
     }
 
+    /// Checks if any day has a summary (text from AI)
+    private var hasAnySummary: Bool {
+        viewModel.items.contains { item in
+            if let text = item.text {
+                return !text.isEmpty
+            }
+            return false
+        }
+    }
+
+    /// Description text based on timeline state
+    private var timelineDescriptionText: String? {
+        guard !viewModel.items.isEmpty else { return nil }
+
+        if hasAnySummary {
+            return NSLocalizedString("journey_description_has_summaries", comment: "")
+        } else {
+            return NSLocalizedString("journey_description_no_summaries", comment: "")
+        }
+    }
+
     private var itemsWithMarkers: [TimelineItem] {
         var result: [TimelineItem] = []
         let formatter = ISO8601DateFormatter()
@@ -157,7 +178,8 @@ struct JourneyView: View {
                             item: daySummary,
                             isToday: true,
                             isBeginning: false,
-                            isJourneyStart: false
+                            isJourneyStart: false,
+                            descriptionText: timelineDescriptionText
                         )
                     case .day(let daySummary):
                         TimelineItemView(
