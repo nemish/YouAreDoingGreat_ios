@@ -320,7 +320,13 @@ struct TimelineItemView: View {
 
         ScrollView {
             VStack(spacing: 0) {
-                TimelineItemView(item: todayItem, isToday: true, isBeginning: false, isJourneyStart: false)
+                TimelineItemView(
+                    item: todayItem,
+                    isToday: true,
+                    isBeginning: false,
+                    isJourneyStart: false,
+                    descriptionText: "Keep going. Today will come together."
+                )
                 TimelineItemView(item: yesterdayItem, isToday: false, isBeginning: false, isJourneyStart: false)
                 TimelineItemView(item: twoDaysAgoItem, isToday: false, isBeginning: true, isJourneyStart: false)
             }
@@ -362,7 +368,13 @@ struct TimelineItemView: View {
 
         ScrollView {
             VStack(spacing: 0) {
-                TimelineItemView(item: todayItem, isToday: true, isBeginning: false, isJourneyStart: false)
+                TimelineItemView(
+                    item: todayItem,
+                    isToday: true,
+                    isBeginning: false,
+                    isJourneyStart: false,
+                    descriptionText: "This is your timeline. Today will settle in by tomorrow."
+                )
                 TimelineItemView(item: beginningItem, isToday: false, isBeginning: true, isJourneyStart: true)
             }
             .padding(.horizontal, 16)

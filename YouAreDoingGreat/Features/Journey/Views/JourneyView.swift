@@ -23,7 +23,12 @@ struct JourneyView: View {
 
     /// Checks if any day has a summary (text from AI)
     private var hasAnySummary: Bool {
-        viewModel.items.contains { $0.text != nil && !$0.text!.isEmpty }
+        viewModel.items.contains { item in
+            if let text = item.text {
+                return !text.isEmpty
+            }
+            return false
+        }
     }
 
     /// Description text based on timeline state
