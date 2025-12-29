@@ -29,15 +29,14 @@
 "plan_detail_days" = "%d days";
 
 /* Premium Benefits - Paywall */
-"premium_benefits_title" = "Premium Benefits";
-"premium_benefit_moments_per_day" = "%d moments per day";
-"premium_benefit_unlimited_moments" = "Unlimited total moments";
-"premium_benefit_complete_history" = "Complete journey history";
+"premium_benefit_moments_per_day" = "Up to %d moments a day";
+"premium_benefit_no_total_limit" = "No total limit";
+"premium_benefit_full_journey" = "Your journey, fully visible";
 
 /* Paywall */
 "paywall_title" = "You've been doing the hard part already";
 "paywall_subtitle" = "This is just to keep the light on.";
-"paywall_cta_trial" = "Start 7-Day Free Trial";
+"paywall_cta_trial" = "Start 3-Day Free Trial";
 "paywall_cta_processing" = "Processing...";
 "paywall_restore" = "Restore purchases";
 "paywall_restoring" = "Restoring...";
