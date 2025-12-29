@@ -21,7 +21,9 @@
       "Bash(git diff:*)",
       "Bash(git status:*)",
       "Bash(git log:*)",
-      "Bash(open -a Simulator:*)"
+      "Bash(open -a Simulator:*)",
+      "Bash(git pull:*)",
+      "Bash(find:*)"
     ],
     "deny": [],
     "ask": []
