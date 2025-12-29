@@ -78,7 +78,7 @@ struct PaywallView: View {
                         .padding(.top, 8)
                 }
 
-                Spacer(minLength: isAnyLimitReached ? 32 : 80)
+                Spacer(minLength: isAnyLimitReached ? 16 : 40)
 
                 // Main content
                 VStack(spacing: 32) {
@@ -97,24 +97,35 @@ struct PaywallView: View {
                             .opacity(showContent ? 1 : 0)
                     }
                     .padding(.horizontal, 24)
+                }
+                .padding(.horizontal, 24)
 
+                Spacer(minLength: 24)
+
+                // Plans and CTA section
+                VStack(spacing: 32) {
                     // Inspirational quote with laurels
                     quoteSection
                         .opacity(showQuote ? 1 : 0)
                         .offset(y: showQuote ? 0 : 20)
-                }
-                .padding(.horizontal, 24)
 
-                Spacer(minLength: 40)
-
-                // Plans and CTA section
-                VStack(spacing: 24) {
-                    // Header
-                    Text("Unlock up to 10 moments per day")
-                        .font(.appHeadline)
-                        .foregroundStyle(Color(red: 0.75, green: 0.85, blue: 1.0))
-                        .multilineTextAlignment(.center)
-                        .opacity(showPlans ? 1 : 0)
+                    // Benefits list
+                    VStack(alignment: .leading, spacing: 12) {
+                        premiumBenefitRow(
+                            icon: "sparkles",
+                            text: "Up to \(AppConfig.SubscriptionLimits.Premium.momentsPerDay) moments a day"
+                        )
+                        premiumBenefitRow(
+                            icon: "infinity",
+                            text: "No total limit"
+                        )
+                        premiumBenefitRow(
+                            icon: "calendar.badge.clock",
+                            text: "Your journey, fully visible"
+                        )
+                    }
+                    .padding(.horizontal, 8)
+                    .opacity(showPlans ? 1 : 0)
 
                     // Plan options
                     planSelection
@@ -122,7 +133,7 @@ struct PaywallView: View {
 
                     // Premium CTA
                     PrimaryButton(
-                        title: viewModel.isPurchasing ? "Processing..." : "Start 7-Day Free Trial",
+                        title: viewModel.isPurchasing ? "Processing..." : "Start 3-Day Free Trial",
                         showGlow: !viewModel.isPurchasing && pulseAnimation
                     ) {
                         UIImpactFeedbackGenerator(style: .medium).impactOccurred()
@@ -299,9 +310,9 @@ struct PaywallView: View {
 
     private var limitBannerText: String {
         if isTotalLimitReached {
-            return "Wow! You've logged 10 moments. Go premium to keep celebrating your wins."
+            return "You've logged \(AppConfig.SubscriptionLimits.Free.totalMoments) moments — that's wonderful! Upgrade to continue capturing your wins."
         } else {
-            return "Daily limit reached. Go premium to continue without interruptions."
+            return "You've reached today's limit. Upgrade to enjoy \(AppConfig.SubscriptionLimits.Premium.momentsPerDay) moments per day."
         }
     }
 
@@ -441,6 +452,23 @@ struct PaywallView: View {
                             .fill(Color.appPrimary.opacity(0.2))
                     )
             }
+        }
+    }
+
+    // MARK: - Premium Benefit Row
+
+    private func premiumBenefitRow(icon: String, text: String) -> some View {
+        HStack(spacing: 12) {
+            Image(systemName: icon)
+                .font(.system(size: 16))
+                .foregroundStyle(.appPrimary)
+                .frame(width: 24)
+
+            Text(text)
+                .font(.appBody)
+                .foregroundStyle(.white.opacity(0.9))
+
+            Spacer()
         }
     }
 

@@ -11,15 +11,34 @@
 "timeline_restriction_banner_button" = "Keep my full journey";
 "timeline_restriction_banner_button_accessibility" = "Upgrade to premium to keep full journey history";
 
-/* Limit Banners */
-"total_limit_banner_text" = "You've logged 10 moments. Go premium to keep celebrating your wins.";
-"daily_limit_banner_text" = "Daily limit reached. Go premium to continue without interruptions.";
+/* Limit Banners - Paywall */
+"total_limit_banner_text" = "You've logged %d moments — that's wonderful! Upgrade to continue capturing your wins.";
+"daily_limit_banner_text" = "You've reached today's limit. Upgrade to enjoy %d moments per day.";
 
-/* Subscription Descriptions */
-"subscription_premium_description" = "Up to 10 moments per day, unlimited history";
-"subscription_free_description" = "3 moments per day, 10 total";
+/* Subscription Descriptions - Profile */
+"subscription_premium_title" = "Premium";
+"subscription_premium_subtitle" = "You have full access to all features";
+"subscription_free_title" = "Free Plan";
+"subscription_free_subtitle" = "Basic access with limits";
 
-/* Premium Benefits */
-"premium_benefit_moments" = "up to 10 moments a day";
-"premium_benefit_unlimited" = "unlimited total moments";
-"premium_benefit_history" = "full journey history";
+/* Plan Details - Profile */
+"plan_detail_moments_per_day" = "Moments per day";
+"plan_detail_total_moments" = "Total moments";
+"plan_detail_journey_history" = "Journey history";
+"plan_detail_unlimited" = "Unlimited";
+"plan_detail_days" = "%d days";
+
+/* Premium Benefits - Paywall */
+"premium_benefit_moments_per_day" = "Up to %d moments a day";
+"premium_benefit_no_total_limit" = "No total limit";
+"premium_benefit_full_journey" = "Your journey, fully visible";
+
+/* Paywall */
+"paywall_title" = "You've been doing the hard part already";
+"paywall_subtitle" = "This is just to keep the light on.";
+"paywall_cta_trial" = "Start 3-Day Free Trial";
+"paywall_cta_processing" = "Processing...";
+"paywall_restore" = "Restore purchases";
+"paywall_restoring" = "Restoring...";
+"paywall_terms" = "Terms of service";
+"paywall_privacy" = "Privacy policy";

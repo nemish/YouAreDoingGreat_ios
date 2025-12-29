@@ -269,23 +269,56 @@ struct ProfileView: View {
                 .foregroundStyle(.textSecondary)
 
             VStack(spacing: 12) {
+                // Current plan header
                 HStack {
                     VStack(alignment: .leading, spacing: 4) {
-                        Text(isPremium ? "Premium" : "Free Plan")
-                            .font(.appHeadline)
-                            .foregroundStyle(.textPrimary)
+                        HStack(spacing: 8) {
+                            Text(isPremium ? "Premium" : "Free Plan")
+                                .font(.appHeadline)
+                                .foregroundStyle(.textPrimary)
 
-                        Text(isPremium ? "Up to 10 moments per day, unlimited history" : "3 moments per day, 10 total")
+                            if isPremium {
+                                Image(systemName: "crown.fill")
+                                    .foregroundStyle(.appPrimary)
+                            }
+                        }
+
+                        Text(isPremium ? "You have full access to all features" : "Basic access with limits")
                             .font(.appFootnote)
                             .foregroundStyle(.textSecondary)
                     }
 
                     Spacer()
+                }
+                .padding(16)
+                .background(
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(isPremium ? Color.appPrimary.opacity(0.1) : Color.white.opacity(0.08))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 12)
+                                .strokeBorder(isPremium ? Color.appPrimary.opacity(0.3) : Color.clear, lineWidth: 1)
+                        )
+                )
 
-                    if isPremium {
-                        Image(systemName: "crown.fill")
-                            .foregroundStyle(.appPrimary)
-                    }
+                // Plan details
+                VStack(alignment: .leading, spacing: 8) {
+                    planDetailRow(
+                        icon: "sparkles",
+                        label: "Moments per day",
+                        value: isPremium
+                            ? "\(AppConfig.SubscriptionLimits.Premium.momentsPerDay)"
+                            : "\(AppConfig.SubscriptionLimits.Free.momentsPerDay)"
+                    )
+                    planDetailRow(
+                        icon: "tray.full",
+                        label: "Total moments",
+                        value: isPremium ? "Unlimited" : "\(AppConfig.SubscriptionLimits.Free.totalMoments)"
+                    )
+                    planDetailRow(
+                        icon: "calendar.badge.clock",
+                        label: "Journey history",
+                        value: isPremium ? "Unlimited" : "\(AppConfig.SubscriptionLimits.Free.timelineRetentionDays) days"
+                    )
                 }
                 .padding(16)
                 .background(
@@ -299,6 +332,30 @@ struct ProfileView: View {
                     }
                 }
             }
+        }
+    }
+
+    // MARK: - Plan Detail Row
+
+    private func planDetailRow(icon: String, label: String, value: String) -> some View {
+        HStack {
+            HStack(spacing: 10) {
+                Image(systemName: icon)
+                    .font(.system(size: 14))
+                    .foregroundStyle(.appPrimary)
+                    .frame(width: 20)
+
+                Text(label)
+                    .font(.appFootnote)
+                    .foregroundStyle(.textSecondary)
+            }
+
+            Spacer()
+
+            Text(value)
+                .font(.appFootnote)
+                .fontWeight(.medium)
+                .foregroundStyle(.textPrimary)
         }
     }
 
