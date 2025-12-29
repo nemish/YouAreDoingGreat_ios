@@ -102,7 +102,7 @@ final class PaywallViewModel {
             let customerInfo = try await subscriptionService.restorePurchases()
             isRestoring = false
 
-            if customerInfo.entitlements["premium"]?.isActive == true {
+            if customerInfo.entitlements["Premium"]?.isActive == true {
                 return true
             } else {
                 errorMessage = "No previous purchases found for this account."
