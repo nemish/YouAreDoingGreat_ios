@@ -1,3 +1,7 @@
+/* Journey Description */
+"journey_description_no_summaries" = "This is your timeline. Today will settle in by tomorrow.";
+"journey_description_has_summaries" = "Keep going. Today will come together.";
+
 /* Timeline Restriction - Alert */
 "timeline_restriction_alert_title" = "Unlock Your Full Journey";
 "timeline_restriction_alert_message_journey" = "Free accounts can only view the last 14 days. Upgrade to premium for unlimited access to your complete journey history.";
