@@ -171,15 +171,13 @@ struct WelcomeView: View {
     }
 
     private func openPrivacyPolicy() {
-        // TODO: Open privacy policy URL in SafariView
-        if let url = URL(string: "https://you-are-doing-great.com/privacy") {
+        if let url = AppConfig.privacyPolicyURL {
             UIApplication.shared.open(url)
         }
     }
 
     private func openTerms() {
-        // TODO: Open terms URL in SafariView
-        if let url = URL(string: "https://you-are-doing-great.com/terms") {
+        if let url = AppConfig.termsOfServiceURL {
             UIApplication.shared.open(url)
         }
     }
