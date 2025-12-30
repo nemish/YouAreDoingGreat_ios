@@ -146,13 +146,13 @@ struct PaywallView: View {
                     VStack(spacing: 16) {
                         HStack(spacing: 40) {
                             Button("Terms of service") {
-                                // TODO: Open terms URL
+                                UIApplication.shared.open(AppConfig.termsOfServiceURL)
                             }
                             .font(.appFootnote)
                             .foregroundStyle(.white.opacity(0.5))
 
                             Button("Privacy policy") {
-                                // TODO: Open privacy URL
+                                UIApplication.shared.open(AppConfig.privacyPolicyURL)
                             }
                             .font(.appFootnote)
                             .foregroundStyle(.white.opacity(0.5))

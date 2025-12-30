@@ -114,6 +114,14 @@ enum AppConfig {
         #endif
     }()
 
+    // MARK: - Legal URLs
+
+    /// Privacy policy URL
+    static let privacyPolicyURL = URL(string: "https://you-are-doing-great.com/privacy")!
+
+    /// Terms of service URL
+    static let termsOfServiceURL = URL(string: "https://you-are-doing-great.com/terms")!
+
     // MARK: - Subscription Limits
 
     /// Subscription limit configuration for free and premium tiers

@@ -462,7 +462,7 @@ struct ProfileView: View {
                 .font(.appHeadline)
                 .foregroundStyle(.textSecondary)
 
-            Link(destination: URL(string: "https://you-are-doing-great.com/privacy")!) {
+            Link(destination: AppConfig.privacyPolicyURL) {
                 settingsRow(
                     icon: "hand.raised.fill",
                     title: "Privacy Policy",
@@ -471,7 +471,7 @@ struct ProfileView: View {
             }
             .buttonStyle(.plain)
 
-            Link(destination: URL(string: "https://you-are-doing-great.com/terms")!) {
+            Link(destination: AppConfig.termsOfServiceURL) {
                 settingsRow(
                     icon: "doc.text.fill",
                     title: "Terms of Service",
