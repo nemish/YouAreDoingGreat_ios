@@ -171,11 +171,15 @@ struct WelcomeView: View {
     }
 
     private func openPrivacyPolicy() {
-        UIApplication.shared.open(AppConfig.privacyPolicyURL)
+        if let url = AppConfig.privacyPolicyURL {
+            UIApplication.shared.open(url)
+        }
     }
 
     private func openTerms() {
-        UIApplication.shared.open(AppConfig.termsOfServiceURL)
+        if let url = AppConfig.termsOfServiceURL {
+            UIApplication.shared.open(url)
+        }
     }
 }
 

@@ -146,16 +146,24 @@ struct PaywallView: View {
                     VStack(spacing: 16) {
                         HStack(spacing: 40) {
                             Button("Terms of service") {
-                                UIApplication.shared.open(AppConfig.termsOfServiceURL)
+                                if let url = AppConfig.termsOfServiceURL {
+                                    UIApplication.shared.open(url)
+                                }
                             }
                             .font(.appFootnote)
                             .foregroundStyle(.white.opacity(0.5))
+                            .accessibilityLabel("Terms of service")
+                            .accessibilityHint("Opens terms of service in browser")
 
                             Button("Privacy policy") {
-                                UIApplication.shared.open(AppConfig.privacyPolicyURL)
+                                if let url = AppConfig.privacyPolicyURL {
+                                    UIApplication.shared.open(url)
+                                }
                             }
                             .font(.appFootnote)
                             .foregroundStyle(.white.opacity(0.5))
+                            .accessibilityLabel("Privacy policy")
+                            .accessibilityHint("Opens privacy policy in browser")
                         }
 
                         Button(viewModel.isRestoring ? "Restoring..." : "Restore purchases") {

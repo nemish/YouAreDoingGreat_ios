@@ -462,7 +462,11 @@ struct ProfileView: View {
                 .font(.appHeadline)
                 .foregroundStyle(.textSecondary)
 
-            Link(destination: AppConfig.privacyPolicyURL) {
+            Button {
+                if let url = AppConfig.privacyPolicyURL {
+                    UIApplication.shared.open(url)
+                }
+            } label: {
                 settingsRow(
                     icon: "hand.raised.fill",
                     title: "Privacy Policy",
@@ -471,7 +475,11 @@ struct ProfileView: View {
             }
             .buttonStyle(.plain)
 
-            Link(destination: AppConfig.termsOfServiceURL) {
+            Button {
+                if let url = AppConfig.termsOfServiceURL {
+                    UIApplication.shared.open(url)
+                }
+            } label: {
                 settingsRow(
                     icon: "doc.text.fill",
                     title: "Terms of Service",
