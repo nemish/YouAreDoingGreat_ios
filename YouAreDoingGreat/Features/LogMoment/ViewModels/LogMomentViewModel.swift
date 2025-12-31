@@ -32,7 +32,7 @@ final class LogMomentViewModel {
 
         // Pre-fill for first log per MAIN_SPEC.md
         if isFirstLog {
-            momentText = "I installed this app. A tiny step, but it counts."
+            momentText = "I installed this app. Not a big deal — but not nothing."
         }
     }
 

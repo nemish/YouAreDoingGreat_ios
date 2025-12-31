@@ -215,7 +215,7 @@ struct MomentsListView: View {
 
     // Create sample moments
     let moment1 = Moment(
-        text: "I installed this app. A tiny step, but it counts.",
+        text: "I installed this app. Not a big deal — but not nothing.",
         submittedAt: Date(),
         happenedAt: Date().addingTimeInterval(-180),
         timezone: TimeZone.current.identifier,

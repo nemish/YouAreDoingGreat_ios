@@ -34,9 +34,14 @@ final class PaywallService {
     // Total limit state (permanent until premium upgrade)
     var isTotalLimitReached: Bool = false
 
+    // Timeline popup cooldown (30 minutes)
+    private(set) var lastTimelinePopupShownDate: Date?
+    private let timelinePopupCooldownSeconds: TimeInterval = 30 * 60 // 30 minutes
+
     // UserDefaults keys
     private let dailyLimitDateKey = "com.youaredoinggreat.dailyLimitDate"
     private let totalLimitReachedKey = "com.youaredoinggreat.totalLimitReached"
+    private let lastTimelinePopupShownKey = "com.youaredoinggreat.lastTimelinePopupShown"
 
     private init() {
         loadState()
@@ -126,6 +131,22 @@ final class PaywallService {
         logger.info("Timeline restriction cleared")
     }
 
+    /// Check if timeline popup can be shown (respects 30-minute cooldown)
+    func canShowTimelinePopup() -> Bool {
+        guard let lastShown = lastTimelinePopupShownDate else {
+            return true
+        }
+        let elapsed = Date().timeIntervalSince(lastShown)
+        return elapsed >= timelinePopupCooldownSeconds
+    }
+
+    /// Record that timeline popup was shown
+    func recordTimelinePopupShown() {
+        lastTimelinePopupShownDate = Date()
+        saveState()
+        logger.info("Timeline popup shown, cooldown started for 30 minutes")
+    }
+
     /// Reset daily limit (for testing or when day changes)
     func resetDailyLimit() {
         dailyLimitReachedDate = nil
@@ -205,10 +226,17 @@ final class PaywallService {
             UserDefaults.standard.removeObject(forKey: dailyLimitDateKey)
         }
         UserDefaults.standard.set(isTotalLimitReached, forKey: totalLimitReachedKey)
+
+        if let date = lastTimelinePopupShownDate {
+            UserDefaults.standard.set(date, forKey: lastTimelinePopupShownKey)
+        } else {
+            UserDefaults.standard.removeObject(forKey: lastTimelinePopupShownKey)
+        }
     }
 
     private func loadState() {
         dailyLimitReachedDate = UserDefaults.standard.object(forKey: dailyLimitDateKey) as? Date
         isTotalLimitReached = UserDefaults.standard.bool(forKey: totalLimitReachedKey)
+        lastTimelinePopupShownDate = UserDefaults.standard.object(forKey: lastTimelinePopupShownKey) as? Date
     }
 }

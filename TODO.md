@@ -3,3 +3,4 @@
 - Launch screen
 - Add description note to the moment
 - Add photos to the moment
+- IDEA: button "Anytime" or some other texts like this one on banner "Thanks - that really means a lot"

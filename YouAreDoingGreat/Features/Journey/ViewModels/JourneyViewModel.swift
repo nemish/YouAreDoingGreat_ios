@@ -127,12 +127,17 @@ final class JourneyViewModel {
             // Check if timeline limit is reached (for free users)
             if response.limitReached {
                 isTimelineRestricted = true
-                // Show popup when we've exhausted available data
+                // Show popup when we've exhausted available data (respects 30-minute cooldown)
                 if !response.hasNextPage {
-                    showTimelineRestrictedPopup = true
+                    if PaywallService.shared.canShowTimelinePopup() {
+                        showTimelineRestrictedPopup = true
+                        PaywallService.shared.recordTimelinePopupShown()
+                        logger.info("Timeline limit reached - showing paywall prompt")
+                    } else {
+                        logger.info("Timeline limit reached - popup suppressed due to cooldown")
+                    }
                     // Stop pagination - we've hit the paywall limit
                     nextCursor = nil
-                    logger.info("Timeline limit reached - showing paywall prompt")
                 }
             }
 
