@@ -414,6 +414,7 @@ struct ProfileView: View {
                 .disabled(viewModel.isClearingDatabase)
                 .opacity(viewModel.isClearingDatabase ? 0.5 : 1.0)
 
+                #if DEBUG
                 Button {
                     SubscriptionService.shared.setHasActiveSubscription(true)
                 } label: {
@@ -424,6 +425,7 @@ struct ProfileView: View {
                     )
                 }
                 .buttonStyle(.plain)
+                #endif
 
                 Button {
                     Task {
@@ -554,6 +556,7 @@ private func makePreviewViewModel() -> ProfileViewModel {
         .preferredColorScheme(.dark)
 }
 
+#if DEBUG
 #Preview("Profile View - Premium") {
     // Note: To preview premium state, SubscriptionService.shared.hasActiveSubscription
     // needs to be true (requires actual subscription or mock)
@@ -564,3 +567,4 @@ private func makePreviewViewModel() -> ProfileViewModel {
             SubscriptionService.shared.setHasActiveSubscription(true)
         }
 }
+#endif

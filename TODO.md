@@ -1,2 +1,5 @@
 - make visual transition between log moment and praise view animated
 - FEATURE: suggestions for what I did
+- Launch screen
+- Add description note to the moment
+- Add photos to the moment

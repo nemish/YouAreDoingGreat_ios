@@ -71,13 +71,13 @@ final class PraiseViewModel: PraiseViewModelProtocol {
     var showButton: Bool = false
 
     // Polling state
-    nonisolated(unsafe) private var pollingTask: Task<Void, Never>?
+    private nonisolated(unsafe) var pollingTask: Task<Void, Never>?
     private var pollCount: Int = 0
     private let maxPolls: Int = AppConfig.maxPraisePolls
     private let pollInterval: UInt64 = UInt64(AppConfig.praisePollingInterval * 1_000_000_000)
 
     // Save task (for cancellation in deinit)
-    nonisolated(unsafe) private var saveTask: Task<Void, Never>?
+    private nonisolated(unsafe) var saveTask: Task<Void, Never>?
 
     // Local moment reference
     private var localMoment: Moment?
