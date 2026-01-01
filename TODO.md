@@ -3,4 +3,6 @@
 - Launch screen
 - Add description note to the moment
 - Add photos to the moment
-- IDEA: button "Anytime" or some other texts like this one on banner "Thanks - that really means a lot"
+- IDEA: button "All good" or some other texts like this one on banner "Thanks - that really means a lot"
+- Add loading overlay on top of blurred areya after subscription triggered till it commited
+- fix: premium does not have impact on journey paywall logic
