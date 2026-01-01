@@ -15,6 +15,8 @@ struct PremiumThankYouCard: View {
     @State private var showBenefit1 = false
     @State private var showBenefit2 = false
     @State private var showBenefit3 = false
+    @State private var showBottomDivider = false
+    @State private var showDismissButton = false
     @State private var iconGlow: CGFloat = 0
 
     // Haptic feedback
@@ -29,7 +31,7 @@ struct PremiumThankYouCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            // Header with sparkles and close button
+            // Header with sparkles
             HStack(alignment: .top, spacing: 12) {
                 Image(systemName: "sparkles")
                     .font(.system(size: 20))
@@ -42,18 +44,6 @@ struct PremiumThankYouCard: View {
                     .fixedSize(horizontal: false, vertical: true)
 
                 Spacer(minLength: 8)
-
-                Button {
-                    lightFeedback.impactOccurred()
-                    onDismiss()
-                } label: {
-                    Image(systemName: "xmark")
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(Color.background.opacity(0.6))
-                        .frame(width: 28, height: 28)
-                        .background(Color.background.opacity(0.15))
-                        .clipShape(Circle())
-                }
             }
             .opacity(showHeader ? 1 : 0)
             .offset(y: showHeader ? 0 : 8)
@@ -133,6 +123,41 @@ struct PremiumThankYouCard: View {
                 .offset(y: showBenefit3 ? 0 : 8)
             }
             .padding(.leading, 32) // Align with text after sparkles icon
+
+            // Bottom dotted divider
+            HStack(spacing: 4) {
+                ForEach(0..<30, id: \.self) { _ in
+                    Circle()
+                        .fill(Color.background.opacity(0.25))
+                        .frame(width: 3, height: 3)
+                }
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 4)
+            .opacity(showBottomDivider ? 1 : 0)
+
+            // Dismiss button - right aligned
+            HStack {
+                Spacer()
+                Button {
+                    lightFeedback.impactOccurred()
+                    onDismiss()
+                } label: {
+                    Text(NSLocalizedString("premium_thank_you_dismiss", comment: ""))
+                        .font(.appHeadline)
+                        .fontWeight(.bold)
+                        .foregroundStyle(Color.appPrimary)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 12)
+                        .background(
+                            RoundedRectangle(cornerRadius: 16)
+                                .fill(Color.background.opacity(0.8))
+                        )
+                }
+                .buttonStyle(ScaleButtonStyle())
+            }
+            .opacity(showDismissButton ? 1 : 0)
+            .offset(y: showDismissButton ? 0 : 8)
         }
         .padding(16)
         .background(
@@ -193,6 +218,18 @@ struct PremiumThankYouCard: View {
             // Benefit 3
             withAnimation(.easeOut(duration: 0.3)) {
                 showBenefit3 = true
+            }
+            try? await Task.sleep(for: .seconds(0.1))
+
+            // Bottom divider
+            withAnimation(.easeOut(duration: 0.25)) {
+                showBottomDivider = true
+            }
+            try? await Task.sleep(for: .seconds(0.1))
+
+            // Dismiss button
+            withAnimation(.easeOut(duration: 0.3)) {
+                showDismissButton = true
             }
         }
     }

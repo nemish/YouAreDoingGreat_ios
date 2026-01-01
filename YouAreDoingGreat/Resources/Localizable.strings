@@ -15,6 +15,9 @@
 "timeline_restriction_banner_button" = "Keep my full journey";
 "timeline_restriction_banner_button_accessibility" = "Upgrade to premium to keep full journey history";
 
+/* Premium Thank You Card - Home */
+"premium_thank_you_dismiss" = "All good";
+
 /* Limit Banners - Paywall */
 "total_limit_banner_text" = "You've logged %d moments — that's wonderful! Upgrade to continue capturing your wins.";
 "daily_limit_banner_text" = "You've reached today's limit. Upgrade to enjoy %d moments per day.";
