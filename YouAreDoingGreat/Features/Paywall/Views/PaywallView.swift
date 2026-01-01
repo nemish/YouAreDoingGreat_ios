@@ -589,3 +589,54 @@ enum PlanOption: String {
     }
     .preferredColorScheme(.dark)
 }
+
+#Preview("Paywall - Loading Overlay") {
+    PaywallLoadingPreview()
+        .preferredColorScheme(.dark)
+}
+
+// MARK: - Loading Preview Helper
+
+private struct PaywallLoadingPreview: View {
+    var body: some View {
+        ZStack {
+            // Background matching paywall
+            ZStack {
+                LinearGradient(
+                    colors: [
+                        Color(red: 0.10, green: 0.12, blue: 0.18),
+                        Color(red: 0.06, green: 0.07, blue: 0.11)
+                    ],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+                .ignoresSafeArea()
+
+                RadialGradient(
+                    colors: [
+                        Color.appSecondary.opacity(0.2),
+                        Color.clear
+                    ],
+                    center: .top,
+                    startRadius: 0,
+                    endRadius: 400
+                )
+                .ignoresSafeArea()
+            }
+
+            // Loading overlay
+            ZStack {
+                Color.black.opacity(0.6)
+                VStack(spacing: 16) {
+                    ProgressView()
+                        .scaleEffect(1.5)
+                        .tint(.appPrimary)
+                    Text("Loading subscription options...")
+                        .font(.appBody)
+                        .foregroundStyle(.white)
+                }
+            }
+            .ignoresSafeArea()
+        }
+    }
+}

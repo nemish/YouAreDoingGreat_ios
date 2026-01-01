@@ -5,6 +5,7 @@ import SwiftUI
 
 struct JourneyView: View {
     @State private var viewModel: JourneyViewModel
+    private var subscriptionService = SubscriptionService.shared
 
     init(viewModel: JourneyViewModel) {
         _viewModel = State(initialValue: viewModel)
@@ -77,8 +78,10 @@ struct JourneyView: View {
 
         // Add "Journey begins" marker at the bottom if there are items
         // Use "Today" if journey just started (single INPROGRESS item)
-        // Don't show if timeline is restricted (banner will be shown instead)
-        if !viewModel.items.isEmpty && !viewModel.isTimelineRestricted {
+        // Don't show if timeline is restricted for non-premium users (banner will be shown instead)
+        let shouldShowBeginningMarker = !viewModel.items.isEmpty &&
+            (!viewModel.isTimelineRestricted || subscriptionService.hasActiveSubscription)
+        if shouldShowBeginningMarker {
             let beginningMarker = DaySummaryDTO(
                 id: "__beginning__",
                 date: isJourneyJustStarted ? formatter.string(from: Date()) : (viewModel.items.last?.date ?? formatter.string(from: Date())),
@@ -204,8 +207,8 @@ struct JourneyView: View {
                         .onAppear {
                             Task { await viewModel.loadNextPage() }
                         }
-                } else if viewModel.isTimelineRestricted {
-                    // Show the restriction banner at the end of the timeline
+                } else if viewModel.isTimelineRestricted && !subscriptionService.hasActiveSubscription {
+                    // Show the restriction banner at the end of the timeline (only for non-premium users)
                     TimelineRestrictedBanner {
                         PaywallService.shared.showPaywallForTimelineRestriction()
                     }
