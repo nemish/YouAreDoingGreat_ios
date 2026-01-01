@@ -58,14 +58,15 @@ final class JourneyViewModel {
             items = response.data
             nextCursor = response.nextCursor
 
-            // Check if timeline limit is reached (for free users)
+            // Check if timeline limit is reached (for free users only)
+            // Premium users bypass all timeline restrictions
             // Only mark as restricted if there's actually more data being restricted
             // If limitReached is true but hasNextPage is false, the user has their full journey
-            if response.limitReached && response.hasNextPage {
+            if response.limitReached && response.hasNextPage && !SubscriptionService.shared.hasActiveSubscription {
                 isTimelineRestricted = true
             }
 
-            logger.info("Loaded \(response.data.count) timeline items, limitReached: \(response.limitReached), hasNextPage: \(response.hasNextPage)")
+            logger.info("Loaded \(response.data.count) timeline items, limitReached: \(response.limitReached), hasNextPage: \(response.hasNextPage), isPremium: \(SubscriptionService.shared.hasActiveSubscription)")
         } catch {
             handleError(error)
         }
@@ -93,14 +94,15 @@ final class JourneyViewModel {
             items = response.data
             nextCursor = response.nextCursor
 
-            // Check if timeline limit is reached (for free users)
+            // Check if timeline limit is reached (for free users only)
+            // Premium users bypass all timeline restrictions
             // Only mark as restricted if there's actually more data being restricted
             // If limitReached is true but hasNextPage is false, the user has their full journey
-            if response.limitReached && response.hasNextPage {
+            if response.limitReached && response.hasNextPage && !SubscriptionService.shared.hasActiveSubscription {
                 isTimelineRestricted = true
             }
 
-            logger.info("Refreshed timeline with \(response.data.count) items, limitReached: \(response.limitReached), hasNextPage: \(response.hasNextPage)")
+            logger.info("Refreshed timeline with \(response.data.count) items, limitReached: \(response.limitReached), hasNextPage: \(response.hasNextPage), isPremium: \(SubscriptionService.shared.hasActiveSubscription)")
         } catch {
             handleError(error)
         }
@@ -124,8 +126,9 @@ final class JourneyViewModel {
             items.append(contentsOf: response.data)
             nextCursor = response.nextCursor
 
-            // Check if timeline limit is reached (for free users)
-            if response.limitReached {
+            // Check if timeline limit is reached (for free users only)
+            // Premium users bypass all timeline restrictions
+            if response.limitReached && !SubscriptionService.shared.hasActiveSubscription {
                 isTimelineRestricted = true
                 // Show popup when we've exhausted available data (respects 30-minute cooldown)
                 if !response.hasNextPage {
@@ -141,7 +144,7 @@ final class JourneyViewModel {
                 }
             }
 
-            logger.info("Loaded \(response.data.count) more timeline items, limitReached: \(response.limitReached)")
+            logger.info("Loaded \(response.data.count) more timeline items, limitReached: \(response.limitReached), isPremium: \(SubscriptionService.shared.hasActiveSubscription)")
         } catch {
             handleError(error)
         }
