@@ -27,13 +27,13 @@
       "Bash(find:*)"
     ],
     "deny": [
-      "git push --force*",
-      "git push -f*",
-      "git push *--force*",
-      "git reset --hard*",
-      "git clean -fd*",
-      "git reflog expire*",
-      "git gc --prune*"
+      "Bash(git push --force*)",
+      "Bash(git push -f*)",
+      "Bash(git push *--force*)",
+      "Bash(git reset --hard*)",
+      "Bash(git clean -fd*)",
+      "Bash(git reflog expire*)",
+      "Bash(git gc --prune*)"
     ],
     "ask": []
   }

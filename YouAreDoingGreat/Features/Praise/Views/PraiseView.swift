@@ -84,6 +84,7 @@ struct PraiseContentView<ViewModel: PraiseViewModelProtocol>: View {
                         }
 
                         // AI praise text with smooth word-by-word animation (no layout jumps)
+                        // After words fade in, breathing + shimmer effect starts after 5s
                         if let aiPraise = viewModel.aiPraise, !aiPraise.isEmpty {
                             SmoothAnimatedTextView(
                                 text: aiPraise,
@@ -92,6 +93,7 @@ struct PraiseContentView<ViewModel: PraiseViewModelProtocol>: View {
                                 multilineTextAlignment: .center,
                                 wordDelay: 0.04
                             )
+                            .breathingShimmer(initialDelay: 5.0)
                             .transition(.opacity.combined(with: .scale(scale: 0.95)))
                         }
 
