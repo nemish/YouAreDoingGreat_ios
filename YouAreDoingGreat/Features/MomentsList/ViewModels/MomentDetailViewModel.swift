@@ -84,6 +84,12 @@ final class MomentDetailViewModel: PraiseViewModelProtocol {
         !moment.isSynced && moment.syncError != nil
     }
 
+    // Hug state (maps to moment.isFavorite)
+    var isHugged: Bool {
+        get { moment.isFavorite }
+        set { }  // Handled via toggleHug()
+    }
+
     // MARK: - Initialization
 
     init(
@@ -145,6 +151,10 @@ final class MomentDetailViewModel: PraiseViewModelProtocol {
 
     func toggleFavorite() async {
         await onFavoriteToggle(moment)
+    }
+
+    func toggleHug() async {
+        await toggleFavorite()
     }
 
     func deleteMoment() async {

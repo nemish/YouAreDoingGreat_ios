@@ -23,10 +23,14 @@ protocol PraiseViewModelProtocol: AnyObject, Observable {
     var isLimitBlocked: Bool { get set }
     var isSyncFailed: Bool { get }
 
+    // Hug state (maps to isFavorite)
+    var isHugged: Bool { get set }
+
     func cancelPolling()
     func startEntranceAnimation() async
     func syncMomentAndFetchPraise() async
     func retrySyncMoment() async
+    func toggleHug() async
 }
 
 // MARK: - Praise Content View
@@ -161,20 +165,29 @@ struct PraiseContentView<ViewModel: PraiseViewModelProtocol>: View {
                 .padding(.horizontal, 32)
             }
 
-            // Done button
-            PrimaryButton(title: "Nice") {
-                UIImpactFeedbackGenerator(style: .light).impactOccurred()
+            // Action buttons: Nice (fills width) + Hug (icon)
+            ActionButtonRow(
+                primaryTitle: "Nice",
+                isHugged: viewModel.isHugged,
+                showDelete: false,
+                onPrimary: {
+                    UIImpactFeedbackGenerator(style: .light).impactOccurred()
 
-                // Highlight the newly created moment
-                highlightService.highlightMoment(viewModel.clientId)
+                    // Highlight the newly created moment
+                    highlightService.highlightMoment(viewModel.clientId)
 
-                selectedTab = 1 // Navigate to Moments tab
-                onDismiss()
+                    selectedTab = 1 // Navigate to Moments tab
+                    onDismiss()
 
-                // Note: We don't cancel polling here - let it continue in background
-                // to update the moment with AI praise when ready
-            }
-            .disabled(viewModel.isNiceButtonDisabled)  // Disable during Phase 1 (POST /moments)
+                    // Note: We don't cancel polling here - let it continue in background
+                    // to update the moment with AI praise when ready
+                },
+                onHug: {
+                    Task { await viewModel.toggleHug() }
+                },
+                onDelete: nil,
+                isPrimaryDisabled: viewModel.isNiceButtonDisabled
+            )
             .iPadContentWidth()
             .padding(.horizontal, 32)
             .padding(.bottom, 40)
@@ -314,6 +327,9 @@ private final class MockPraiseViewModel: PraiseViewModelProtocol {
         (isLimitBlocked || syncError != nil) && !isLoadingAIPraise
     }
 
+    // Hug state
+    var isHugged: Bool = false
+
     var timeDisplayText: String {
         guard let seconds = timeAgoSeconds, seconds > 0 else {
             return "Just now"
@@ -363,5 +379,9 @@ private final class MockPraiseViewModel: PraiseViewModelProtocol {
 
     func retrySyncMoment() async {
         // No-op for mock - state is set manually
+    }
+
+    func toggleHug() async {
+        isHugged.toggle()
     }
 }

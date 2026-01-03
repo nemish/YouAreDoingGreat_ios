@@ -214,43 +214,24 @@ struct MomentDetailSheet: View {
     }
 
     private var actionButtons: some View {
-        HStack(spacing: 12) {
-            // Favorite button
-            Button {
-                Task {
-                    await viewModel.toggleFavorite()
-                    dismiss()
-                }
-            } label: {
-                HStack {
-                    Image(systemName: moment.isFavorite ? "star.fill" : "star")
-                    Text(moment.isFavorite ? "Unfavorite" : "Favorite")
-                }
-                .frame(maxWidth: .infinity)
-                .padding()
-                .background(Color.white.opacity(0.08))
-                .foregroundStyle(.textPrimary)
-                .cornerRadius(12)
-            }
-
-            // Delete button
-            Button(role: .destructive) {
+        ActionButtonRow(
+            primaryTitle: "Nice",
+            isHugged: moment.isFavorite,
+            showDelete: true,
+            onPrimary: {
+                UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                dismiss()
+            },
+            onHug: {
+                Task { await viewModel.toggleHug() }
+            },
+            onDelete: {
                 Task {
                     await viewModel.deleteMoment()
                     dismiss()
                 }
-            } label: {
-                HStack {
-                    Image(systemName: "trash")
-                    Text("Delete")
-                }
-                .frame(maxWidth: .infinity)
-                .padding()
-                .background(Color.white.opacity(0.08))
-                .foregroundStyle(.red)
-                .cornerRadius(12)
             }
-        }
+        )
     }
 }
 
