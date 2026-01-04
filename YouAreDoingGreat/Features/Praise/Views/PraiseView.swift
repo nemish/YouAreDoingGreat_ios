@@ -24,7 +24,7 @@ protocol PraiseViewModelProtocol: AnyObject, Observable {
     var isSyncFailed: Bool { get }
 
     // Hug state (maps to isFavorite)
-    var isHugged: Bool { get set }
+    var isHugged: Bool { get }
 
     func cancelPolling()
     func startEntranceAnimation() async

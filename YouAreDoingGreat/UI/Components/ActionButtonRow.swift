@@ -36,7 +36,7 @@ struct ActionButtonRow: View {
                     action: onDelete
                 )
                 .accessibilityLabel("Delete moment")
-                .accessibilityHint("Double tap to delete this moment")
+                .accessibilityHint("Double tap to permanently delete this moment. This cannot be undone.")
             }
         }
     }

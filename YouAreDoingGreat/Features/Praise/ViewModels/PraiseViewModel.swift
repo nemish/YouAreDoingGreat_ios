@@ -379,6 +379,9 @@ final class PraiseViewModel: PraiseViewModelProtocol {
             }
             moment.isFavorite = isHugged
             logger.error("Failed to toggle hug: \(error.localizedDescription)")
+
+            // Show error feedback to user
+            ToastService.shared.showError("Couldn't save hug. Try again?")
         }
     }
 

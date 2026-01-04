@@ -86,8 +86,7 @@ final class MomentDetailViewModel: PraiseViewModelProtocol {
 
     // Hug state (maps to moment.isFavorite)
     var isHugged: Bool {
-        get { moment.isFavorite }
-        set { }  // Handled via toggleHug()
+        moment.isFavorite
     }
 
     // MARK: - Initialization

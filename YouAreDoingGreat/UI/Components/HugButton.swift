@@ -11,6 +11,7 @@ struct HugButton: View {
     // Animation state
     @State private var animationScale: CGFloat = 1.0
     @State private var glowOpacity: Double = 0.0
+    @State private var animationTask: Task<Void, Never>?
 
     // Haptic feedback
     private let impactFeedback = UIImpactFeedbackGenerator(style: .light)
@@ -46,6 +47,9 @@ struct HugButton: View {
     private func handleTap() {
         impactFeedback.impactOccurred()
 
+        // Cancel any in-flight animation
+        animationTask?.cancel()
+
         if !isHugged {
             // Hugging animation: scale up with glow
             withAnimation(.spring(response: 0.3, dampingFraction: 0.5, blendDuration: 0)) {
@@ -53,8 +57,10 @@ struct HugButton: View {
                 glowOpacity = 1.0
             }
 
-            // Return to normal
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+            // Return to normal after delay
+            animationTask = Task { @MainActor in
+                try? await Task.sleep(nanoseconds: 150_000_000) // 0.15s
+                guard !Task.isCancelled else { return }
                 withAnimation(.spring(response: 0.4, dampingFraction: 0.6)) {
                     animationScale = 1.0
                     glowOpacity = 0.0
@@ -66,8 +72,10 @@ struct HugButton: View {
                 animationScale = 0.85
             }
 
-            // Return to normal
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            // Return to normal after delay
+            animationTask = Task { @MainActor in
+                try? await Task.sleep(nanoseconds: 100_000_000) // 0.1s
+                guard !Task.isCancelled else { return }
                 withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
                     animationScale = 1.0
                 }

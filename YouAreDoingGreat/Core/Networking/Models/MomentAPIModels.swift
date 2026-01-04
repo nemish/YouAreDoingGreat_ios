@@ -55,20 +55,6 @@ struct EmptyResponse: Decodable {
     }
 }
 
-struct DeleteMomentResponse: Decodable {
-    let success: Bool
-
-    // Handle API returning empty body or missing success field
-    init(from decoder: Decoder) throws {
-        let container = try? decoder.container(keyedBy: CodingKeys.self)
-        success = (try? container?.decode(Bool.self, forKey: .success)) ?? true
-    }
-
-    private enum CodingKeys: String, CodingKey {
-        case success
-    }
-}
-
 // MARK: - API Request Models
 
 struct UpdateMomentRequest: Encodable {
