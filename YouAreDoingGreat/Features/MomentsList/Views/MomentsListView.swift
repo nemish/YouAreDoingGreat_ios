@@ -29,8 +29,21 @@ struct MomentsListView: View {
                     momentsList
                 }
             }
-            .navigationTitle("Your Moments")
+            .navigationTitle(viewModel.isShowingFavoritesOnly ? "Saved Moments" : "All Moments")
             .navigationBarTitleDisplayMode(.large)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        Task { await viewModel.toggleFavoritesFilter() }
+                    } label: {
+                        Image(systemName: "sparkles")
+                            .font(.system(size: 18, weight: .medium))
+                            .foregroundStyle(viewModel.isShowingFavoritesOnly ? .appPrimary : .textSecondary)
+                            .symbolEffect(.bounce, value: viewModel.isShowingFavoritesOnly)
+                    }
+                    .accessibilityLabel(viewModel.isShowingFavoritesOnly ? "Show all moments" : "Show saved moments only")
+                }
+            }
             .task {
                 await viewModel.loadMoments()
             }
@@ -124,18 +137,60 @@ struct MomentsListView: View {
 
     private var emptyStateView: some View {
         VStack(spacing: 16) {
-            celebrationIcon
+            if viewModel.isShowingFavoritesOnly {
+                emptyFavoritesIcon
 
-            Text("No moments yet...")
-                .font(.appTitle2)
-                .foregroundStyle(.textPrimary)
+                Text("No saved moments yet")
+                    .font(.appTitle2)
+                    .foregroundStyle(.textPrimary)
 
-            Text("But you're here, so that's one.\nTap 'I Did a Thing' to get started.")
-                .font(.appBody)
-                .foregroundStyle(.textSecondary)
-                .multilineTextAlignment(.center)
+                Text("Tap the lasso on any moment\nto save it here.")
+                    .font(.appBody)
+                    .foregroundStyle(.textSecondary)
+                    .multilineTextAlignment(.center)
+            } else {
+                celebrationIcon
+
+                Text("No moments yet...")
+                    .font(.appTitle2)
+                    .foregroundStyle(.textPrimary)
+
+                Text("But you're here, so that's one.\nTap 'I Did a Thing' to get started.")
+                    .font(.appBody)
+                    .foregroundStyle(.textSecondary)
+                    .multilineTextAlignment(.center)
+            }
         }
         .padding(.horizontal, 32)
+    }
+
+    private var emptyFavoritesIcon: some View {
+        ZStack {
+            // Outer glow
+            Circle()
+                .fill(Color.appPrimary.opacity(0.2))
+                .frame(width: 80, height: 80)
+                .blur(radius: 20)
+
+            // Main circle
+            Circle()
+                .fill(
+                    LinearGradient(
+                        colors: [
+                            Color.appPrimary,
+                            Color.appPrimary.opacity(0.8)
+                        ],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+                .frame(width: 64, height: 64)
+
+            // Sparkles icon
+            Image(systemName: "sparkles")
+                .font(.system(size: 26, weight: .bold))
+                .foregroundStyle(.white)
+        }
     }
 
     private var celebrationIcon: some View {

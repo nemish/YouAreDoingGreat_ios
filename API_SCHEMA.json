@@ -349,6 +349,17 @@
               "default": 20,
               "example": 20
             }
+          },
+          {
+            "name": "isFavorite",
+            "in": "query",
+            "description": "Filter to show only favorite moments",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false,
+              "example": true
+            }
           }
         ],
         "responses": {
@@ -442,6 +453,19 @@
                       },
                       "meta": {
                         "limit": 10,
+                        "isPremium": false
+                      }
+                    }
+                  },
+                  "dailyLimitReached": {
+                    "summary": "Daily limit reached",
+                    "value": {
+                      "error": {
+                        "code": "DAILY_LIMIT_REACHED",
+                        "message": "You've reached your daily limit of 3 moments. Upgrade to premium for 30 moments per day!"
+                      },
+                      "meta": {
+                        "limit": 3,
                         "isPremium": false
                       }
                     }

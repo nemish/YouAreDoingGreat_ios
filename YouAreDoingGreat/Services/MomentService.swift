@@ -24,6 +24,9 @@ final class MomentService {
     // Timeline restriction state (true when limitReached flag is set in API response)
     var isLimitReached: Bool = false
 
+    // Filter state
+    var isShowingFavoritesOnly: Bool = false
+
     // MARK: - Initialization
 
     init(apiClient: APIClient, repository: MomentRepository) {
@@ -118,10 +121,10 @@ final class MomentService {
 
     /// Refresh from server (pull-to-refresh)
     func refreshFromServer() async throws {
-        logger.info("Refreshing moments from server")
+        logger.info("Refreshing moments from server, favoritesOnly: \(self.isShowingFavoritesOnly)")
 
         let response: PaginatedMomentsResponse = try await apiClient.request(
-            endpoint: .moments(cursor: nil, limit: 50),
+            endpoint: .moments(cursor: nil, limit: 50, isFavorite: isShowingFavoritesOnly ? true : nil),
             method: .get,
             body: nil as String?
         )
@@ -146,10 +149,10 @@ final class MomentService {
             return []
         }
 
-        logger.info("Loading next page with cursor: \(cursor)")
+        logger.info("Loading next page with cursor: \(cursor), favoritesOnly: \(self.isShowingFavoritesOnly)")
 
         let response: PaginatedMomentsResponse = try await apiClient.request(
-            endpoint: .moments(cursor: cursor, limit: 20),
+            endpoint: .moments(cursor: cursor, limit: 20, isFavorite: isShowingFavoritesOnly ? true : nil),
             method: .get,
             body: nil as String?
         )
@@ -169,6 +172,16 @@ final class MomentService {
         logger.info("Loaded \(moments.count) moments from next page, limitReached: \(response.limitReached)")
 
         return moments
+    }
+
+    /// Toggle favorites filter mode
+    func setFavoritesFilter(_ enabled: Bool) {
+        isShowingFavoritesOnly = enabled
+        // Reset pagination when filter changes
+        nextCursor = nil
+        hasNextPage = false
+        isLimitReached = false
+        logger.info("Favorites filter set to: \(enabled)")
     }
 
     /// Toggle favorite status

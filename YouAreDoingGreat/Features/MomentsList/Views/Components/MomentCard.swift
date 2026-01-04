@@ -75,7 +75,7 @@ struct MomentCard: View {
                     }
 
                     if moment.isFavorite {
-                        Image(systemName: "star.fill")
+                        Image(systemName: "sparkle")
                             .font(.system(size: 14))
                             .foregroundStyle(.appPrimary)
                     }
