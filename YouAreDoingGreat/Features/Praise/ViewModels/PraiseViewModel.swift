@@ -70,6 +70,9 @@ final class PraiseViewModel: PraiseViewModelProtocol {
     var showTags: Bool = false
     var showButton: Bool = false
 
+    // Hug state (maps to isFavorite on backend)
+    var isHugged: Bool = false
+
     // Polling state
     private nonisolated(unsafe) var pollingTask: Task<Void, Never>?
     private var pollCount: Int = 0
@@ -345,6 +348,41 @@ final class PraiseViewModel: PraiseViewModelProtocol {
 
         // Retry the sync
         await syncMomentAndFetchPraise()
+    }
+
+    /// Toggle hug state (maps to isFavorite on backend)
+    func toggleHug() async {
+        guard let moment = localMoment else { return }
+
+        // Optimistic update with animation
+        withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
+            isHugged.toggle()
+        }
+        moment.isFavorite = isHugged
+
+        do {
+            try await repository.update(moment)
+
+            // If moment is synced, also update on server
+            if let serverId = moment.serverId {
+                let _: UpdateMomentResponse = try await apiClient.request(
+                    endpoint: .updateMoment(id: serverId),
+                    method: .put,
+                    body: UpdateMomentRequest(isFavorite: isHugged)
+                )
+                logger.info("Hug status synced to server")
+            }
+        } catch {
+            // Revert on failure
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
+                isHugged.toggle()
+            }
+            moment.isFavorite = isHugged
+            logger.error("Failed to toggle hug: \(error.localizedDescription)")
+
+            // Show error feedback to user
+            ToastService.shared.showError("Couldn't save hug. Try again?")
+        }
     }
 
     private func createMomentOnServer() async throws -> MomentResponse {

@@ -45,8 +45,14 @@ struct UpdateMomentResponse: Decodable {
     let message: String
 }
 
-struct DeleteMomentResponse: Decodable {
-    let success: Bool
+/// Empty response that accepts any JSON structure (including empty object {})
+/// Used for DELETE endpoints that may return empty or minimal responses
+struct EmptyResponse: Decodable {
+    init() {}
+
+    init(from decoder: Decoder) throws {
+        // Accept any structure - we don't care about the content
+    }
 }
 
 // MARK: - API Request Models
