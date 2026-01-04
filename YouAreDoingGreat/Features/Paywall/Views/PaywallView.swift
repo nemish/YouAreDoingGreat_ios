@@ -260,16 +260,15 @@ struct PaywallView: View {
         .overlay {
             if viewModel.isPurchasing || viewModel.isRestoring {
                 ZStack {
-                    // Blurred background
+                    // Blurred background with dim overlay
                     Rectangle()
                         .fill(.ultraThinMaterial)
                         .ignoresSafeArea()
 
-                    // Dark overlay for better contrast
-                    Color.black.opacity(0.4)
+                    Color.black.opacity(0.35)
                         .ignoresSafeArea()
 
-                    // Loading content
+                    // Loading content (no panel container)
                     VStack(spacing: 20) {
                         ProgressView()
                             .scaleEffect(1.8)
@@ -283,12 +282,9 @@ struct PaywallView: View {
                             .font(.appBody)
                             .foregroundStyle(.white.opacity(0.7))
                     }
-                    .padding(32)
-                    .background(
-                        RoundedRectangle(cornerRadius: 20)
-                            .fill(Color(red: 0.1, green: 0.12, blue: 0.18).opacity(0.95))
-                            .shadow(color: .black.opacity(0.3), radius: 20, x: 0, y: 10)
-                    )
+                    .accessibilityElement(children: .combine)
+                    .accessibilityLabel(viewModel.isRestoring ? "Restoring purchases, please wait" : "Processing purchase, please wait")
+                    .accessibilityAddTraits(.updatesFrequently)
                 }
                 .transition(.opacity)
                 .animation(.easeInOut(duration: 0.25), value: viewModel.isPurchasing)
