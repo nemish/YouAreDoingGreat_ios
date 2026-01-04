@@ -174,6 +174,26 @@ Never judgmental or pressure-inducing.
 - **Technical** - Implementation details, architecture decisions
 - **Extra Sources** - Links to Figma, docs, related PRs (optional)
 
+## Git Workflow
+
+### Branch Naming
+Use issue number + short description. No username prefix.
+
+```
+# Good
+yadg-7-delete-confirmation-dialogue
+yadg-5-filter-favourites
+
+# Bad
+yaraoncode/yadg-7-delete-confirmation-dialogue
+feature/yadg-7-delete-confirmation
+```
+
+### Commit Messages
+Follow conventional commits: `feat:`, `fix:`, `docs:`, `refactor:`, `test:`
+
+Include issue number in title: `feat: add delete confirmation dialog (YADG-7)`
+
 ## Code Review Checklist
 
 - [ ] ViewModels use `@Observable` + `@MainActor`

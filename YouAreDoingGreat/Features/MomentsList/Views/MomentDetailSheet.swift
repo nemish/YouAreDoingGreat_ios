@@ -14,6 +14,7 @@ struct MomentDetailSheet: View {
     @State private var showPraise = false
     @State private var showTags = false
     @State private var showButtons = false
+    @State private var showDeleteConfirmation = false
 
     private var timeOfDay: TimeOfDay {
         TimeOfDay(from: moment.happenedAt)
@@ -226,12 +227,24 @@ struct MomentDetailSheet: View {
                 Task { await viewModel.toggleHug() }
             },
             onDelete: {
+                showDeleteConfirmation = true
+            }
+        )
+        .confirmationDialog(
+            "Delete this moment?",
+            isPresented: $showDeleteConfirmation,
+            titleVisibility: .visible
+        ) {
+            Button("Delete", role: .destructive) {
                 Task {
                     await viewModel.deleteMoment()
                     dismiss()
                 }
             }
-        )
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("This can't be undone.")
+        }
     }
 }
 
