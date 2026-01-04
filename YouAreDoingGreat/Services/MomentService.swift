@@ -201,7 +201,7 @@ final class MomentService {
 
         // Delete from server if moment has been synced
         if let serverId = moment.serverId {
-            let _: DeleteMomentResponse = try await apiClient.request(
+            let _: EmptyResponse = try await apiClient.request(
                 endpoint: .deleteMoment(id: serverId),
                 method: .delete,
                 body: nil as String?

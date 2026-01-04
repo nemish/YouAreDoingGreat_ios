@@ -124,6 +124,7 @@ struct ContentView: View {
                 }
             }
         }
+        .toastContainer()
     }
 }
 

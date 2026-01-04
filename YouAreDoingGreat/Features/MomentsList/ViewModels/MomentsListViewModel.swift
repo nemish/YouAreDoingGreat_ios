@@ -247,6 +247,9 @@ final class MomentsListViewModel {
             try await momentService.deleteMoment(moment)
             moments.removeAll { $0.clientId == moment.clientId }
             groupedMoments = groupMomentsByDate(moments)
+
+            // Show deletion confirmation toast
+            ToastService.shared.showDeleted()
         } catch {
             handleError(error)
         }
