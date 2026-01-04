@@ -35,6 +35,11 @@ final class MomentsListViewModel {
     var isTimelineRestricted: Bool = false
     var showTimelineRestrictedPopup: Bool = false
 
+    // Favorites filter (read from MomentService for consistency)
+    var isShowingFavoritesOnly: Bool {
+        momentService.isShowingFavoritesOnly
+    }
+
     // MARK: - Pagination
 
     var canLoadMore: Bool = false
@@ -144,9 +149,16 @@ final class MomentsListViewModel {
     /// Reload moments from local storage (called after background refresh)
     private func reloadFromLocalStorage() async {
         do {
-            self.moments = try await repository.fetchAll(
+            var loadedMoments = try await repository.fetchAll(
                 sortedBy: SortDescriptor(\.submittedAt, order: .reverse)
             )
+
+            // Filter by favorites if filter is active
+            if isShowingFavoritesOnly {
+                loadedMoments = loadedMoments.filter { $0.isFavorite }
+            }
+
+            self.moments = loadedMoments
             self.groupedMoments = groupMomentsByDate(self.moments)
             self.canLoadMore = momentService.hasNextPage
 
@@ -156,7 +168,7 @@ final class MomentsListViewModel {
                 isTimelineRestricted = true
             }
 
-            logger.info("Reloaded \(self.moments.count) moments after background refresh, limitReached: \(self.momentService.isLimitReached), hasNextPage: \(self.momentService.hasNextPage)")
+            logger.info("Reloaded \(self.moments.count) moments after background refresh, favoritesOnly: \(self.isShowingFavoritesOnly), limitReached: \(self.momentService.isLimitReached), hasNextPage: \(self.momentService.hasNextPage)")
         } catch {
             logger.error("Failed to reload moments: \(error.localizedDescription)")
         }
@@ -165,7 +177,7 @@ final class MomentsListViewModel {
     func refresh() async {
         guard !isRefreshing else { return }
 
-        logger.info("Refreshing moments")
+        logger.info("Refreshing moments, favoritesOnly: \(self.isShowingFavoritesOnly)")
         isRefreshing = true
         isTimelineRestricted = false
         showTimelineRestrictedPopup = false
@@ -174,9 +186,16 @@ final class MomentsListViewModel {
             try await momentService.refreshFromServer()
 
             // Reload all moments from local storage after refresh
-            moments = try await repository.fetchAll(
+            var loadedMoments = try await repository.fetchAll(
                 sortedBy: SortDescriptor(\.submittedAt, order: .reverse)
             )
+
+            // Filter by favorites if filter is active
+            if isShowingFavoritesOnly {
+                loadedMoments = loadedMoments.filter { $0.isFavorite }
+            }
+
+            moments = loadedMoments
             groupedMoments = groupMomentsByDate(moments)
             canLoadMore = momentService.hasNextPage
 
@@ -187,7 +206,7 @@ final class MomentsListViewModel {
                 isTimelineRestricted = true
             }
 
-            logger.info("Refresh complete, \(self.moments.count) moments, limitReached: \(self.momentService.isLimitReached), hasNextPage: \(self.momentService.hasNextPage)")
+            logger.info("Refresh complete, \(self.moments.count) moments, favoritesOnly: \(self.isShowingFavoritesOnly), limitReached: \(self.momentService.isLimitReached), hasNextPage: \(self.momentService.hasNextPage)")
 
             // Restart sync service to pick up any unsynced moments
             SyncService.shared.startSyncing(repository: repository)
@@ -258,6 +277,23 @@ final class MomentsListViewModel {
         } catch {
             handleError(error)
         }
+    }
+
+    /// Toggle favorites-only filter mode
+    func toggleFavoritesFilter() async {
+        logger.info("Toggling favorites filter: \(!self.isShowingFavoritesOnly)")
+
+        // Toggle filter state in service (resets pagination)
+        momentService.setFavoritesFilter(!isShowingFavoritesOnly)
+
+        // Clear current list with animation
+        withAnimation(.easeOut(duration: 0.2)) {
+            moments = []
+            groupedMoments = []
+        }
+
+        // Refresh with new filter
+        await refresh()
     }
 
     func showDetail(for moment: Moment) {

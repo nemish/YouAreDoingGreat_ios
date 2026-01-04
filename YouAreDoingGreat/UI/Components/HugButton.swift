@@ -1,7 +1,7 @@
 import SwiftUI
 
 // MARK: - Hug Button
-// Animated heart button with gentle pulse animation on tap
+// Animated sparkle button with gentle pulse animation on tap
 // Dark mode only for v1
 
 struct HugButton: View {
@@ -21,17 +21,18 @@ struct HugButton: View {
             ZStack {
                 // Subtle glow layer (only visible during animation)
                 Circle()
-                    .fill(Color.pink.opacity(0.3))
+                    .fill(Color.appPrimary.opacity(0.3))
                     .frame(width: 40, height: 40)
                     .blur(radius: 8)
                     .opacity(glowOpacity)
                     .scaleEffect(animationScale * 1.2)
 
-                // Heart icon
-                Image(systemName: isHugged ? "heart.fill" : "heart")
+                // Lasso sparkles icon
+                Image(systemName: "lasso.sparkles")
                     .font(.system(size: 18, weight: .medium))
-                    .foregroundStyle(isHugged ? .pink : .textSecondary)
+                    .foregroundStyle(isHugged ? .appPrimary : .textSecondary)
                     .scaleEffect(animationScale)
+                    .symbolEffect(.bounce, value: isHugged)
             }
             .frame(width: 48, height: 48)
             .background(Color.white.opacity(0.08))

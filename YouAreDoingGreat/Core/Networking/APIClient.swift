@@ -23,7 +23,7 @@ enum HTTPMethod: String {
 // MARK: - API Endpoints
 
 enum APIEndpoint {
-    case moments(cursor: String?, limit: Int)
+    case moments(cursor: String?, limit: Int, isFavorite: Bool?)
     case createMoment
     case moment(id: String)
     case momentByClientId(clientId: String)
@@ -37,13 +37,16 @@ enum APIEndpoint {
 
     var path: String {
         switch self {
-        case .moments(let cursor, let limit):
+        case .moments(let cursor, let limit, let isFavorite):
             var components = URLComponents(string: "\(AppConfig.apiBaseURL)/moments")
             components?.queryItems = [
                 URLQueryItem(name: "limit", value: "\(limit)")
             ]
             if let cursor = cursor {
                 components?.queryItems?.append(URLQueryItem(name: "cursor", value: cursor))
+            }
+            if let isFavorite = isFavorite, isFavorite {
+                components?.queryItems?.append(URLQueryItem(name: "isFavorite", value: "true"))
             }
             return components?.url?.absoluteString ?? "\(AppConfig.apiBaseURL)/moments"
 
