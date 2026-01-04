@@ -1,4 +1,5 @@
 import Foundation
+import SwiftUI
 import SwiftData
 import OSLog
 
@@ -245,8 +246,12 @@ final class MomentsListViewModel {
 
         do {
             try await momentService.deleteMoment(moment)
-            moments.removeAll { $0.clientId == moment.clientId }
-            groupedMoments = groupMomentsByDate(moments)
+
+            // Animate the removal with fade + shrink
+            withAnimation(.easeOut(duration: 0.3)) {
+                moments.removeAll { $0.clientId == moment.clientId }
+                groupedMoments = groupMomentsByDate(moments)
+            }
 
             // Show deletion confirmation toast
             ToastService.shared.showDeleted()
