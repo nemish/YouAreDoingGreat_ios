@@ -165,39 +165,14 @@ Never judgmental or pressure-inducing.
 
 **Out**: Themes, notifications, social features, iCloud sync, widgets
 
-## Linear Issue Template
+## Linear Issues
 
-When creating or updating Linear issue descriptions, use this standard format:
+**Always read `.linear/issue-template.md`** before creating or updating Linear issue descriptions. Use the Standard Issue Template format with these sections:
 
-```markdown
-## Overview
-
-[One sentence summary of the change]
-
-## Requirements
-
-### Current State
-* [What exists now / the problem]
-
-### Target State
-* [What should exist after / the solution]
-
-## Implementation
-
-- [ ] [Task 1]
-- [ ] [Task 2]
-- [ ] [Task 3]
-
-## Technical Notes
-
-* [Important considerations, constraints, or dependencies]
-```
-
-**Guidelines:**
-- Keep descriptions concise - avoid over-documentation
-- Use bullet points, not paragraphs
-- Check off implementation items as work progresses
-- Technical Notes section is optional for simple changes
+- **Context** - Why is this change needed, what's the problem
+- **Requirements & Definition of Done** - Solution + checklist to verify completion
+- **Technical** - Implementation details, architecture decisions
+- **Extra Sources** - Links to Figma, docs, related PRs (optional)
 
 ## Code Review Checklist
 
