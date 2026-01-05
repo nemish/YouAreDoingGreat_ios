@@ -99,11 +99,16 @@ final class MomentService {
     /// Load initial moments (local first, then sync from server)
     func loadInitialMoments(onBackgroundRefreshComplete: (() -> Void)? = nil) async throws -> [Moment] {
         // 1. Load from SwiftData immediately (offline-first)
-        let localMoments = try await repository.fetchAll(
+        var localMoments = try await repository.fetchAll(
             sortedBy: SortDescriptor(\.submittedAt, order: .reverse)
         )
 
-        logger.info("Loaded \(localMoments.count) moments from local storage")
+        // Apply favorites filter if active
+        if isShowingFavoritesOnly {
+            localMoments = localMoments.filter { $0.isFavorite }
+        }
+
+        logger.info("Loaded \(localMoments.count) moments from local storage, favoritesOnly: \(self.isShowingFavoritesOnly)")
 
         // 2. Fetch from server in background (non-blocking)
         Task { @MainActor in

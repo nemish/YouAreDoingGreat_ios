@@ -281,19 +281,36 @@ final class MomentsListViewModel {
 
     /// Toggle favorites-only filter mode
     func toggleFavoritesFilter() async {
-        logger.info("Toggling favorites filter: \(!self.isShowingFavoritesOnly)")
+        let newFilterState = !isShowingFavoritesOnly
+        logger.info("Toggling favorites filter: \(newFilterState)")
 
         // Toggle filter state in service (resets pagination)
-        momentService.setFavoritesFilter(!isShowingFavoritesOnly)
+        momentService.setFavoritesFilter(newFilterState)
 
-        // Clear current list with animation
-        withAnimation(.easeOut(duration: 0.2)) {
-            moments = []
-            groupedMoments = []
+        // Load filtered data from local storage first (immediate, no network)
+        do {
+            var loadedMoments = try await repository.fetchAll(
+                sortedBy: SortDescriptor(\.submittedAt, order: .reverse)
+            )
+
+            // Apply filter
+            if newFilterState {
+                loadedMoments = loadedMoments.filter { $0.isFavorite }
+            }
+
+            // Animate transition to new data
+            withAnimation(.easeOut(duration: 0.25)) {
+                moments = loadedMoments
+                groupedMoments = groupMomentsByDate(moments)
+            }
+        } catch {
+            logger.error("Failed to load filtered moments: \(error.localizedDescription)")
         }
 
-        // Refresh with new filter
-        await refresh()
+        // Refresh from server in background (non-blocking)
+        Task {
+            await refresh()
+        }
     }
 
     func showDetail(for moment: Moment) {
