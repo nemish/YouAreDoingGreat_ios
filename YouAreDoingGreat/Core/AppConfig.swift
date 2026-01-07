@@ -121,7 +121,7 @@ enum AppConfig {
         URL(string: "https://you-are-doing-great.com/privacy")
     }
 
-    /// Terms of service URL
+    /// Terms of Use URL
     static var termsOfServiceURL: URL? {
         URL(string: "https://you-are-doing-great.com/terms")
     }

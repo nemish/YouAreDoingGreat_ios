@@ -484,7 +484,7 @@ struct ProfileView: View {
             } label: {
                 settingsRow(
                     icon: "doc.text.fill",
-                    title: "Terms of Service",
+                    title: "Terms of Use",
                     subtitle: "Terms and conditions"
                 )
             }

@@ -145,15 +145,15 @@ struct PaywallView: View {
                     // Footer links
                     VStack(spacing: 16) {
                         HStack(spacing: 40) {
-                            Button("Terms of service") {
+                            Button("Terms of Use") {
                                 if let url = AppConfig.termsOfServiceURL {
                                     UIApplication.shared.open(url)
                                 }
                             }
                             .font(.appFootnote)
                             .foregroundStyle(.white.opacity(0.5))
-                            .accessibilityLabel("Terms of service")
-                            .accessibilityHint("Opens terms of service in browser")
+                            .accessibilityLabel("Terms of Use")
+                            .accessibilityHint("Opens terms of use in browser")
 
                             Button("Privacy policy") {
                                 if let url = AppConfig.privacyPolicyURL {
@@ -173,6 +173,13 @@ struct PaywallView: View {
                         .font(.appFootnote)
                         .foregroundStyle(.white.opacity(0.5))
                         .disabled(viewModel.isPurchasing || viewModel.isRestoring)
+
+                        // Subscription information
+                        Text("Payment will be charged to your Apple ID account at the confirmation of purchase. Subscription automatically renews unless it is canceled at least 24 hours before the end of the current period. You can manage and cancel your subscriptions in App Store account settings.")
+                            .font(.appFootnote)
+                            .foregroundStyle(.white.opacity(0.4))
+                            .multilineTextAlignment(.center)
+                            .padding(.top, 16)
                     }
                     .opacity(showPlans ? 1 : 0)
                     .padding(.bottom, 20)
