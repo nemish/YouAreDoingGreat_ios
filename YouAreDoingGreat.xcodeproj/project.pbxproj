@@ -10,12 +10,41 @@
 		9F8DBA342EDFA56A00EE086B /* RevenueCat in Frameworks */ = {isa = PBXBuildFile; productRef = 9F8DBA332EDFA56A00EE086B /* RevenueCat */; };
 		9FAC13012EF61EAC002F2549 /* yadg.icon in Resources */ = {isa = PBXBuildFile; fileRef = 9FAC13002EF61EAC002F2549 /* yadg.icon */; };
 		9FAC13B72EFACB61002F2549 /* yadg2.icon in Resources */ = {isa = PBXBuildFile; fileRef = 9FAC13B62EFACB61002F2549 /* yadg2.icon */; };
+		9FAC19BD2F0F0D0C002F2549 /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = 9FAC19BA2F0F0D0C002F2549 /* README.md */; };
+		9FAC19BE2F0F0D0C002F2549 /* MomentRepositoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FAC19B42F0F0D0C002F2549 /* MomentRepositoryTests.swift */; };
+		9FAC19BF2F0F0D0C002F2549 /* OfflineFirstFlowTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FAC19B12F0F0D0C002F2549 /* OfflineFirstFlowTests.swift */; };
+		9FAC19C02F0F0D0C002F2549 /* MomentFixtures.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FAC19AE2F0F0D0C002F2549 /* MomentFixtures.swift */; };
+		9FAC19C12F0F0D0C002F2549 /* MomentServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FAC19B62F0F0D0C002F2549 /* MomentServiceTests.swift */; };
+		9FAC19C22F0F0D0C002F2549 /* YouAreDoingGreatTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FAC19BB2F0F0D0C002F2549 /* YouAreDoingGreatTests.swift */; };
+		9FAC19C32F0F0D0C002F2549 /* TestContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FAC19AF2F0F0D0C002F2549 /* TestContainer.swift */; };
+		9FAC19C42F0F0D0C002F2549 /* MomentsListViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FAC19B82F0F0D0C002F2549 /* MomentsListViewModelTests.swift */; };
+		9FAC19C52F0F0D0C002F2549 /* MockAPIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FAC19AD2F0F0D0C002F2549 /* MockAPIClient.swift */; };
 /* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		9FAC19922F0F0CB9002F2549 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 9F8506532ECBC90C000A97E7 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 9F85065A2ECBC90C000A97E7;
+			remoteInfo = YouAreDoingGreat;
+		};
+/* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
 		9F85065B2ECBC90C000A97E7 /* YouAreDoingGreat.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = YouAreDoingGreat.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		9FAC13002EF61EAC002F2549 /* yadg.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = yadg.icon; sourceTree = "<group>"; };
 		9FAC13B62EFACB61002F2549 /* yadg2.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = yadg2.icon; sourceTree = "<group>"; };
+		9FAC198E2F0F0CB9002F2549 /* YouAreDoingGreatTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = YouAreDoingGreatTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		9FAC19AD2F0F0D0C002F2549 /* MockAPIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockAPIClient.swift; sourceTree = "<group>"; };
+		9FAC19AE2F0F0D0C002F2549 /* MomentFixtures.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MomentFixtures.swift; sourceTree = "<group>"; };
+		9FAC19AF2F0F0D0C002F2549 /* TestContainer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestContainer.swift; sourceTree = "<group>"; };
+		9FAC19B12F0F0D0C002F2549 /* OfflineFirstFlowTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OfflineFirstFlowTests.swift; sourceTree = "<group>"; };
+		9FAC19B42F0F0D0C002F2549 /* MomentRepositoryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MomentRepositoryTests.swift; sourceTree = "<group>"; };
+		9FAC19B62F0F0D0C002F2549 /* MomentServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MomentServiceTests.swift; sourceTree = "<group>"; };
+		9FAC19B82F0F0D0C002F2549 /* MomentsListViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MomentsListViewModelTests.swift; sourceTree = "<group>"; };
+		9FAC19BA2F0F0D0C002F2549 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
+		9FAC19BB2F0F0D0C002F2549 /* YouAreDoingGreatTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YouAreDoingGreatTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -37,6 +66,11 @@
 			path = YouAreDoingGreat;
 			sourceTree = "<group>";
 		};
+		9FAC198F2F0F0CB9002F2549 /* YouAreDoingGreatTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = YouAreDoingGreatTests;
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -48,14 +82,23 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		9FAC198B2F0F0CB9002F2549 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
 		9F8506522ECBC90C000A97E7 = {
 			isa = PBXGroup;
 			children = (
+				9FAC19BC2F0F0D0C002F2549 /* YouAreDoingGreatTests */,
 				9FAC13002EF61EAC002F2549 /* yadg.icon */,
 				9F85065D2ECBC90C000A97E7 /* YouAreDoingGreat */,
+				9FAC198F2F0F0CB9002F2549 /* YouAreDoingGreatTests */,
 				9F8DBA322EDFA56A00EE086B /* Frameworks */,
 				9F85065C2ECBC90C000A97E7 /* Products */,
 				9FAC13B62EFACB61002F2549 /* yadg2.icon */,
@@ -66,6 +109,7 @@
 			isa = PBXGroup;
 			children = (
 				9F85065B2ECBC90C000A97E7 /* YouAreDoingGreat.app */,
+				9FAC198E2F0F0CB9002F2549 /* YouAreDoingGreatTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -75,6 +119,70 @@
 			children = (
 			);
 			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		9FAC19B02F0F0D0C002F2549 /* Helpers */ = {
+			isa = PBXGroup;
+			children = (
+				9FAC19AD2F0F0D0C002F2549 /* MockAPIClient.swift */,
+				9FAC19AE2F0F0D0C002F2549 /* MomentFixtures.swift */,
+				9FAC19AF2F0F0D0C002F2549 /* TestContainer.swift */,
+			);
+			path = Helpers;
+			sourceTree = "<group>";
+		};
+		9FAC19B22F0F0D0C002F2549 /* Integration */ = {
+			isa = PBXGroup;
+			children = (
+				9FAC19B12F0F0D0C002F2549 /* OfflineFirstFlowTests.swift */,
+			);
+			path = Integration;
+			sourceTree = "<group>";
+		};
+		9FAC19B32F0F0D0C002F2549 /* Network */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Network;
+			sourceTree = "<group>";
+		};
+		9FAC19B52F0F0D0C002F2549 /* Repositories */ = {
+			isa = PBXGroup;
+			children = (
+				9FAC19B42F0F0D0C002F2549 /* MomentRepositoryTests.swift */,
+			);
+			path = Repositories;
+			sourceTree = "<group>";
+		};
+		9FAC19B72F0F0D0C002F2549 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				9FAC19B62F0F0D0C002F2549 /* MomentServiceTests.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		9FAC19B92F0F0D0C002F2549 /* ViewModels */ = {
+			isa = PBXGroup;
+			children = (
+				9FAC19B82F0F0D0C002F2549 /* MomentsListViewModelTests.swift */,
+			);
+			path = ViewModels;
+			sourceTree = "<group>";
+		};
+		9FAC19BC2F0F0D0C002F2549 /* YouAreDoingGreatTests */ = {
+			isa = PBXGroup;
+			children = (
+				9FAC19B02F0F0D0C002F2549 /* Helpers */,
+				9FAC19B22F0F0D0C002F2549 /* Integration */,
+				9FAC19B32F0F0D0C002F2549 /* Network */,
+				9FAC19B52F0F0D0C002F2549 /* Repositories */,
+				9FAC19B72F0F0D0C002F2549 /* Services */,
+				9FAC19B92F0F0D0C002F2549 /* ViewModels */,
+				9FAC19BA2F0F0D0C002F2549 /* README.md */,
+				9FAC19BB2F0F0D0C002F2549 /* YouAreDoingGreatTests.swift */,
+			);
+			path = YouAreDoingGreatTests;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -103,6 +211,29 @@
 			productReference = 9F85065B2ECBC90C000A97E7 /* YouAreDoingGreat.app */;
 			productType = "com.apple.product-type.application";
 		};
+		9FAC198D2F0F0CB9002F2549 /* YouAreDoingGreatTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 9FAC19942F0F0CB9002F2549 /* Build configuration list for PBXNativeTarget "YouAreDoingGreatTests" */;
+			buildPhases = (
+				9FAC198A2F0F0CB9002F2549 /* Sources */,
+				9FAC198B2F0F0CB9002F2549 /* Frameworks */,
+				9FAC198C2F0F0CB9002F2549 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				9FAC19932F0F0CB9002F2549 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				9FAC198F2F0F0CB9002F2549 /* YouAreDoingGreatTests */,
+			);
+			name = YouAreDoingGreatTests;
+			packageProductDependencies = (
+			);
+			productName = YouAreDoingGreatTests;
+			productReference = 9FAC198E2F0F0CB9002F2549 /* YouAreDoingGreatTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -115,6 +246,10 @@
 				TargetAttributes = {
 					9F85065A2ECBC90C000A97E7 = {
 						CreatedOnToolsVersion = 26.1.1;
+					};
+					9FAC198D2F0F0CB9002F2549 = {
+						CreatedOnToolsVersion = 26.1.1;
+						TestTargetID = 9F85065A2ECBC90C000A97E7;
 					};
 				};
 			};
@@ -136,6 +271,7 @@
 			projectRoot = "";
 			targets = (
 				9F85065A2ECBC90C000A97E7 /* YouAreDoingGreat */,
+				9FAC198D2F0F0CB9002F2549 /* YouAreDoingGreatTests */,
 			);
 		};
 /* End PBXProject section */
@@ -150,6 +286,14 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		9FAC198C2F0F0CB9002F2549 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				9FAC19BD2F0F0D0C002F2549 /* README.md in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
@@ -160,7 +304,30 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		9FAC198A2F0F0CB9002F2549 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				9FAC19BE2F0F0D0C002F2549 /* MomentRepositoryTests.swift in Sources */,
+				9FAC19BF2F0F0D0C002F2549 /* OfflineFirstFlowTests.swift in Sources */,
+				9FAC19C02F0F0D0C002F2549 /* MomentFixtures.swift in Sources */,
+				9FAC19C12F0F0D0C002F2549 /* MomentServiceTests.swift in Sources */,
+				9FAC19C22F0F0D0C002F2549 /* YouAreDoingGreatTests.swift in Sources */,
+				9FAC19C32F0F0D0C002F2549 /* TestContainer.swift in Sources */,
+				9FAC19C42F0F0D0C002F2549 /* MomentsListViewModelTests.swift in Sources */,
+				9FAC19C52F0F0D0C002F2549 /* MockAPIClient.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		9FAC19932F0F0CB9002F2549 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 9F85065A2ECBC90C000A97E7 /* YouAreDoingGreat */;
+			targetProxy = 9FAC19922F0F0CB9002F2549 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		9F8506642ECBC90D000A97E7 /* Debug */ = {
@@ -364,6 +531,48 @@
 			};
 			name = Release;
 		};
+		9FAC19952F0F0CB9002F2549 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = W3U75T8JTH;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = ee.required.YouAreDoingGreatTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/YouAreDoingGreat.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/YouAreDoingGreat";
+			};
+			name = Debug;
+		};
+		9FAC19962F0F0CB9002F2549 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = W3U75T8JTH;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = ee.required.YouAreDoingGreatTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/YouAreDoingGreat.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/YouAreDoingGreat";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -381,6 +590,15 @@
 			buildConfigurations = (
 				9F8506672ECBC90D000A97E7 /* Debug */,
 				9F8506682ECBC90D000A97E7 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		9FAC19942F0F0CB9002F2549 /* Build configuration list for PBXNativeTarget "YouAreDoingGreatTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				9FAC19952F0F0CB9002F2549 /* Debug */,
+				9FAC19962F0F0CB9002F2549 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
