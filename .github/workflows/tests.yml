@@ -21,20 +21,17 @@ jobs:
       - name: Show Xcode version
         run: xcodebuild -version
 
-      - name: List available simulators
-        run: xcrun simctl list devices available | grep iPhone
+      - name: Install iOS 18.1 Simulator
+        run: |
+          sudo xcversion simulators --install='iOS 18.1' || xcodebuild -downloadPlatform iOS || echo "iOS 18.1 runtime installation skipped"
 
       - name: Build and test
         run: |
-          # Use iPhone SE (3rd generation) which should be available
-          SIMULATOR_ID=$(xcrun simctl list devices available | grep "iPhone SE (3rd generation)" | head -1 | grep -E -o -i "([0-9a-f]{8}-([0-9a-f]{4}-){3}[0-9a-f]{12})")
-          echo "Using simulator ID: $SIMULATOR_ID"
-          # List available SDKs
-          xcodebuild -showsdks | grep simulator
+          # Use any iOS Simulator - let Xcode pick one
           xcodebuild test \
             -project YouAreDoingGreat.xcodeproj \
             -scheme YouAreDoingGreat \
-            -destination "platform=iOS Simulator,id=$SIMULATOR_ID" \
+            -destination 'platform=iOS Simulator,name=Any iOS Simulator Device' \
             -enableCodeCoverage YES \
             -resultBundlePath TestResults.xcresult
 
