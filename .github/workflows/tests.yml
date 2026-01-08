@@ -26,10 +26,11 @@ jobs:
 
       - name: Build and test
         run: |
+          SIMULATOR_ID=$(xcrun simctl list devices available | grep "iPhone 16 (" | head -1 | grep -E -o -i "([0-9a-f]{8}-([0-9a-f]{4}-){3}[0-9a-f]{12})")
           xcodebuild test \
             -project YouAreDoingGreat.xcodeproj \
             -scheme YouAreDoingGreat \
-            -destination 'platform=iOS Simulator,name=iPhone 16' \
+            -destination "platform=iOS Simulator,id=$SIMULATOR_ID" \
             -enableCodeCoverage YES \
             -resultBundlePath TestResults.xcresult
 
