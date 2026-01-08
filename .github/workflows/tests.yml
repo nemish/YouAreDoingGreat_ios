@@ -23,14 +23,15 @@ jobs:
 
       - name: Build and test
         run: |
-          # Use iPhone SE with explicitly specified SDK
+          # Use iPhone SE - let Xcode determine the SDK
           SIMULATOR_ID=$(xcrun simctl list devices available | grep "iPhone SE (3rd generation)" | head -1 | grep -E -o -i "([0-9a-f]{8}-([0-9a-f]{4}-){3}[0-9a-f]{12})")
           echo "Using simulator: $SIMULATOR_ID"
+          # Show available SDK versions
+          xcodebuild -showsdks | grep simulator
           xcodebuild test \
             -project YouAreDoingGreat.xcodeproj \
             -scheme YouAreDoingGreat \
             -destination "platform=iOS Simulator,id=$SIMULATOR_ID" \
-            -sdk iphonesimulator18.4 \
             -enableCodeCoverage YES \
             -resultBundlePath TestResults.xcresult
 
