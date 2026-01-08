@@ -29,11 +29,12 @@ jobs:
           # Use iPhone SE (3rd generation) which should be available
           SIMULATOR_ID=$(xcrun simctl list devices available | grep "iPhone SE (3rd generation)" | head -1 | grep -E -o -i "([0-9a-f]{8}-([0-9a-f]{4}-){3}[0-9a-f]{12})")
           echo "Using simulator ID: $SIMULATOR_ID"
+          # List available SDKs
+          xcodebuild -showsdks | grep simulator
           xcodebuild test \
             -project YouAreDoingGreat.xcodeproj \
             -scheme YouAreDoingGreat \
             -destination "platform=iOS Simulator,id=$SIMULATOR_ID" \
-            -sdk iphonesimulator \
             -enableCodeCoverage YES \
             -resultBundlePath TestResults.xcresult
 
