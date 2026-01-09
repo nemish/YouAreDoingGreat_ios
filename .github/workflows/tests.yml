@@ -26,11 +26,11 @@ jobs:
 
       - name: Build and test
         run: |
-          # Use generic iOS Simulator destination to let Xcode choose
+          # Use iPhone SE with iOS 18.4
           xcodebuild test \
             -project YouAreDoingGreat.xcodeproj \
             -scheme YouAreDoingGreat \
-            -destination 'generic/platform=iOS Simulator' \
+            -destination 'platform=iOS Simulator,name=iPhone SE (3rd generation),OS=18.4' \
             -enableCodeCoverage YES \
             -resultBundlePath TestResults.xcresult
 
