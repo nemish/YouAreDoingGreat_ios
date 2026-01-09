@@ -23,11 +23,11 @@ jobs:
 
       - name: Build and test
         run: |
-          # Use iPhone SE with explicit OS version that matches available SDK
+          # Use iPhone SE with latest OS version
           xcodebuild test \
             -project YouAreDoingGreat.xcodeproj \
             -scheme YouAreDoingGreat \
-            -destination 'platform=iOS Simulator,name=iPhone SE (3rd generation),OS=18.4' \
+            -destination 'platform=iOS Simulator,name=iPhone SE (3rd generation),OS=latest' \
             -enableCodeCoverage YES \
             -resultBundlePath TestResults.xcresult
 
