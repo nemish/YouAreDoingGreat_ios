@@ -26,19 +26,11 @@ jobs:
 
       - name: Build and test
         run: |
-          # Find an available iOS simulator and use it
-          SIMULATOR_ID=$(xcrun simctl list devices available | grep "iPhone" | head -1 | grep -E -o -i "([0-9a-f]{8}-([0-9a-f]{4}-){3}[0-9a-f]{12})")
-          echo "Using simulator ID: $SIMULATOR_ID"
-
-          # Boot the simulator
-          xcrun simctl boot "$SIMULATOR_ID" || true
-
-          # Run tests
+          # Use generic iOS Simulator destination to let Xcode choose
           xcodebuild test \
             -project YouAreDoingGreat.xcodeproj \
             -scheme YouAreDoingGreat \
-            -sdk iphonesimulator \
-            -destination "platform=iOS Simulator,id=$SIMULATOR_ID" \
+            -destination 'generic/platform=iOS Simulator' \
             -enableCodeCoverage YES \
             -resultBundlePath TestResults.xcresult
 
