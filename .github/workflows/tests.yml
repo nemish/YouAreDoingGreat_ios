@@ -27,9 +27,6 @@ jobs:
           sudo xcodebuild -runFirstLaunch
           xcodebuild -downloadPlatform iOS || true
 
-      - name: List available simulators
-        run: xcrun simctl list devices available
-
       - name: Build and test
         run: |
           # Use iPhone SE with iOS 18.4
