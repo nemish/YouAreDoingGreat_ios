@@ -1,0 +1,23 @@
+#!/bin/bash
+
+# Pre-commit hook to run tests before committing
+# This ensures all tests pass before code is committed
+
+echo "Running tests before commit..."
+
+# Run xcodebuild test
+xcodebuild test \
+  -project YouAreDoingGreat.xcodeproj \
+  -scheme YouAreDoingGreat \
+  -destination 'platform=iOS Simulator,name=iPhone SE (3rd generation)' \
+  -quiet
+
+# Check if tests passed
+if [ $? -eq 0 ]; then
+  echo "✅ All tests passed"
+  exit 0
+else
+  echo "❌ Tests failed. Commit aborted."
+  echo "Fix the failing tests or use 'git commit --no-verify' to skip this hook."
+  exit 1
+fi
