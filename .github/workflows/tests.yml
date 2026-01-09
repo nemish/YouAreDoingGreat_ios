@@ -32,6 +32,7 @@ jobs:
           xcodebuild test \
             -project YouAreDoingGreat.xcodeproj \
             -scheme YouAreDoingGreat \
+            -sdk iphonesimulator \
             -destination "platform=iOS Simulator,id=$SIMULATOR_ID" \
             -enableCodeCoverage YES \
             -resultBundlePath TestResults.xcresult
