@@ -27,7 +27,7 @@ jobs:
           xcodebuild test \
             -project YouAreDoingGreat.xcodeproj \
             -scheme YouAreDoingGreat \
-            -destination 'platform=iOS Simulator,name=iPhone SE (3rd generation),OS=18.1' \
+            -destination 'platform=iOS Simulator,name=iPhone SE (3rd generation),OS=18.4' \
             -enableCodeCoverage YES \
             -resultBundlePath TestResults.xcresult
 
