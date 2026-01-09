@@ -76,12 +76,12 @@
 - **Fast Isolated Tests**: In-memory SwiftData
 - **No External Dependencies**: All tests fully mocked
 
-### CI/CD Ready
+### Local Testing with Git Hooks
 
-- ✅ GitHub Actions workflow configured
-- ✅ macOS runner setup
+- ✅ Pre-commit hook configured to run tests before commits
+- ✅ Tests run locally on developer machines
 - ✅ Code coverage enabled
-- ✅ Tests run automatically on PRs
+- ✅ Installation script provided (`hooks/install.sh`)
 
 ### Notes
 
