@@ -5,11 +5,11 @@
 
 echo "Running tests before commit..."
 
-# Run xcodebuild test
+# Run xcodebuild test - use any available iOS Simulator
 xcodebuild test \
   -project YouAreDoingGreat.xcodeproj \
   -scheme YouAreDoingGreat \
-  -destination 'platform=iOS Simulator,name=iPhone SE (3rd generation)' \
+  -destination 'platform=iOS Simulator,name=iPhone 17' \
   -quiet
 
 # Check if tests passed
