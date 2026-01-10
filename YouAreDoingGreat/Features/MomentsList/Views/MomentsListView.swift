@@ -11,7 +11,6 @@ struct MomentsListView: View {
 
     init(viewModel: MomentsListViewModel) {
         _viewModel = State(initialValue: viewModel)
-        configureNavigationBarAppearance()
     }
 
     var body: some View {
@@ -31,6 +30,8 @@ struct MomentsListView: View {
             }
             .navigationTitle(viewModel.isShowingFavoritesOnly ? "Saved Moments" : "All Moments")
             .navigationBarTitleDisplayMode(.large)
+            .toolbarBackground(.hidden, for: .navigationBar)
+            .toolbarColorScheme(.dark, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
@@ -234,31 +235,6 @@ struct MomentsListView: View {
         .padding(.vertical, 16)
     }
 
-    // MARK: - Navigation Bar Configuration
-
-    private func configureNavigationBarAppearance() {
-        let appearance = UINavigationBarAppearance()
-        appearance.configureWithDefaultBackground()
-        appearance.backgroundColor = .clear
-
-        // Large title font (Comfortaa)
-        let largeTitleFont = UIFont(name: "Comfortaa-Bold", size: 34) ?? UIFont.systemFont(ofSize: 34, weight: .bold)
-        appearance.largeTitleTextAttributes = [
-            .font: largeTitleFont,
-            .foregroundColor: UIColor.white
-        ]
-
-        // Regular title font (Comfortaa)
-        let titleFont = UIFont(name: "Comfortaa-Bold", size: 17) ?? UIFont.systemFont(ofSize: 17, weight: .semibold)
-        appearance.titleTextAttributes = [
-            .font: titleFont,
-            .foregroundColor: UIColor.white
-        ]
-
-        UINavigationBar.appearance().standardAppearance = appearance
-        UINavigationBar.appearance().scrollEdgeAppearance = appearance
-        UINavigationBar.appearance().compactAppearance = appearance
-    }
 }
 
 // MARK: - Previews

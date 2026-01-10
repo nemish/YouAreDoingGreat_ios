@@ -32,6 +32,7 @@ struct ContentView: View {
     var body: some View {
         TabView(selection: $selectedTab) {
             HomeView(selectedTab: $selectedTab, animatePremiumBadge: animatePremiumBadge)
+                .toolbarBackground(.hidden, for: .tabBar)
                 .tabItem {
                     Label("Home", systemImage: "house.fill")
                 }
@@ -47,6 +48,7 @@ struct ContentView: View {
                         }
                 }
             }
+            .toolbarBackground(.visible, for: .tabBar)
             .tabItem {
                 Label("Moments", systemImage: "list.bullet")
             }
@@ -62,6 +64,7 @@ struct ContentView: View {
                         }
                 }
             }
+            .toolbarBackground(.visible, for: .tabBar)
             .tabItem {
                 Label("Journey", systemImage: "chart.line.uptrend.xyaxis")
             }
@@ -77,6 +80,7 @@ struct ContentView: View {
                         }
                 }
             }
+            .toolbarBackground(.visible, for: .tabBar)
             .tabItem {
                 Label("Profile", systemImage: "person.fill")
             }

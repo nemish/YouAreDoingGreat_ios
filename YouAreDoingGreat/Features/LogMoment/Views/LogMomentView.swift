@@ -59,6 +59,8 @@ struct LogMomentView: View {
             }
             .animation(.spring(duration: 0.4, bounce: 0.15), value: showPraise)
             .navigationBarTitleDisplayMode(.inline)
+            .toolbarBackground(.hidden, for: .navigationBar)
+            .toolbarColorScheme(.dark, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button {

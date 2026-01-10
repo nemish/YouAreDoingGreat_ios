@@ -143,6 +143,8 @@ struct JourneyView: View {
             }
             .navigationTitle("Journey")
             .navigationBarTitleDisplayMode(.large)
+            .toolbarBackground(.hidden, for: .navigationBar)
+            .toolbarColorScheme(.dark, for: .navigationBar)
             .task {
                 await viewModel.loadTimeline()
             }
