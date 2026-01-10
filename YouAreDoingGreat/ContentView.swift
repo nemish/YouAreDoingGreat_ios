@@ -29,18 +29,6 @@ struct ContentView: View {
         ViewModelFactory(modelContext: modelContext)
     }
 
-    init() {
-        // Configure opaque tab bar appearance with shadow for non-Home tabs
-        let opaqueAppearance = UITabBarAppearance()
-        opaqueAppearance.configureWithOpaqueBackground()
-        opaqueAppearance.backgroundColor = UIColor(named: "Background")
-        opaqueAppearance.shadowColor = UIColor.black.withAlphaComponent(0.3)
-
-        // Set as default
-        UITabBar.appearance().standardAppearance = opaqueAppearance
-        UITabBar.appearance().scrollEdgeAppearance = opaqueAppearance
-    }
-
     var body: some View {
         TabView(selection: $selectedTab) {
             HomeView(selectedTab: $selectedTab, animatePremiumBadge: animatePremiumBadge)
