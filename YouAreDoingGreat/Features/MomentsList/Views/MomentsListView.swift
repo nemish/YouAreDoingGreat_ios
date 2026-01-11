@@ -52,19 +52,18 @@ struct MomentsListView: View {
                 await viewModel.refresh()
             }
             .sheet(isPresented: $viewModel.showMomentDetail) {
-                if let moment = viewModel.selectedMomentForDetail {
+                if let moment = viewModel.selectedMomentForDetail,
+                   let index = viewModel.moments.firstIndex(where: { $0.id == moment.id }) {
                     MomentDetailSheet(
-                        viewModel: MomentDetailViewModel(
-                            moment: moment,
-                            repository: viewModel.repository,
-                            onFavoriteToggle: { m in
-                                await viewModel.toggleFavorite(m)
-                            },
-                            onDelete: { m in
-                                await viewModel.deleteMoment(m)
-                            }
-                        ),
-                        moment: moment
+                        moments: viewModel.moments,
+                        initialIndex: index,
+                        repository: viewModel.repository,
+                        onFavoriteToggle: { m in
+                            await viewModel.toggleFavorite(m)
+                        },
+                        onDelete: { m in
+                            await viewModel.deleteMoment(m)
+                        }
                     )
                     .presentationDetents([.large])
                     .presentationDragIndicator(.visible)

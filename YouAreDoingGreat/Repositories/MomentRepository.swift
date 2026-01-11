@@ -29,4 +29,7 @@ protocol MomentRepository {
 
     /// Delete all moments (for testing/dev purposes)
     func deleteAll() async throws
+
+    /// Fetch moments filtered by a specific tag
+    func fetchByTag(_ tag: String) async throws -> [Moment]
 }

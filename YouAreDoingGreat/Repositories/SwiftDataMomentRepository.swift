@@ -87,4 +87,16 @@ final class SwiftDataMomentRepository: MomentRepository {
         try modelContext.save()
         logger.info("Successfully cleared local database")
     }
+
+    func fetchByTag(_ tag: String) async throws -> [Moment] {
+        let descriptor = FetchDescriptor<Moment>(
+            predicate: #Predicate<Moment> { moment in
+                moment.tags.contains(tag)
+            },
+            sortBy: [SortDescriptor(\.happenedAt, order: .reverse)]
+        )
+        let moments = try modelContext.fetch(descriptor)
+        logger.info("Fetched \(moments.count) moments with tag: \(tag)")
+        return moments
+    }
 }
