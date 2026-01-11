@@ -84,17 +84,10 @@ struct MomentDetailSheet: View {
     private func handleDelete(_ moment: Moment, at index: Int) async {
         await onDelete(moment)
 
-        // If there are other moments, navigate to the next one
-        if moments.count > 1 {
-            if currentIndex < moments.count - 1 {
-                currentIndex += 1
-            } else {
-                currentIndex = max(0, currentIndex - 1)
-            }
-        } else {
-            // Last moment, dismiss the sheet
-            dismiss()
-        }
+        // Always dismiss after delete to avoid stale array access
+        // The moments array is immutable and doesn't update after deletion,
+        // which can cause EXC_BAD_ACCESS when navigating to deleted objects
+        dismiss()
     }
 }
 
