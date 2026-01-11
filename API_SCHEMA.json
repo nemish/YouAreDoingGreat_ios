@@ -81,7 +81,7 @@
     "/user/me": {
       "get": {
         "summary": "Get current user profile",
-        "description": "Retrieve the current user's profile information",
+        "description": "Retrieve the current user's profile information.\n\n**Subscription Status Sync:** This endpoint triggers a background sync with RevenueCat\nto verify subscription status if the cached status is older than 24 hours. The sync\nruns asynchronously (fire-and-forget) and does not delay the response. The returned\nstatus reflects the current database value; subsequent requests will show updated\nstatus after the background sync completes.\n",
         "operationId": "getCurrentUser",
         "security": [
           {
@@ -359,6 +359,18 @@
               "type": "boolean",
               "default": false,
               "example": true
+            }
+          },
+          {
+            "name": "tag",
+            "in": "query",
+            "description": "Filter moments by tag name (case-insensitive)",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 50,
+              "example": "self_care"
             }
           }
         ],

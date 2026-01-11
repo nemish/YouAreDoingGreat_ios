@@ -5,6 +5,7 @@ import SwiftUI
 
 struct TagsView: View {
     let tags: [String]
+    var onTagTap: ((String) -> Void)? = nil
 
     private let horizontalSpacing: CGFloat = 6
     private let verticalSpacing: CGFloat = 6
@@ -12,7 +13,7 @@ struct TagsView: View {
     var body: some View {
         FlowLayout(horizontalSpacing: horizontalSpacing, verticalSpacing: verticalSpacing) {
             ForEach(tags.prefix(3), id: \.self) { tag in
-                TagPill(tag: tag)
+                TagPill(tag: tag, onTap: onTagTap)
             }
 
             if tags.count > 3 {
@@ -28,9 +29,10 @@ struct TagsView: View {
 
 private struct TagPill: View {
     let tag: String
+    var onTap: ((String) -> Void)? = nil
 
     var body: some View {
-        Text("#\(tag.replacingOccurrences(of: "_", with: " "))")
+        let content = Text("#\(tag.replacingOccurrences(of: "_", with: " "))")
             .font(.appCaption)
             .foregroundStyle(.appSecondary)
             .lineLimit(1)
@@ -41,6 +43,18 @@ private struct TagPill: View {
                 Capsule()
                     .fill(Color.appSecondary.opacity(0.2))
             )
+
+        if let onTap = onTap {
+            Button {
+                UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                onTap(tag)
+            } label: {
+                content
+            }
+            .buttonStyle(.plain)
+        } else {
+            content
+        }
     }
 }
 
