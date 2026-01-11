@@ -7,16 +7,32 @@ import SwiftData
 
 struct FilteredMomentsSheet: View {
     @Environment(\.dismiss) private var dismiss
-    @Query(sort: \Moment.happenedAt, order: .reverse) private var allMoments: [Moment]
+    @Environment(\.modelContext) private var modelContext
+
+    @Query private var moments: [Moment]
 
     let tag: String
 
     @State private var showHeader = false
     @State private var showContent = false
+    @State private var selectedMomentIndex: Int?
+    @State private var showMomentDetail = false
 
-    // Filter moments by tag
-    private var moments: [Moment] {
-        allMoments.filter { $0.tags.contains(tag) }
+    private var repository: MomentRepository {
+        SwiftDataMomentRepository(modelContext: modelContext)
+    }
+
+    init(tag: String) {
+        self.tag = tag
+
+        // Optimize with database-level filtering using predicate
+        _moments = Query(
+            filter: #Predicate { moment in
+                moment.tags.contains(tag)
+            },
+            sort: \.happenedAt,
+            order: .reverse
+        )
     }
 
     var body: some View {
@@ -77,8 +93,13 @@ struct FilteredMomentsSheet: View {
     private var momentsList: some View {
         ScrollView {
             LazyVStack(spacing: 12) {
-                ForEach(moments) { moment in
+                ForEach(Array(moments.enumerated()), id: \.element.id) { index, moment in
                     MomentCard(moment: moment)
+                        .onTapGesture {
+                            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                            selectedMomentIndex = index
+                            showMomentDetail = true
+                        }
                         .transition(.asymmetric(
                             insertion: .opacity.combined(with: .move(edge: .top)),
                             removal: .opacity
@@ -90,6 +111,21 @@ struct FilteredMomentsSheet: View {
             .padding(.bottom, 40)
         }
         .opacity(showContent ? 1 : 0)
+        .sheet(isPresented: $showMomentDetail) {
+            if let index = selectedMomentIndex {
+                MomentDetailSheet(
+                    moments: moments,
+                    initialIndex: index,
+                    repository: repository,
+                    onFavoriteToggle: { moment in
+                        await toggleFavorite(moment)
+                    },
+                    onDelete: { moment in
+                        await deleteMoment(moment)
+                    }
+                )
+            }
+        }
     }
 
     private var emptyState: some View {
@@ -121,6 +157,17 @@ struct FilteredMomentsSheet: View {
         withAnimation(.easeIn(duration: 0.5).delay(0.3)) {
             showContent = true
         }
+    }
+
+    // MARK: - Actions
+
+    private func toggleFavorite(_ moment: Moment) async {
+        moment.isFavorite.toggle()
+        try? await repository.update(moment)
+    }
+
+    private func deleteMoment(_ moment: Moment) async {
+        try? await repository.delete(moment)
     }
 }
 

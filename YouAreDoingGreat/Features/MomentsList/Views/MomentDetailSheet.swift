@@ -8,7 +8,6 @@ import SwiftData
 
 struct MomentDetailSheet: View {
     @Environment(\.dismiss) private var dismiss
-    @Environment(\.modelContext) private var modelContext
 
     let moments: [Moment]
     let initialIndex: Int
@@ -17,7 +16,6 @@ struct MomentDetailSheet: View {
     let onDelete: (Moment) async -> Void
 
     @State private var currentIndex: Int
-    @State private var currentViewModel: MomentDetailViewModel
 
     init(
         moments: [Moment],
@@ -33,19 +31,11 @@ struct MomentDetailSheet: View {
         self.onDelete = onDelete
 
         _currentIndex = State(initialValue: initialIndex)
-
-        // Create initial viewModel
-        let moment = moments[initialIndex]
-        _currentViewModel = State(initialValue: MomentDetailViewModel(
-            moment: moment,
-            repository: repository,
-            onFavoriteToggle: onFavoriteToggle,
-            onDelete: onDelete
-        ))
     }
 
-    private var currentMoment: Moment {
-        moments[currentIndex]
+    private var currentMoment: Moment? {
+        guard currentIndex >= 0 && currentIndex < moments.count else { return nil }
+        return moments[currentIndex]
     }
 
     var body: some View {
@@ -55,19 +45,19 @@ struct MomentDetailSheet: View {
                 CosmicBackgroundView()
                     .ignoresSafeArea()
 
-                // TabView for swipe navigation
+                // TabView for swipe navigation with lazy ViewModel creation
                 TabView(selection: $currentIndex) {
                     ForEach(Array(moments.enumerated()), id: \.element.id) { index, moment in
                         MomentDetailContent(
-                            viewModel: index == currentIndex ? currentViewModel : MomentDetailViewModel(
-                                moment: moment,
-                                repository: repository,
-                                onFavoriteToggle: onFavoriteToggle,
-                                onDelete: onDelete
-                            ),
                             moment: moment,
+                            repository: repository,
+                            onFavoriteToggle: onFavoriteToggle,
+                            onDelete: { deletedMoment in
+                                await handleDelete(deletedMoment, at: index)
+                            },
                             onDismiss: { dismiss() }
                         )
+                        .id(moment.id)  // Force recreation when moment changes
                         .tag(index)
                     }
                 }
@@ -90,28 +80,41 @@ struct MomentDetailSheet: View {
             .onChange(of: currentIndex) { oldValue, newValue in
                 // Haptic feedback on swipe
                 UIImpactFeedbackGenerator(style: .light).impactOccurred()
-
-                // Update viewModel when index changes
-                let moment = moments[newValue]
-                currentViewModel = MomentDetailViewModel(
-                    moment: moment,
-                    repository: repository,
-                    onFavoriteToggle: onFavoriteToggle,
-                    onDelete: onDelete
-                )
             }
+        }
+    }
+
+    // MARK: - Delete Handling
+
+    private func handleDelete(_ moment: Moment, at index: Int) async {
+        await onDelete(moment)
+
+        // If there are other moments, navigate to the next one
+        if moments.count > 1 {
+            if currentIndex < moments.count - 1 {
+                currentIndex += 1
+            } else {
+                currentIndex = max(0, currentIndex - 1)
+            }
+        } else {
+            // Last moment, dismiss the sheet
+            dismiss()
         }
     }
 }
 
 // MARK: - Moment Detail Content
 // Extracted content view for each moment in the TabView
+// Creates its own ViewModel lazily when needed
 
 private struct MomentDetailContent: View {
-    @Bindable var viewModel: MomentDetailViewModel
-    let moment: Moment
+    @Bindable var moment: Moment
+    let repository: MomentRepository
+    let onFavoriteToggle: (Moment) async -> Void
+    let onDelete: (Moment) async -> Void
     let onDismiss: () -> Void
 
+    @State private var viewModel: MomentDetailViewModel
     @State private var showMomentText = false
     @State private var showPraise = false
     @State private var showTags = false
@@ -124,6 +127,29 @@ private struct MomentDetailContent: View {
     private struct IdentifiableTag: Identifiable {
         let id = UUID()
         let value: String
+    }
+
+    init(
+        moment: Moment,
+        repository: MomentRepository,
+        onFavoriteToggle: @escaping (Moment) async -> Void,
+        onDelete: @escaping (Moment) async -> Void,
+        onDismiss: @escaping () -> Void
+    ) {
+        self.moment = moment
+        self.repository = repository
+        self.onFavoriteToggle = onFavoriteToggle
+        self.onDelete = onDelete
+        self.onDismiss = onDismiss
+
+        // Create ViewModel lazily only when this view is instantiated
+        let vm = MomentDetailViewModel(
+            moment: moment,
+            repository: repository,
+            onFavoriteToggle: onFavoriteToggle,
+            onDelete: onDelete
+        )
+        _viewModel = State(initialValue: vm)
     }
 
     private var timeOfDay: TimeOfDay {
@@ -349,8 +375,7 @@ private struct MomentDetailContent: View {
         ) {
             Button("Delete", role: .destructive) {
                 Task {
-                    await viewModel.deleteMoment()
-                    onDismiss()
+                    await onDelete(moment)
                 }
             }
             Button("Cancel", role: .cancel) {}
