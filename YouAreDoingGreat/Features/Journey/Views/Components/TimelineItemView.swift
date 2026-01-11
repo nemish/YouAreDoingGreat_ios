@@ -11,6 +11,13 @@ struct TimelineItemView: View {
     var descriptionText: String? = nil  // Optional description shown below "You are here"
 
     @State private var appear = false
+    @State private var selectedTag: IdentifiableTag? = nil
+
+    // Wrapper to make tag identifiable for sheet presentation
+    private struct IdentifiableTag: Identifiable {
+        let id = UUID()
+        let value: String
+    }
 
     private var date: Date {
         DateFormatters.calendarDay(from: item.date) ?? Date()
@@ -262,7 +269,9 @@ struct TimelineItemView: View {
 
             // Tags
             if !item.tags.isEmpty {
-                TagsView(tags: item.tags)
+                TagsView(tags: item.tags, onTagTap: { tag in
+                    selectedTag = IdentifiableTag(value: tag)
+                })
             }
         }
         .padding(16)
@@ -270,6 +279,9 @@ struct TimelineItemView: View {
             RoundedRectangle(cornerRadius: 12)
                 .fill(Color.white.opacity(0.08))
         )
+        .sheet(item: $selectedTag) { identifiableTag in
+            FilteredMomentsSheet(tag: identifiableTag.value)
+        }
     }
 }
 

@@ -15,6 +15,13 @@ struct MomentDetailSheet: View {
     @State private var showTags = false
     @State private var showButtons = false
     @State private var showDeleteConfirmation = false
+    @State private var selectedTag: IdentifiableTag? = nil
+
+    // Wrapper to make tag identifiable for sheet presentation
+    private struct IdentifiableTag: Identifiable {
+        let id = UUID()
+        let value: String
+    }
 
     private var timeOfDay: TimeOfDay {
         TimeOfDay(from: moment.happenedAt)
@@ -200,17 +207,26 @@ struct MomentDetailSheet: View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
                 ForEach(Array(moment.tags.enumerated()), id: \.offset) { index, tag in
-                    Text("#\(tag.replacingOccurrences(of: "_", with: " "))")
-                        .font(.appCaption)
-                        .foregroundStyle(.white)
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 6)
-                        .background(
-                            Capsule()
-                                .fill(Color.appSecondary.opacity(0.6))
-                        )
+                    Button {
+                        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                        selectedTag = IdentifiableTag(value: tag)
+                    } label: {
+                        Text("#\(tag.replacingOccurrences(of: "_", with: " "))")
+                            .font(.appCaption)
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 6)
+                            .background(
+                                Capsule()
+                                    .fill(Color.appSecondary.opacity(0.6))
+                            )
+                    }
+                    .buttonStyle(.plain)
                 }
             }
+        }
+        .sheet(item: $selectedTag) { identifiableTag in
+            FilteredMomentsSheet(tag: identifiableTag.value)
         }
     }
 
