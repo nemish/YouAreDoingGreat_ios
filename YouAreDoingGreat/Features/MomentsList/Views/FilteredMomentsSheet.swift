@@ -8,8 +8,7 @@ import SwiftData
 struct FilteredMomentsSheet: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
-
-    @Query private var moments: [Moment]
+    @Query(sort: \Moment.happenedAt, order: .reverse) private var allMoments: [Moment]
 
     let tag: String
 
@@ -22,17 +21,9 @@ struct FilteredMomentsSheet: View {
         SwiftDataMomentRepository(modelContext: modelContext)
     }
 
-    init(tag: String) {
-        self.tag = tag
-
-        // Optimize with database-level filtering using predicate
-        _moments = Query(
-            filter: #Predicate { moment in
-                moment.tags.contains(tag)
-            },
-            sort: \.happenedAt,
-            order: .reverse
-        )
+    // Filter moments by tag (client-side filtering required for dynamic tag parameter)
+    private var moments: [Moment] {
+        allMoments.filter { $0.tags.contains(tag) }
     }
 
     var body: some View {
