@@ -33,11 +33,6 @@ struct MomentDetailSheet: View {
         _currentIndex = State(initialValue: initialIndex)
     }
 
-    private var currentMoment: Moment? {
-        guard currentIndex >= 0 && currentIndex < moments.count else { return nil }
-        return moments[currentIndex]
-    }
-
     var body: some View {
         NavigationStack {
             ZStack {
@@ -122,12 +117,6 @@ private struct MomentDetailContent: View {
     @State private var showDeleteConfirmation = false
     @State private var selectedTag: IdentifiableTag? = nil
     @State private var contentOpacity: Double = 0
-
-    // Wrapper to make tag identifiable for sheet presentation
-    private struct IdentifiableTag: Identifiable {
-        let id = UUID()
-        let value: String
-    }
 
     init(
         moment: Moment,

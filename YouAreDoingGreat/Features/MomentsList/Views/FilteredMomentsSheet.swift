@@ -154,11 +154,22 @@ struct FilteredMomentsSheet: View {
 
     private func toggleFavorite(_ moment: Moment) async {
         moment.isFavorite.toggle()
-        try? await repository.update(moment)
+
+        do {
+            try await repository.update(moment)
+        } catch {
+            // Revert on failure
+            moment.isFavorite.toggle()
+            ToastService.shared.showError("Couldn't update moment. Try again?")
+        }
     }
 
     private func deleteMoment(_ moment: Moment) async {
-        try? await repository.delete(moment)
+        do {
+            try await repository.delete(moment)
+        } catch {
+            ToastService.shared.showError("Couldn't delete moment. Try again?")
+        }
     }
 }
 
