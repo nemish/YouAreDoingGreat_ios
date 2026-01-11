@@ -82,12 +82,8 @@ struct MomentDetailSheet: View {
     // MARK: - Delete Handling
 
     private func handleDelete(_ moment: Moment, at index: Int) async {
+        // Dismissal is now handled by the child view before calling this
         await onDelete(moment)
-
-        // Always dismiss after delete to avoid stale array access
-        // The moments array is immutable and doesn't update after deletion,
-        // which can cause EXC_BAD_ACCESS when navigating to deleted objects
-        dismiss()
     }
 }
 
@@ -356,8 +352,15 @@ private struct MomentDetailContent: View {
             titleVisibility: .visible
         ) {
             Button("Delete", role: .destructive) {
+                // Capture moment reference before dismissing
+                let momentToDelete = moment
+
+                // Dismiss immediately to avoid SwiftUI updating views with deleted objects
+                onDismiss()
+
+                // Perform deletion in background after dismissal
                 Task {
-                    await onDelete(moment)
+                    await onDelete(momentToDelete)
                 }
             }
             Button("Cancel", role: .cancel) {}
