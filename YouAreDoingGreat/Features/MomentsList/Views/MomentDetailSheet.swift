@@ -25,6 +25,12 @@ struct MomentDetailSheet: View {
     @State private var selectedTag: IdentifiableTag? = nil
     @State private var deletingMomentId: UUID? = nil
 
+    // Wrapper to make tag identifiable for sheet presentation
+    private struct IdentifiableTag: Identifiable {
+        let id = UUID()
+        let value: String
+    }
+
     init(
         moments: [Moment],
         initialIndex: Int,

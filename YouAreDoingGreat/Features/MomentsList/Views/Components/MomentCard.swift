@@ -12,6 +12,12 @@ struct MomentCard: View {
     @State private var syncRotation: Double = 0
     @State private var selectedTag: IdentifiableTag? = nil
 
+    // Wrapper to make tag identifiable for sheet presentation
+    private struct IdentifiableTag: Identifiable {
+        let id = UUID()
+        let value: String
+    }
+
     private var timeOfDay: TimeOfDay {
         TimeOfDay(from: moment.happenedAt)
     }
