@@ -8,7 +8,6 @@ import SwiftData
 struct FilteredMomentsSheet: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
-    @Query(sort: \Moment.happenedAt, order: .reverse) private var allMoments: [Moment]
 
     let tag: String
 
@@ -16,14 +15,10 @@ struct FilteredMomentsSheet: View {
     @State private var showContent = false
     @State private var selectedMomentIndex: Int?
     @State private var showMomentDetail = false
+    @State private var moments: [Moment] = []
 
     private var repository: MomentRepository {
         SwiftDataMomentRepository(modelContext: modelContext)
-    }
-
-    // Filter moments by tag (client-side filtering required for dynamic tag parameter)
-    private var moments: [Moment] {
-        allMoments.filter { $0.tags.contains(tag) }
     }
 
     var body: some View {
@@ -43,6 +38,7 @@ struct FilteredMomentsSheet: View {
             }
             .navigationBarTitleDisplayMode(.inline)
             .onAppear {
+                loadMoments()
                 startAnimations()
             }
             .toolbar {
@@ -103,18 +99,25 @@ struct FilteredMomentsSheet: View {
         }
         .opacity(showContent ? 1 : 0)
         .sheet(isPresented: $showMomentDetail) {
-            if let index = selectedMomentIndex {
-                MomentDetailSheet(
-                    moments: moments,
-                    initialIndex: index,
-                    repository: repository,
-                    onFavoriteToggle: { moment in
-                        await toggleFavorite(moment)
-                    },
-                    onDelete: { moment in
-                        await deleteMoment(moment)
-                    }
-                )
+            Group {
+                if let index = selectedMomentIndex {
+                    // Create a temporary ViewModel for MomentDetailSheet
+                    let momentService = MomentService(apiClient: DefaultAPIClient(), repository: repository)
+                    let vm = MomentsListViewModel(momentService: momentService, repository: repository)
+                    let _ = { vm.moments = moments }()
+
+                    MomentDetailSheet(
+                        moments: moments,
+                        initialIndex: index,
+                        viewModel: vm
+                    )
+                } else {
+                    EmptyView()
+                }
+            }
+            .onDisappear {
+                // Reload moments after detail sheet dismisses (in case of deletion)
+                loadMoments()
             }
         }
     }
@@ -136,6 +139,27 @@ struct FilteredMomentsSheet: View {
                 .padding(.horizontal, 32)
         }
         .opacity(showContent ? 1 : 0)
+    }
+
+    // MARK: - Data Loading
+
+    private func loadMoments() {
+        // Fetch all moments and filter by tag
+        // This avoids SwiftData @Query auto-updates that can access deleted moments
+        Task { @MainActor in
+            do {
+                let fetchDescriptor = FetchDescriptor<Moment>(
+                    sortBy: [SortDescriptor(\.happenedAt, order: .reverse)]
+                )
+                let allMoments = try modelContext.fetch(fetchDescriptor)
+
+                // Filter by tag - this happens in controlled context
+                moments = allMoments.filter { $0.tags.contains(tag) }
+            } catch {
+                print("⚠️ Failed to load filtered moments: \(error)")
+                moments = []
+            }
+        }
     }
 
     // MARK: - Animations
@@ -164,12 +188,23 @@ struct FilteredMomentsSheet: View {
         }
     }
 
-    private func deleteMoment(_ moment: Moment) async {
+    private func deleteMomentByIds(clientId: UUID, serverId: String?) async {
         do {
+            // Fetch the moment from repository using clientId
+            guard let moment = try await repository.fetch(clientId: clientId) else {
+                ToastService.shared.showError("Couldn't find moment. Try again?")
+                return
+            }
             try await repository.delete(moment)
         } catch {
             ToastService.shared.showError("Couldn't delete moment. Try again?")
         }
+    }
+
+    private func deleteMoment(_ moment: Moment) async {
+        let clientId = moment.clientId
+        let serverId = moment.serverId
+        await deleteMomentByIds(clientId: clientId, serverId: serverId)
     }
 }
 

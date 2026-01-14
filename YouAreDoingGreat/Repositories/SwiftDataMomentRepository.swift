@@ -33,9 +33,11 @@ final class SwiftDataMomentRepository: MomentRepository {
     }
 
     func delete(_ moment: Moment) async throws {
+        // Capture clientId BEFORE deletion - SwiftData objects become invalid after delete
+        let clientId = moment.clientId
         modelContext.delete(moment)
         try modelContext.save()
-        logger.info("Deleted moment with clientId: \(moment.clientId.uuidString)")
+        logger.info("Deleted moment with clientId: \(clientId.uuidString)")
     }
 
     func update(_ moment: Moment) async throws {

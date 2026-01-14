@@ -57,13 +57,7 @@ struct MomentsListView: View {
                     MomentDetailSheet(
                         moments: viewModel.moments,
                         initialIndex: index,
-                        repository: viewModel.repository,
-                        onFavoriteToggle: { m in
-                            await viewModel.toggleFavorite(m)
-                        },
-                        onDelete: { m in
-                            await viewModel.deleteMoment(m)
-                        }
+                        viewModel: viewModel
                     )
                     .presentationDetents([.large])
                     .presentationDragIndicator(.visible)
