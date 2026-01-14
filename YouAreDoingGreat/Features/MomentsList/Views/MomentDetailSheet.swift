@@ -1,6 +1,13 @@
 import SwiftUI
 import SwiftData
 
+// MARK: - Constants
+
+private enum MomentDetailConstants {
+    /// Delay in nanoseconds to allow confirmation dialog to dismiss cleanly before proceeding with deletion
+    static let dialogDismissDelay: UInt64 = 50_000_000  // 0.05 seconds
+}
+
 // MARK: - Moment Detail Sheet
 // Bottom sheet that displays full moment details with praise
 // Includes action buttons for favorite and delete
@@ -30,8 +37,12 @@ struct MomentDetailSheet: View {
     }
 
     // Current moment based on swipe position
-    private var currentMoment: Moment {
-        moments[currentIndex]
+    // Returns nil if index is out of bounds (e.g., during deletion)
+    private var currentMoment: Moment? {
+        guard currentIndex >= 0 && currentIndex < moments.count else {
+            return nil
+        }
+        return moments[currentIndex]
     }
 
     var body: some View {
@@ -72,14 +83,15 @@ struct MomentDetailSheet: View {
 
                         ActionButtonRow(
                             primaryTitle: "Nice",
-                            isHugged: currentMoment.isFavorite,
+                            isHugged: currentMoment?.isFavorite ?? false,
                             showDelete: true,
                             onPrimary: {
                                 UIImpactFeedbackGenerator(style: .light).impactOccurred()
                                 dismiss()
                             },
                             onHug: {
-                                Task { await viewModel.toggleFavorite(currentMoment) }
+                                guard let moment = currentMoment else { return }
+                                Task { await viewModel.toggleFavorite(moment) }
                             },
                             onDelete: {
                                 // Show delete confirmation for current moment
@@ -95,12 +107,13 @@ struct MomentDetailSheet: View {
                             titleVisibility: .visible
                         ) {
                             Button("Delete", role: .destructive) {
-                                let clientId = currentMoment.clientId
-                                let serverId = currentMoment.serverId
+                                guard let moment = currentMoment else { return }
+                                let clientId = moment.clientId
+                                let serverId = moment.serverId
 
                                 Task {
                                     // Small delay to let confirmation dialog dismiss cleanly
-                                    try? await Task.sleep(nanoseconds: 50_000_000) // 0.05 second
+                                    try? await Task.sleep(nanoseconds: MomentDetailConstants.dialogDismissDelay)
 
                                     // Mark moment as deleting to hide content immediately
                                     deletingMomentId = clientId

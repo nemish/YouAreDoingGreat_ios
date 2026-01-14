@@ -101,9 +101,6 @@ final class MomentDetailViewModel: PraiseViewModelProtocol {
         self.repository = repository
         self.onFavoriteToggle = onFavoriteToggle
         self.onDelete = onDelete
-
-//        logger.info("🔍 MomentDetailViewModel init - clientId: \(moment.clientId), serverId: \(moment.serverId ?? "nil"), isSynced: \(moment.isSynced)")
-//        logger.info("🔍 Praise: \(moment.praise?.prefix(50) ?? "nil"), Tags: \(moment.tags)")
     }
 
     // MARK: - PraiseViewModelProtocol Methods

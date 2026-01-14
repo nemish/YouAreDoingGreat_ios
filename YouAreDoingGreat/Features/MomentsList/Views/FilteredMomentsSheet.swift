@@ -10,6 +10,7 @@ struct FilteredMomentsSheet: View {
     @Environment(\.modelContext) private var modelContext
 
     let tag: String
+    let viewModel: MomentsListViewModel?
 
     @State private var showHeader = false
     @State private var showContent = false
@@ -17,8 +18,24 @@ struct FilteredMomentsSheet: View {
     @State private var showMomentDetail = false
     @State private var moments: [Moment] = []
 
+    init(tag: String, viewModel: MomentsListViewModel? = nil) {
+        self.tag = tag
+        self.viewModel = viewModel
+    }
+
     private var repository: MomentRepository {
         SwiftDataMomentRepository(modelContext: modelContext)
+    }
+
+    private func makeViewModel() -> MomentsListViewModel {
+        // If ViewModel was injected, use it; otherwise create a temporary one
+        if let viewModel = viewModel {
+            return viewModel
+        }
+
+        // Create temporary ViewModel for child sheets (MomentDetailSheet)
+        let momentService = MomentService(apiClient: DefaultAPIClient(), repository: repository)
+        return MomentsListViewModel(momentService: momentService, repository: repository)
     }
 
     var body: some View {
@@ -101,9 +118,8 @@ struct FilteredMomentsSheet: View {
         .sheet(isPresented: $showMomentDetail) {
             Group {
                 if let index = selectedMomentIndex {
-                    // Create a temporary ViewModel for MomentDetailSheet
-                    let momentService = MomentService(apiClient: DefaultAPIClient(), repository: repository)
-                    let vm = MomentsListViewModel(momentService: momentService, repository: repository)
+                    // Use injected or create temporary ViewModel for MomentDetailSheet
+                    let vm = makeViewModel()
                     let _ = { vm.moments = moments }()
 
                     MomentDetailSheet(
@@ -144,17 +160,21 @@ struct FilteredMomentsSheet: View {
     // MARK: - Data Loading
 
     private func loadMoments() {
-        // Fetch all moments and filter by tag
-        // This avoids SwiftData @Query auto-updates that can access deleted moments
+        // Fetch moments filtered by tag using SwiftData predicate
+        // Manual fetching (not @Query) avoids auto-updates that can access deleted moments
         Task { @MainActor in
             do {
+                // Use predicate to filter at database level instead of in-memory
+                let predicate = #Predicate<Moment> { moment in
+                    moment.tags.contains(tag)
+                }
+
                 let fetchDescriptor = FetchDescriptor<Moment>(
+                    predicate: predicate,
                     sortBy: [SortDescriptor(\.happenedAt, order: .reverse)]
                 )
-                let allMoments = try modelContext.fetch(fetchDescriptor)
 
-                // Filter by tag - this happens in controlled context
-                moments = allMoments.filter { $0.tags.contains(tag) }
+                moments = try modelContext.fetch(fetchDescriptor)
             } catch {
                 print("⚠️ Failed to load filtered moments: \(error)")
                 moments = []
@@ -172,39 +192,6 @@ struct FilteredMomentsSheet: View {
         withAnimation(.easeIn(duration: 0.5).delay(0.3)) {
             showContent = true
         }
-    }
-
-    // MARK: - Actions
-
-    private func toggleFavorite(_ moment: Moment) async {
-        moment.isFavorite.toggle()
-
-        do {
-            try await repository.update(moment)
-        } catch {
-            // Revert on failure
-            moment.isFavorite.toggle()
-            ToastService.shared.showError("Couldn't update moment. Try again?")
-        }
-    }
-
-    private func deleteMomentByIds(clientId: UUID, serverId: String?) async {
-        do {
-            // Fetch the moment from repository using clientId
-            guard let moment = try await repository.fetch(clientId: clientId) else {
-                ToastService.shared.showError("Couldn't find moment. Try again?")
-                return
-            }
-            try await repository.delete(moment)
-        } catch {
-            ToastService.shared.showError("Couldn't delete moment. Try again?")
-        }
-    }
-
-    private func deleteMoment(_ moment: Moment) async {
-        let clientId = moment.clientId
-        let serverId = moment.serverId
-        await deleteMomentByIds(clientId: clientId, serverId: serverId)
     }
 }
 
