@@ -224,13 +224,15 @@ final class MomentService {
         try await repository.delete(moment)
 
         // Delete from server if moment has been synced
-        if let serverId = serverId {
+        // Use the fetched moment's serverId to handle race conditions where
+        // background sync completed after the UI captured the serverId
+        if let serverIdToDelete = moment.serverId {
             let _: EmptyResponse = try await apiClient.request(
-                endpoint: .deleteMoment(id: serverId),
+                endpoint: .deleteMoment(id: serverIdToDelete),
                 method: .delete,
                 body: nil as String?
             )
-            logger.info("Moment deleted from server")
+            logger.info("Moment deleted from server: \(serverIdToDelete)")
         } else {
             logger.warning("Moment not yet synced to server, deleted locally only")
         }
