@@ -118,11 +118,11 @@ struct MomentDetailSheet: View {
                                     // Mark moment as deleting to hide content immediately
                                     deletingMomentId = clientId
 
-                                    // Dismiss sheet immediately
-                                    dismiss()
-
-                                    // Deletion happens in background
+                                    // Delete moment first to avoid race condition
                                     await viewModel.deleteMomentByIds(clientId: clientId, serverId: serverId)
+
+                                    // Dismiss sheet after deletion completes
+                                    dismiss()
                                 }
                             }
                             Button("Cancel", role: .cancel) {}
@@ -184,9 +184,6 @@ private struct MomentDetailContent: View {
             repository: viewModel.repository,
             onFavoriteToggle: { m in
                 await viewModel.toggleFavorite(m)
-            },
-            onDelete: { _, _ in
-                // No-op: we'll call viewModel.deleteMoment directly
             }
         )
         _detailViewModel = State(initialValue: vm)

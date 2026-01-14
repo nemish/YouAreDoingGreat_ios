@@ -15,7 +15,6 @@ final class MomentDetailViewModel: PraiseViewModelProtocol {
     private let moment: Moment
     private let repository: MomentRepository
     private let onFavoriteToggle: (Moment) async -> Void
-    private let onDelete: (String, String?) async -> Void  // Accept String to avoid UUID corruption
 
     // MARK: - PraiseViewModelProtocol Properties
 
@@ -94,13 +93,11 @@ final class MomentDetailViewModel: PraiseViewModelProtocol {
     init(
         moment: Moment,
         repository: MomentRepository,
-        onFavoriteToggle: @escaping (Moment) async -> Void,
-        onDelete: @escaping (String, String?) async -> Void  // Accept String to avoid UUID corruption
+        onFavoriteToggle: @escaping (Moment) async -> Void
     ) {
         self.moment = moment
         self.repository = repository
         self.onFavoriteToggle = onFavoriteToggle
-        self.onDelete = onDelete
     }
 
     // MARK: - PraiseViewModelProtocol Methods
@@ -151,12 +148,5 @@ final class MomentDetailViewModel: PraiseViewModelProtocol {
 
     func toggleHug() async {
         await toggleFavorite()
-    }
-
-    func deleteMoment() async {
-        // Capture IDs as Strings BEFORE calling onDelete - SwiftData objects can become invalid
-        let clientIdString = moment.clientId.uuidString
-        let serverId = moment.serverId
-        await onDelete(clientIdString, serverId)
     }
 }

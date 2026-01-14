@@ -120,13 +120,16 @@ struct FilteredMomentsSheet: View {
                 if let index = selectedMomentIndex {
                     // Use injected or create temporary ViewModel for MomentDetailSheet
                     let vm = makeViewModel()
-                    let _ = { vm.moments = moments }()
 
                     MomentDetailSheet(
                         moments: moments,
                         initialIndex: index,
                         viewModel: vm
                     )
+                    .onAppear {
+                        // Set moments on the ViewModel when sheet appears
+                        vm.moments = moments
+                    }
                 } else {
                     EmptyView()
                 }
