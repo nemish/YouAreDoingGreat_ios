@@ -220,19 +220,22 @@ final class MomentService {
             throw NSError(domain: "MomentService", code: 404, userInfo: [NSLocalizedDescriptionKey: "Moment not found"])
         }
 
+        // Capture serverId BEFORE deleting to avoid accessing invalidated SwiftData object
+        // Use the fetched moment's serverId to handle race conditions where
+        // background sync completed after the UI captured the serverId
+        let serverIdToDelete = moment.serverId
+
         // Delete from local storage
         try await repository.delete(moment)
 
         // Delete from server if moment has been synced
-        // Use the fetched moment's serverId to handle race conditions where
-        // background sync completed after the UI captured the serverId
-        if let serverIdToDelete = moment.serverId {
+        if let serverId = serverIdToDelete {
             let _: EmptyResponse = try await apiClient.request(
-                endpoint: .deleteMoment(id: serverIdToDelete),
+                endpoint: .deleteMoment(id: serverId),
                 method: .delete,
                 body: nil as String?
             )
-            logger.info("Moment deleted from server: \(serverIdToDelete)")
+            logger.info("Moment deleted from server: \(serverId)")
         } else {
             logger.warning("Moment not yet synced to server, deleted locally only")
         }
