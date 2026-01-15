@@ -22,6 +22,7 @@ struct MomentDetailSheet: View {
 
     @State private var currentIndex: Int
     @State private var showDeleteConfirmation = false
+    @State private var selectedTag: IdentifiableTag? = nil
     @State private var deletingMomentId: UUID? = nil
 
     init(
