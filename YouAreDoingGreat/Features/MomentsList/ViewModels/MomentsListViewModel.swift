@@ -260,15 +260,15 @@ final class MomentsListViewModel {
         }
     }
 
-    func deleteMoment(_ moment: Moment) async {
-        logger.info("Deleting moment")
+    func deleteMomentByIds(clientId: UUID, serverId: String?) async {
+        logger.info("Deleting moment by IDs: \(clientId)")
 
         do {
-            try await momentService.deleteMoment(moment)
+            try await momentService.deleteMoment(clientId: clientId, serverId: serverId)
 
             // Animate the removal with fade + shrink
             withAnimation(.easeOut(duration: 0.45)) {
-                moments.removeAll { $0.clientId == moment.clientId }
+                moments.removeAll { $0.clientId == clientId }
                 groupedMoments = groupMomentsByDate(moments)
             }
 
@@ -277,6 +277,13 @@ final class MomentsListViewModel {
         } catch {
             handleError(error)
         }
+    }
+
+    func deleteMoment(_ moment: Moment) async {
+        // Capture IDs immediately to avoid accessing invalid SwiftData object
+        let clientId = moment.clientId
+        let serverId = moment.serverId
+        await deleteMomentByIds(clientId: clientId, serverId: serverId)
     }
 
     /// Toggle favorites-only filter mode

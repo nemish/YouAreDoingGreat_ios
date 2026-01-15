@@ -240,7 +240,7 @@ struct MomentServiceTests {
             response: DeleteResponse()
         )
 
-        try await service.deleteMoment(moment)
+        try await service.deleteMoment(clientId: moment.clientId, serverId: moment.serverId)
 
         let fetchedMoment = try await repository.fetch(clientId: moment.clientId)
         #expect(fetchedMoment == nil)
@@ -252,7 +252,7 @@ struct MomentServiceTests {
         let moment = MomentFixtures.unsyncedMoment(text: "Local only")
         try await repository.save(moment)
 
-        try await service.deleteMoment(moment)
+        try await service.deleteMoment(clientId: moment.clientId, serverId: moment.serverId)
 
         let fetchedMoment = try await repository.fetch(clientId: moment.clientId)
         #expect(fetchedMoment == nil)

@@ -10,6 +10,7 @@ struct MomentCard: View {
     @State private var glowIntensity: CGFloat = 0
     @State private var previousTagsCount: Int = 0
     @State private var syncRotation: Double = 0
+    @State private var selectedTag: IdentifiableTag? = nil
 
     private var timeOfDay: TimeOfDay {
         TimeOfDay(from: moment.happenedAt)
@@ -92,7 +93,9 @@ struct MomentCard: View {
 
             // Tags
             if !moment.tags.isEmpty {
-                TagsView(tags: moment.tags)
+                TagsView(tags: moment.tags, onTagTap: { tag in
+                    selectedTag = IdentifiableTag(value: tag)
+                })
                     .padding(.top, 12)
                     .transition(.asymmetric(
                         insertion: .opacity.combined(with: .move(edge: .top)).combined(with: .scale(scale: 0.95)),
@@ -144,6 +147,9 @@ struct MomentCard: View {
                 // Tags were added (enrichment completed)
                 previousTagsCount = newValue
             }
+        }
+        .sheet(item: $selectedTag) { identifiableTag in
+            FilteredMomentsSheet(tag: identifiableTag.value)
         }
     }
 

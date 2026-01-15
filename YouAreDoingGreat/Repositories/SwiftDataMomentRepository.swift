@@ -33,9 +33,11 @@ final class SwiftDataMomentRepository: MomentRepository {
     }
 
     func delete(_ moment: Moment) async throws {
+        // Capture clientId BEFORE deletion - SwiftData objects become invalid after delete
+        let clientId = moment.clientId
         modelContext.delete(moment)
         try modelContext.save()
-        logger.info("Deleted moment with clientId: \(moment.clientId.uuidString)")
+        logger.info("Deleted moment with clientId: \(clientId.uuidString)")
     }
 
     func update(_ moment: Moment) async throws {
@@ -86,5 +88,17 @@ final class SwiftDataMomentRepository: MomentRepository {
 
         try modelContext.save()
         logger.info("Successfully cleared local database")
+    }
+
+    func fetchByTag(_ tag: String) async throws -> [Moment] {
+        let descriptor = FetchDescriptor<Moment>(
+            predicate: #Predicate<Moment> { moment in
+                moment.tags.contains(tag)
+            },
+            sortBy: [SortDescriptor(\.happenedAt, order: .reverse)]
+        )
+        let moments = try modelContext.fetch(descriptor)
+        logger.info("Fetched \(moments.count) moments with tag: \(tag)")
+        return moments
     }
 }

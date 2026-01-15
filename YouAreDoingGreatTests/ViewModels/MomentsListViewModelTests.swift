@@ -281,6 +281,134 @@ struct MomentsListViewModelTests {
         #expect(viewModel.moments.count == 0)
     }
 
+    @Test("Delete moment by IDs removes from list")
+    func deleteMomentByIds() async throws {
+        let moment = MomentFixtures.syncedMoment(text: "To delete")
+        moment.serverId = "server123"
+        try await repository.save(moment)
+
+        // Load moments first
+        let response = MomentFixtures.paginatedResponse(moments: [])
+        try mockAPI.setResponse(for: "\(AppConfig.apiBaseURL)/moments?limit=50", response: response)
+        await viewModel.loadMoments()
+
+        #expect(viewModel.moments.count == 1)
+
+        // Mock delete response
+        struct DeleteResponse: Encodable {}
+        try mockAPI.setResponse(
+            for: "\(AppConfig.apiBaseURL)/moments/server123",
+            response: DeleteResponse()
+        )
+
+        let clientId = moment.clientId
+        let serverId = moment.serverId
+
+        await viewModel.deleteMomentByIds(clientId: clientId, serverId: serverId)
+
+        #expect(viewModel.moments.count == 0)
+    }
+
+    @Test("Delete moment by IDs with nil serverId deletes locally")
+    func deleteMomentByIdsWithNilServerId() async throws {
+        let moment = MomentFixtures.moment(text: "Unsynced moment")
+        moment.isSynced = false
+        moment.serverId = nil
+        try await repository.save(moment)
+
+        // Load moments first
+        let response = MomentFixtures.paginatedResponse(moments: [])
+        try mockAPI.setResponse(for: "\(AppConfig.apiBaseURL)/moments?limit=50", response: response)
+        await viewModel.loadMoments()
+
+        #expect(viewModel.moments.count == 1)
+
+        let clientId = moment.clientId
+
+        await viewModel.deleteMomentByIds(clientId: clientId, serverId: nil)
+
+        #expect(viewModel.moments.count == 0)
+    }
+
+    @Test("Delete moment updates grouped moments")
+    func deleteMomentUpdatesGroupedMoments() async throws {
+        let today = Date()
+        let yesterday = today.addingTimeInterval(-86400)
+
+        let moment1 = MomentFixtures.syncedMoment(text: "Today 1")
+        moment1.serverId = "server1"
+        moment1.happenedAt = today
+
+        let moment2 = MomentFixtures.syncedMoment(text: "Today 2")
+        moment2.serverId = "server2"
+        moment2.happenedAt = today
+
+        let moment3 = MomentFixtures.syncedMoment(text: "Yesterday")
+        moment3.serverId = "server3"
+        moment3.happenedAt = yesterday
+
+        try await repository.save(moment1)
+        try await repository.save(moment2)
+        try await repository.save(moment3)
+
+        // Load moments first
+        let response = MomentFixtures.paginatedResponse(moments: [])
+        try mockAPI.setResponse(for: "\(AppConfig.apiBaseURL)/moments?limit=50", response: response)
+        await viewModel.loadMoments()
+
+        #expect(viewModel.moments.count == 3)
+        #expect(viewModel.groupedMoments.count == 2) // 2 groups (today, yesterday)
+
+        // Mock delete response
+        struct DeleteResponse: Encodable {}
+        try mockAPI.setResponse(
+            for: "\(AppConfig.apiBaseURL)/moments/server1",
+            response: DeleteResponse()
+        )
+
+        await viewModel.deleteMomentByIds(clientId: moment1.clientId, serverId: moment1.serverId)
+
+        #expect(viewModel.moments.count == 2)
+        #expect(viewModel.groupedMoments.count == 2) // Still 2 groups
+    }
+
+    @Test("Delete last moment in group removes group")
+    func deleteLastMomentInGroupRemovesGroup() async throws {
+        let today = Date()
+        let yesterday = today.addingTimeInterval(-86400)
+
+        let moment1 = MomentFixtures.syncedMoment(text: "Today")
+        moment1.serverId = "server1"
+        moment1.happenedAt = today
+
+        let moment2 = MomentFixtures.syncedMoment(text: "Yesterday")
+        moment2.serverId = "server2"
+        moment2.happenedAt = yesterday
+
+        try await repository.save(moment1)
+        try await repository.save(moment2)
+
+        // Load moments first
+        let response = MomentFixtures.paginatedResponse(moments: [])
+        try mockAPI.setResponse(for: "\(AppConfig.apiBaseURL)/moments?limit=50", response: response)
+        await viewModel.loadMoments()
+
+        #expect(viewModel.moments.count == 2)
+        #expect(viewModel.groupedMoments.count == 2)
+
+        // Mock delete response
+        struct DeleteResponse: Encodable {}
+        try mockAPI.setResponse(
+            for: "\(AppConfig.apiBaseURL)/moments/server1",
+            response: DeleteResponse()
+        )
+
+        await viewModel.deleteMomentByIds(clientId: moment1.clientId, serverId: moment1.serverId)
+
+        #expect(viewModel.moments.count == 1)
+        #expect(viewModel.groupedMoments.count == 1) // Only yesterday group remains
+    }
+
     // MARK: - Detail Sheet Tests
 
     @Test("Show detail sets state")
