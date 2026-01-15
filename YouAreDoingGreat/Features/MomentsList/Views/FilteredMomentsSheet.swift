@@ -7,16 +7,35 @@ import SwiftData
 
 struct FilteredMomentsSheet: View {
     @Environment(\.dismiss) private var dismiss
-    @Query(sort: \Moment.happenedAt, order: .reverse) private var allMoments: [Moment]
+    @Environment(\.modelContext) private var modelContext
 
     let tag: String
+    let viewModel: MomentsListViewModel?
 
     @State private var showHeader = false
     @State private var showContent = false
+    @State private var selectedMomentIndex: Int?
+    @State private var showMomentDetail = false
+    @State private var moments: [Moment] = []
 
-    // Filter moments by tag
-    private var moments: [Moment] {
-        allMoments.filter { $0.tags.contains(tag) }
+    init(tag: String, viewModel: MomentsListViewModel? = nil) {
+        self.tag = tag
+        self.viewModel = viewModel
+    }
+
+    private var repository: MomentRepository {
+        SwiftDataMomentRepository(modelContext: modelContext)
+    }
+
+    private func makeViewModel() -> MomentsListViewModel {
+        // If ViewModel was injected, use it; otherwise create a temporary one
+        if let viewModel = viewModel {
+            return viewModel
+        }
+
+        // Create temporary ViewModel for child sheets (MomentDetailSheet)
+        let momentService = MomentService(apiClient: DefaultAPIClient(), repository: repository)
+        return MomentsListViewModel(momentService: momentService, repository: repository)
     }
 
     var body: some View {
@@ -36,6 +55,7 @@ struct FilteredMomentsSheet: View {
             }
             .navigationBarTitleDisplayMode(.inline)
             .onAppear {
+                loadMoments()
                 startAnimations()
             }
             .toolbar {
@@ -77,8 +97,13 @@ struct FilteredMomentsSheet: View {
     private var momentsList: some View {
         ScrollView {
             LazyVStack(spacing: 12) {
-                ForEach(moments) { moment in
+                ForEach(Array(moments.enumerated()), id: \.element.id) { index, moment in
                     MomentCard(moment: moment)
+                        .onTapGesture {
+                            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                            selectedMomentIndex = index
+                            showMomentDetail = true
+                        }
                         .transition(.asymmetric(
                             insertion: .opacity.combined(with: .move(edge: .top)),
                             removal: .opacity
@@ -90,6 +115,30 @@ struct FilteredMomentsSheet: View {
             .padding(.bottom, 40)
         }
         .opacity(showContent ? 1 : 0)
+        .sheet(isPresented: $showMomentDetail) {
+            Group {
+                if let index = selectedMomentIndex {
+                    // Use injected or create temporary ViewModel for MomentDetailSheet
+                    let vm = makeViewModel()
+
+                    MomentDetailSheet(
+                        moments: moments,
+                        initialIndex: index,
+                        viewModel: vm
+                    )
+                    .onAppear {
+                        // Set moments on the ViewModel when sheet appears
+                        vm.moments = moments
+                    }
+                } else {
+                    EmptyView()
+                }
+            }
+            .onDisappear {
+                // Reload moments after detail sheet dismisses (in case of deletion)
+                loadMoments()
+            }
+        }
     }
 
     private var emptyState: some View {
@@ -109,6 +158,31 @@ struct FilteredMomentsSheet: View {
                 .padding(.horizontal, 32)
         }
         .opacity(showContent ? 1 : 0)
+    }
+
+    // MARK: - Data Loading
+
+    private func loadMoments() {
+        // Fetch moments filtered by tag using SwiftData predicate
+        // Manual fetching (not @Query) avoids auto-updates that can access deleted moments
+        Task { @MainActor in
+            do {
+                // Use predicate to filter at database level instead of in-memory
+                let predicate = #Predicate<Moment> { moment in
+                    moment.tags.contains(tag)
+                }
+
+                let fetchDescriptor = FetchDescriptor<Moment>(
+                    predicate: predicate,
+                    sortBy: [SortDescriptor(\.happenedAt, order: .reverse)]
+                )
+
+                moments = try modelContext.fetch(fetchDescriptor)
+            } catch {
+                print("⚠️ Failed to load filtered moments: \(error)")
+                moments = []
+            }
+        }
     }
 
     // MARK: - Animations

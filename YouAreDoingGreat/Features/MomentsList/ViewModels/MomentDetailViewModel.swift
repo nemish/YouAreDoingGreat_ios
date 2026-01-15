@@ -15,7 +15,6 @@ final class MomentDetailViewModel: PraiseViewModelProtocol {
     private let moment: Moment
     private let repository: MomentRepository
     private let onFavoriteToggle: (Moment) async -> Void
-    private let onDelete: (Moment) async -> Void
 
     // MARK: - PraiseViewModelProtocol Properties
 
@@ -94,16 +93,11 @@ final class MomentDetailViewModel: PraiseViewModelProtocol {
     init(
         moment: Moment,
         repository: MomentRepository,
-        onFavoriteToggle: @escaping (Moment) async -> Void,
-        onDelete: @escaping (Moment) async -> Void
+        onFavoriteToggle: @escaping (Moment) async -> Void
     ) {
         self.moment = moment
         self.repository = repository
         self.onFavoriteToggle = onFavoriteToggle
-        self.onDelete = onDelete
-
-        logger.info("🔍 MomentDetailViewModel init - clientId: \(moment.clientId), serverId: \(moment.serverId ?? "nil"), isSynced: \(moment.isSynced)")
-        logger.info("🔍 Praise: \(moment.praise?.prefix(50) ?? "nil"), Tags: \(moment.tags)")
     }
 
     // MARK: - PraiseViewModelProtocol Methods
@@ -154,9 +148,5 @@ final class MomentDetailViewModel: PraiseViewModelProtocol {
 
     func toggleHug() async {
         await toggleFavorite()
-    }
-
-    func deleteMoment() async {
-        await onDelete(moment)
     }
 }

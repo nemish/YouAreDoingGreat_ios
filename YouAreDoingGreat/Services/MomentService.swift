@@ -211,20 +211,31 @@ final class MomentService {
     }
 
     /// Delete moment
-    func deleteMoment(_ moment: Moment) async throws {
-        logger.info("Deleting moment: \(moment.clientId.uuidString)")
+    func deleteMoment(clientId: UUID, serverId: String?) async throws {
+        logger.info("Deleting moment: \(clientId.uuidString)")
+
+        // Fetch the moment from local storage
+        guard let moment = try await repository.fetch(clientId: clientId) else {
+            logger.error("Moment not found for deletion: \(clientId.uuidString)")
+            throw NSError(domain: "MomentService", code: 404, userInfo: [NSLocalizedDescriptionKey: "Moment not found"])
+        }
+
+        // Capture serverId BEFORE deleting to avoid accessing invalidated SwiftData object
+        // Use the fetched moment's serverId to handle race conditions where
+        // background sync completed after the UI captured the serverId
+        let serverIdToDelete = moment.serverId
 
         // Delete from local storage
         try await repository.delete(moment)
 
         // Delete from server if moment has been synced
-        if let serverId = moment.serverId {
+        if let serverId = serverIdToDelete {
             let _: EmptyResponse = try await apiClient.request(
                 endpoint: .deleteMoment(id: serverId),
                 method: .delete,
                 body: nil as String?
             )
-            logger.info("Moment deleted from server")
+            logger.info("Moment deleted from server: \(serverId)")
         } else {
             logger.warning("Moment not yet synced to server, deleted locally only")
         }
