@@ -261,20 +261,26 @@ final class MomentsListViewModel {
     }
 
     func deleteMomentByIds(clientId: UUID, serverId: String?) async {
-        logger.info("Deleting moment by IDs: \(clientId)")
+        logger.info("Deleting moment by IDs: \(clientId), serverId: \(serverId ?? "nil")")
 
         do {
             try await momentService.deleteMoment(clientId: clientId, serverId: serverId)
+            logger.info("✅ Moment deleted successfully from database")
 
             // Animate the removal with fade + shrink
             withAnimation(.easeOut(duration: 0.45)) {
+                let beforeCount = moments.count
                 moments.removeAll { $0.clientId == clientId }
+                let afterCount = moments.count
+                logger.info("Removed from moments array: \(beforeCount) → \(afterCount)")
                 groupedMoments = groupMomentsByDate(moments)
             }
 
             // Show deletion confirmation toast
             ToastService.shared.showDeleted()
+            logger.info("✅ Deletion complete, toast shown")
         } catch {
+            logger.error("❌ Failed to delete moment: \(error)")
             handleError(error)
         }
     }
@@ -284,6 +290,16 @@ final class MomentsListViewModel {
         let clientId = moment.clientId
         let serverId = moment.serverId
         await deleteMomentByIds(clientId: clientId, serverId: serverId)
+    }
+
+    /// Remove moment from in-memory array without deleting from database
+    /// Used when deletion is handled by MomentDeletionCoordinator
+    func removeMomentFromArray(clientId: UUID) {
+        withAnimation(.easeOut(duration: 0.45)) {
+            moments.removeAll { $0.clientId == clientId }
+            groupedMoments = groupMomentsByDate(moments)
+        }
+        logger.info("Removed moment \(clientId) from array")
     }
 
     /// Toggle favorites-only filter mode

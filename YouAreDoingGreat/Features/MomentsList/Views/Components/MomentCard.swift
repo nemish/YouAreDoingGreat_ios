@@ -6,6 +6,7 @@ import SwiftUI
 struct MomentCard: View {
     let moment: Moment
     let isHighlighted: Bool
+    let viewModel: MomentsListViewModel?
 
     @State private var glowIntensity: CGFloat = 0
     @State private var previousTagsCount: Int = 0
@@ -22,9 +23,14 @@ struct MomentCard: View {
         TimeOfDay(from: moment.happenedAt)
     }
 
-    init(moment: Moment, isHighlighted: Bool = false) {
+    init(
+        moment: Moment,
+        isHighlighted: Bool = false,
+        viewModel: MomentsListViewModel? = nil
+    ) {
         self.moment = moment
         self.isHighlighted = isHighlighted
+        self.viewModel = viewModel
         _previousTagsCount = State(initialValue: moment.tags.count)
     }
 
@@ -155,7 +161,11 @@ struct MomentCard: View {
             }
         }
         .sheet(item: $selectedTag) { identifiableTag in
-            FilteredMomentsSheet(tag: identifiableTag.value)
+            // Open filtered list view for the tapped tag
+            FilteredMomentsListView(
+                tag: identifiableTag.value,
+                viewModel: viewModel
+            )
         }
     }
 

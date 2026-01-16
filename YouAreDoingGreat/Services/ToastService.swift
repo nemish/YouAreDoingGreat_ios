@@ -32,12 +32,14 @@ struct ToastMessage: Equatable {
     let message: String
     let style: Style
     let duration: TimeInterval
+    let undoAction: (() -> Void)?
 
-    init(message: String, style: Style = .info, duration: TimeInterval = 3.0) {
+    init(message: String, style: Style = .info, duration: TimeInterval = 3.0, undoAction: (() -> Void)? = nil) {
         self.id = UUID()
         self.message = message
         self.style = style
         self.duration = duration
+        self.undoAction = undoAction
     }
 
     static func == (lhs: ToastMessage, rhs: ToastMessage) -> Bool {
@@ -61,22 +63,22 @@ final class ToastService {
     // MARK: - Public Methods
 
     /// Show a toast with custom message and style
-    func show(_ message: String, style: ToastMessage.Style = .info, duration: TimeInterval = 3.0) {
+    func show(_ message: String, style: ToastMessage.Style = .info, duration: TimeInterval = 3.0, undoAction: (() -> Void)? = nil) {
         // Cancel any pending dismiss
         dismissTask?.cancel()
 
         // Show new toast
         withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
-            currentToast = ToastMessage(message: message, style: style, duration: duration)
+            currentToast = ToastMessage(message: message, style: style, duration: duration, undoAction: undoAction)
         }
 
         // Schedule auto-dismiss
         scheduleDismiss(after: duration)
     }
 
-    /// Convenience method for deletion confirmation
-    func showDeleted(_ itemName: String = "Moment") {
-        show("\(itemName) deleted", style: .deleted)
+    /// Convenience method for deletion confirmation with undo
+    func showDeleted(_ itemName: String = "Moment", undoAction: (() -> Void)? = nil) {
+        show("\(itemName) deleted", style: .deleted, duration: 5.0, undoAction: undoAction)
     }
 
     /// Convenience method for success messages

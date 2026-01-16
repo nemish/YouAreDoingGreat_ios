@@ -280,7 +280,11 @@ struct TimelineItemView: View {
                 .fill(Color.white.opacity(0.08))
         )
         .sheet(item: $selectedTag) { identifiableTag in
-            FilteredMomentsSheet(tag: identifiableTag.value)
+            // Open filtered list view for the tapped tag
+            FilteredMomentsListView(
+                tag: identifiableTag.value,
+                viewModel: nil  // Will create temporary viewModel
+            )
         }
     }
 }

@@ -52,15 +52,20 @@ struct MomentsListView: View {
                 await viewModel.refresh()
             }
             .sheet(isPresented: $viewModel.showMomentDetail) {
-                if let moment = viewModel.selectedMomentForDetail,
-                   let index = viewModel.moments.firstIndex(where: { $0.id == moment.id }) {
+                // Reload moments when sheet is dismissed to pick up any deletions
+                Task {
+                    await viewModel.refresh()
+                }
+            } content: {
+                if let moment = viewModel.selectedMomentForDetail {
                     MomentDetailSheet(
-                        moments: viewModel.moments,
-                        initialIndex: index,
+                        initialMomentId: moment.clientId,
+                        filterTag: nil,
                         viewModel: viewModel
                     )
                     .presentationDetents([.large])
                     .presentationDragIndicator(.visible)
+                    .toastContainer()  // Add toast support to sheet
                 }
             }
             .alert("Error", isPresented: $viewModel.showError) {
@@ -91,12 +96,16 @@ struct MomentsListView: View {
                 ForEach(viewModel.moments) { moment in
                     MomentCard(
                         moment: moment,
-                        isHighlighted: highlightService.highlightedMomentId == moment.clientId
+                        isHighlighted: highlightService.highlightedMomentId == moment.clientId,
+                        viewModel: viewModel
                     )
                     .onTapGesture {
                         viewModel.showDetail(for: moment)
                     }
-                    .transition(.opacity.combined(with: .scale(scale: 0.95)))
+                    .transition(.asymmetric(
+                        insertion: .opacity.combined(with: .scale(scale: 0.95)),
+                        removal: .move(edge: .leading).combined(with: .opacity)
+                    ))
                 }
 
                 // Show loading indicator or restriction banner
@@ -114,6 +123,7 @@ struct MomentsListView: View {
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 8)
+            .animation(.spring(response: 0.35, dampingFraction: 0.75), value: viewModel.moments.map { $0.id })
         }
     }
 
