@@ -192,6 +192,8 @@ struct MomentDetailSheet: View {
                         .background(Color(red: 0.06, green: 0.07, blue: 0.11))
                     }
                 }
+                .opacity(deletingMomentId != nil ? 0 : 1)
+                .animation(.easeOut(duration: 0.2), value: deletingMomentId)
             }
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
