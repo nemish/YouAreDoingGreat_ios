@@ -164,4 +164,33 @@ extension MomentFixtures {
             limitReached: limitReached
         )
     }
+
+    /// Create a MomentResponse for API response mocking
+    static func momentResponse(
+        id: String? = UUID().uuidString,
+        clientId: String? = UUID().uuidString,
+        text: String = "Test moment",
+        submittedAt: String = DateFormatters.iso8601Basic.string(from: Date()),
+        happenedAt: String = DateFormatters.iso8601Basic.string(from: Date()),
+        tz: String = "UTC",
+        timeAgo: Int? = nil,
+        praise: String? = "Great job!",
+        action: String? = "Keep going",
+        tags: [String]? = ["achievement"],
+        isFavorite: Bool? = false
+    ) -> MomentResponse {
+        return MomentResponse(
+            id: id,
+            clientId: clientId,
+            text: text,
+            submittedAt: submittedAt,
+            happenedAt: happenedAt,
+            tz: tz,
+            timeAgo: timeAgo,
+            praise: praise,
+            action: action,
+            tags: tags,
+            isFavorite: isFavorite
+        )
+    }
 }

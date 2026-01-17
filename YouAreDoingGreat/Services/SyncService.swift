@@ -332,6 +332,10 @@ struct EnrichMomentResponseWrapper: Decodable {
     let item: MomentResponse
 }
 
+struct RestoreMomentResponseWrapper: Decodable {
+    let item: MomentResponse
+}
+
 struct MomentResponse: Decodable {
     let id: String?
     let clientId: String?

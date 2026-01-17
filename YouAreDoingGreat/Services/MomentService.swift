@@ -240,4 +240,37 @@ final class MomentService {
             logger.warning("Moment not yet synced to server, deleted locally only")
         }
     }
+
+    /// Restore a deleted (archived) moment
+    func restoreMoment(serverId: String) async throws -> Moment {
+        logger.info("Restoring moment: \(serverId)")
+
+        // Call restore API endpoint
+        let response: RestoreMomentResponseWrapper = try await apiClient.request(
+            endpoint: .restoreMoment(id: serverId),
+            method: .post,
+            body: nil as String?
+        )
+
+        // Convert response to DTO
+        let dto = MomentDTO(
+            id: response.item.id,
+            clientId: response.item.clientId,
+            text: response.item.text,
+            submittedAt: response.item.submittedAt,
+            happenedAt: response.item.happenedAt,
+            tz: response.item.tz,
+            timeAgo: response.item.timeAgo,
+            praise: response.item.praise,
+            action: response.item.action,
+            tags: response.item.tags,
+            isFavorite: response.item.isFavorite
+        )
+
+        // Sync the restored moment back to local storage
+        let restoredMoment = try await syncMoment(dto)
+        logger.info("Moment restored successfully: \(serverId)")
+
+        return restoredMoment
+    }
 }

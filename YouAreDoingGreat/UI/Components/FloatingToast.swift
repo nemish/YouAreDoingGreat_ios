@@ -21,6 +21,22 @@ struct FloatingToast: View {
                 .font(.appBody)
                 .foregroundStyle(.textPrimary)
                 .lineLimit(2)
+
+            // Undo button (if available)
+            if let undoAction = toast.undoAction {
+                Spacer()
+
+                Button {
+                    undoAction()
+                    ToastService.shared.dismiss()
+                } label: {
+                    Text("Undo")
+                        .font(.appBody)
+                        .fontWeight(.semibold)
+                        .foregroundStyle(.appPrimary)
+                }
+                .buttonStyle(.plain)
+            }
         }
         .padding(.vertical, 14)
         .padding(.horizontal, 20)
@@ -45,7 +61,7 @@ struct FloatingToast: View {
         )
         .frame(maxWidth: 340)
         .accessibilityElement(children: .combine)
-        .accessibilityLabel(toast.message)
+        .accessibilityLabel(toast.undoAction != nil ? "\(toast.message). Undo available" : toast.message)
         .accessibilityAddTraits(.isStaticText)
     }
 }
@@ -57,16 +73,21 @@ struct ToastContainerModifier: ViewModifier {
     @State private var toastService = ToastService.shared
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
+    @State private var dragOffset: CGFloat = 0
+    @State private var isDragging = false
+
     func body(content: Content) -> some View {
         content
             .overlay(alignment: .bottom) {
                 if let toast = toastService.currentToast {
                     FloatingToast(toast: toast)
+                        .offset(x: dragOffset)
+                        .opacity(isDragging ? Double(1 - abs(dragOffset) / CGFloat(200)) : 1)
                         .transition(reduceMotion
                             ? .opacity
                             : .asymmetric(
                                 insertion: .move(edge: .bottom).combined(with: .opacity),
-                                removal: .opacity
+                                removal: .move(edge: .trailing).combined(with: .opacity)
                             )
                         )
                         .padding(.bottom, 70) // Above tab bar
@@ -74,9 +95,39 @@ struct ToastContainerModifier: ViewModifier {
                         .onTapGesture {
                             toastService.dismiss()
                         }
+                        .gesture(
+                            DragGesture()
+                                .onChanged { value in
+                                    // Only allow dragging to the right
+                                    if value.translation.width > 0 {
+                                        isDragging = true
+                                        dragOffset = value.translation.width
+                                    }
+                                }
+                                .onEnded { value in
+                                    // Dismiss if dragged more than 80 points to the right
+                                    if value.translation.width > 80 {
+                                        withAnimation(.easeOut(duration: 0.2)) {
+                                            dragOffset = 400 // Slide completely off screen
+                                        }
+                                        // Dismiss after animation
+                                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                                            toastService.dismiss()
+                                            dragOffset = 0
+                                            isDragging = false
+                                        }
+                                    } else {
+                                        // Spring back to original position
+                                        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                                            dragOffset = 0
+                                            isDragging = false
+                                        }
+                                    }
+                                }
+                        )
                 }
             }
-            .animation(.spring(response: 0.35, dampingFraction: 0.8), value: toastService.currentToast)
+            .animation(.spring(response: 0.35, dampingFraction: 0.8), value: toastService.currentToast?.id)
     }
 }
 

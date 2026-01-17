@@ -13,6 +13,12 @@ struct TimelineItemView: View {
     @State private var appear = false
     @State private var selectedTag: IdentifiableTag? = nil
 
+    // Wrapper to make tag identifiable for sheet presentation
+    private struct IdentifiableTag: Identifiable {
+        let id = UUID()
+        let value: String
+    }
+
     private var date: Date {
         DateFormatters.calendarDay(from: item.date) ?? Date()
     }
@@ -274,7 +280,11 @@ struct TimelineItemView: View {
                 .fill(Color.white.opacity(0.08))
         )
         .sheet(item: $selectedTag) { identifiableTag in
-            FilteredMomentsSheet(tag: identifiableTag.value)
+            // Open filtered list view for the tapped tag
+            FilteredMomentsListView(
+                tag: identifiableTag.value,
+                viewModel: nil  // Will create temporary viewModel
+            )
         }
     }
 }

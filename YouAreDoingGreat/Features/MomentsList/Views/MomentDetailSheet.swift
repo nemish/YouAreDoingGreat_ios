@@ -1,49 +1,82 @@
 import SwiftUI
 import SwiftData
+import OSLog
+
+private let logger = Logger(subsystem: "ee.required.you-are-doing-great", category: "moment-detail")
 
 // MARK: - Constants
-
-private enum MomentDetailConstants {
-    /// Delay in nanoseconds to allow confirmation dialog to dismiss cleanly before proceeding with deletion
-    static let dialogDismissDelay: UInt64 = 50_000_000  // 0.05 seconds
-}
+private let dismissDelayNanoseconds: UInt64 = 100_000_000  // 0.1s
 
 // MARK: - Moment Detail Sheet
 // Bottom sheet that displays full moment details with praise
 // Includes action buttons for favorite and delete
 // Supports swipe navigation between moments
+// Can filter by tag or show all moments
 
 struct MomentDetailSheet: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.modelContext) private var modelContext
 
-    let moments: [Moment]
-    let initialIndex: Int
-    let viewModel: MomentsListViewModel
+    let initialMomentId: UUID
+    let filterTag: String?  // nil = show all moments, value = filter by tag
+    let viewModel: MomentsListViewModel?
 
-    @State private var currentIndex: Int
-    @State private var showDeleteConfirmation = false
+    // Query all moments, sorted by date
+    @Query(sort: \Moment.happenedAt, order: .reverse)
+    private var allMoments: [Moment]
+
+    @State private var currentMomentId: UUID
     @State private var selectedTag: IdentifiableTag? = nil
     @State private var deletingMomentId: UUID? = nil
 
-    init(
-        moments: [Moment],
-        initialIndex: Int,
-        viewModel: MomentsListViewModel
-    ) {
-        self.moments = moments
-        self.initialIndex = initialIndex
-        self.viewModel = viewModel
-
-        _currentIndex = State(initialValue: initialIndex)
+    // Wrapper to make tag identifiable for sheet presentation
+    private struct IdentifiableTag: Identifiable {
+        let id = UUID()
+        let value: String
     }
 
-    // Current moment based on swipe position
-    // Returns nil if index is out of bounds (e.g., during deletion)
-    private var currentMoment: Moment? {
-        guard currentIndex >= 0 && currentIndex < moments.count else {
-            return nil
+    init(
+        initialMomentId: UUID,
+        filterTag: String? = nil,
+        viewModel: MomentsListViewModel? = nil
+    ) {
+        self.initialMomentId = initialMomentId
+        self.filterTag = filterTag
+        self.viewModel = viewModel
+
+        _currentMomentId = State(initialValue: initialMomentId)
+    }
+
+    // Get or create viewModel for child operations
+    private var effectiveViewModel: MomentsListViewModel {
+        if let viewModel = viewModel {
+            return viewModel
         }
-        return moments[currentIndex]
+
+        // Create temporary ViewModel for child sheets
+        let repository = SwiftDataMomentRepository(modelContext: modelContext)
+        let momentService = MomentService(apiClient: DefaultAPIClient(), repository: repository)
+        return MomentsListViewModel(momentService: momentService, repository: repository)
+    }
+
+    // Filter moments by tag if provided
+    private var displayMoments: [Moment] {
+        let moments = allMoments.filter { !$0.isDeleted }
+
+        if let tag = filterTag {
+            return moments.filter { $0.tags.contains(tag) }
+        }
+        return moments
+    }
+
+    // Current moment based on selected ID
+    private var currentMoment: Moment? {
+        displayMoments.first { $0.clientId == currentMomentId }
+    }
+
+    // Current index for display purposes
+    private var currentIndex: Int {
+        displayMoments.firstIndex { $0.clientId == currentMomentId } ?? 0
     }
 
     var body: some View {
@@ -55,15 +88,15 @@ struct MomentDetailSheet: View {
 
                 VStack(spacing: 0) {
                     // TabView for swipe navigation (content only, no buttons)
-                    TabView(selection: $currentIndex) {
-                        ForEach(Array(moments.enumerated()), id: \.element.id) { index, moment in
+                    TabView(selection: $currentMomentId) {
+                        ForEach(displayMoments) { moment in
                             MomentDetailContent(
                                 moment: moment,
-                                viewModel: viewModel,
+                                viewModel: effectiveViewModel,
                                 isDeleting: deletingMomentId == moment.clientId
                             )
                             .id(moment.id)  // Force recreation when moment changes
-                            .tag(index)
+                            .tag(moment.clientId)
                         }
                     }
                     .tabViewStyle(.page(indexDisplayMode: .never))
@@ -92,46 +125,79 @@ struct MomentDetailSheet: View {
                             },
                             onHug: {
                                 guard let moment = currentMoment else { return }
-                                Task { await viewModel.toggleFavorite(moment) }
+                                Task { await effectiveViewModel.toggleFavorite(moment) }
                             },
                             onDelete: {
-                                // Show delete confirmation for current moment
-                                showDeleteConfirmation = true
+                                // Delete with undo support
+                                logger.info("Delete button tapped")
+                                guard let moment = currentMoment else {
+                                    logger.error("No current moment to delete")
+                                    return
+                                }
+
+                                let momentId = moment.clientId
+                                let serverId = moment.serverId
+                                logger.info("Deleting moment: \(momentId.uuidString)")
+
+                                // Mark as deleting for UI feedback
+                                deletingMomentId = momentId
+
+                                Task { @MainActor in
+                                    do {
+                                        // Delete using service (handles both local and server deletion)
+                                        try await effectiveViewModel.momentService.deleteMoment(
+                                            clientId: momentId,
+                                            serverId: serverId
+                                        )
+                                        logger.info("Moment deleted successfully")
+
+                                        // Show undo toast with restore capability
+                                        ToastService.shared.showDeleted("Moment", undoAction: { [weak viewModel = effectiveViewModel] in
+                                            guard let serverId = serverId else {
+                                                logger.warning("Cannot undo: moment not synced to server")
+                                                ToastService.shared.showError("Cannot undo unsynced moment")
+                                                return
+                                            }
+
+                                            guard let viewModel = viewModel else {
+                                                logger.warning("ViewModel deallocated, cannot restore")
+                                                return
+                                            }
+
+                                            Task { @MainActor in
+                                                do {
+                                                    logger.info("Restoring moment: \(serverId)")
+                                                    _ = try await viewModel.momentService.restoreMoment(serverId: serverId)
+
+                                                    // Refresh the list to show the restored moment immediately
+                                                    await viewModel.refresh()
+
+                                                    ToastService.shared.showSuccess("Moment restored")
+                                                } catch {
+                                                    logger.error("Restore failed: \(error.localizedDescription)")
+                                                    ToastService.shared.showError("Failed to restore moment")
+                                                }
+                                            }
+                                        })
+
+                                        // Dismiss sheet after short delay
+                                        try await Task.sleep(nanoseconds: dismissDelayNanoseconds)
+                                        dismiss()
+                                    } catch {
+                                        logger.error("Delete failed: \(error.localizedDescription)")
+                                        deletingMomentId = nil
+                                        ToastService.shared.showError("Failed to delete moment")
+                                    }
+                                }
                             }
                         )
                         .padding(.horizontal, 24)
                         .padding(.bottom, 40)
                         .background(Color(red: 0.06, green: 0.07, blue: 0.11))
-                        .confirmationDialog(
-                            "Delete this moment?",
-                            isPresented: $showDeleteConfirmation,
-                            titleVisibility: .visible
-                        ) {
-                            Button("Delete", role: .destructive) {
-                                guard let moment = currentMoment else { return }
-                                let clientId = moment.clientId
-                                let serverId = moment.serverId
-
-                                Task {
-                                    // Small delay to let confirmation dialog dismiss cleanly
-                                    try? await Task.sleep(nanoseconds: MomentDetailConstants.dialogDismissDelay)
-
-                                    // Mark moment as deleting to hide content immediately
-                                    deletingMomentId = clientId
-
-                                    // Delete moment first to avoid race condition
-                                    await viewModel.deleteMomentByIds(clientId: clientId, serverId: serverId)
-
-                                    // Dismiss sheet after deletion completes
-                                    dismiss()
-                                }
-                            }
-                            Button("Cancel", role: .cancel) {}
-                        } message: {
-                            Text("This can't be undone.")
-                        }
                     }
                 }
+                .opacity(deletingMomentId != nil ? 0 : 1)
+                .animation(.easeOut(duration: 0.2), value: deletingMomentId)
             }
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -146,7 +212,7 @@ struct MomentDetailSheet: View {
                 }
             }
             .toolbarBackground(.hidden, for: .navigationBar)
-            .onChange(of: currentIndex) { oldValue, newValue in
+            .onChange(of: currentMomentId) { oldValue, newValue in
                 // Haptic feedback on swipe
                 UIImpactFeedbackGenerator(style: .light).impactOccurred()
             }
@@ -162,6 +228,10 @@ private struct MomentDetailContent: View {
     @Bindable var moment: Moment
     let viewModel: MomentsListViewModel
     let isDeleting: Bool
+
+    // Query all moments for tag filtering
+    @Query(sort: \Moment.happenedAt, order: .reverse)
+    private var allMoments: [Moment]
 
     @State private var detailViewModel: MomentDetailViewModel
     @State private var showMomentText = false
@@ -364,7 +434,11 @@ private struct MomentDetailContent: View {
             }
         }
         .sheet(item: $selectedTag) { identifiableTag in
-            FilteredMomentsSheet(tag: identifiableTag.value)
+            // Open filtered list view for the tapped tag
+            FilteredMomentsListView(
+                tag: identifiableTag.value,
+                viewModel: viewModel
+            )
         }
     }
 }
@@ -421,8 +495,8 @@ private struct MomentDetailContent: View {
     viewModel.moments = moments
 
     return MomentDetailSheet(
-        moments: viewModel.moments,
-        initialIndex: 0,
+        initialMomentId: moment1.clientId,
+        filterTag: nil,
         viewModel: viewModel
     )
     .preferredColorScheme(.dark)

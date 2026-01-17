@@ -30,6 +30,7 @@ enum APIEndpoint {
     case enrichMoment(id: String)
     case updateMoment(id: String)
     case deleteMoment(id: String)
+    case restoreMoment(id: String)
     case userProfile
     case userStats
     case submitFeedback
@@ -67,6 +68,9 @@ enum APIEndpoint {
 
         case .deleteMoment(let id):
             return "\(AppConfig.apiBaseURL)/moments/\(id)"
+
+        case .restoreMoment(let id):
+            return "\(AppConfig.apiBaseURL)/moments/\(id)/restore"
 
         case .userProfile:
             return "\(AppConfig.apiBaseURL)/user/me"
