@@ -343,4 +343,100 @@ struct MomentServiceTests {
         #expect(moments.first?.praise == "Synced successfully!")
         #expect(moments.first?.isSynced == true)
     }
+
+    // MARK: - Restore Moment Tests
+
+    @Test("Restore moment succeeds and syncs to local storage")
+    func restoreMoment_Success() async throws {
+        let serverId = "server123"
+
+        // Mock restore response
+        let restoredMomentDTO = MomentFixtures.momentDTO(
+            id: serverId,
+            clientId: UUID().uuidString,
+            text: "Restored moment",
+            praise: "Welcome back!"
+        )
+        struct RestoreResponse: Encodable {
+            let item: EncodableMomentDTO
+        }
+        try mockAPI.setResponse(
+            for: "\(AppConfig.apiBaseURL)/moments/\(serverId)/restore",
+            response: RestoreResponse(item: restoredMomentDTO)
+        )
+
+        let restoredMoment = try await service.restoreMoment(serverId: serverId)
+
+        #expect(restoredMoment.serverId == serverId)
+        #expect(restoredMoment.text == "Restored moment")
+        #expect(restoredMoment.praise == "Welcome back!")
+        #expect(mockAPI.didRequest(endpoint: .restoreMoment(id: serverId)))
+
+        // Verify moment is saved in local storage
+        let fetchedMoment = try await repository.fetch(serverId: serverId)
+        #expect(fetchedMoment != nil)
+        #expect(fetchedMoment?.text == "Restored moment")
+    }
+
+    @Test("Restore moment updates existing local moment")
+    func restoreMoment_UpdatesLocalStorage() async throws {
+        let serverId = "server123"
+        let clientId = UUID()
+
+        // Pre-populate with deleted moment (exists locally but marked as deleted)
+        let existingMoment = MomentFixtures.syncedMoment(text: "Old version")
+        existingMoment.serverId = serverId
+        existingMoment.clientId = clientId
+        try await repository.save(existingMoment)
+
+        // Mock restore response
+        let restoredMomentDTO = MomentFixtures.momentDTO(
+            id: serverId,
+            clientId: clientId.uuidString,
+            text: "Restored moment",
+            praise: "Back again!"
+        )
+        struct RestoreResponse: Encodable {
+            let item: EncodableMomentDTO
+        }
+        try mockAPI.setResponse(
+            for: "\(AppConfig.apiBaseURL)/moments/\(serverId)/restore",
+            response: RestoreResponse(item: restoredMomentDTO)
+        )
+
+        let restoredMoment = try await service.restoreMoment(serverId: serverId)
+
+        #expect(restoredMoment.serverId == serverId)
+        #expect(restoredMoment.clientId == clientId)
+        #expect(restoredMoment.text == "Restored moment")
+        #expect(restoredMoment.praise == "Back again!")
+
+        // Verify only one moment exists (updated, not created new)
+        let allMoments = try await repository.fetchAll(
+            sortedBy: SortDescriptor(\.submittedAt, order: .reverse)
+        )
+        #expect(allMoments.count == 1)
+    }
+
+    @Test("Restore moment handles network error")
+    func restoreMoment_NetworkError() async throws {
+        let serverId = "server123"
+
+        // Mock network error
+        enum TestError: Error {
+            case networkFailure
+        }
+        mockAPI.setError(
+            for: "\(AppConfig.apiBaseURL)/moments/\(serverId)/restore",
+            error: TestError.networkFailure
+        )
+
+        do {
+            _ = try await service.restoreMoment(serverId: serverId)
+            Issue.record("Expected restore to throw error")
+        } catch {
+            // Expected error - test passes
+            #expect(true)
+        }
+    }
 }

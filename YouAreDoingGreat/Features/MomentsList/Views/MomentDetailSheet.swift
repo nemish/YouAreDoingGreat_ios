@@ -1,5 +1,11 @@
 import SwiftUI
 import SwiftData
+import OSLog
+
+private let logger = Logger(subsystem: "ee.required.you-are-doing-great", category: "moment-detail")
+
+// MARK: - Constants
+private let dismissDelayNanoseconds: UInt64 = 100_000_000  // 0.1s
 
 // MARK: - Moment Detail Sheet
 // Bottom sheet that displays full moment details with praise
@@ -123,64 +129,62 @@ struct MomentDetailSheet: View {
                             },
                             onDelete: {
                                 // Delete with undo support
-                                print("🗑️ Delete button tapped")
+                                logger.info("Delete button tapped")
                                 guard let moment = currentMoment else {
-                                    print("❌ No current moment to delete")
+                                    logger.error("No current moment to delete")
                                     return
                                 }
 
                                 let momentId = moment.clientId
                                 let serverId = moment.serverId
-                                let momentText = moment.text
-                                print("🗑️ Deleting moment: \(momentId)")
+                                logger.info("Deleting moment: \(momentId.uuidString)")
 
                                 // Mark as deleting for UI feedback
                                 deletingMomentId = momentId
 
                                 Task { @MainActor in
                                     do {
-                                        // Delete locally
-                                        modelContext.delete(moment)
-                                        try modelContext.save()
-                                        print("✅ Moment deleted from SwiftData")
-
-                                        // Delete from server if synced
-                                        if let serverId = serverId {
-                                            try? await effectiveViewModel.momentService.deleteMoment(
-                                                clientId: momentId,
-                                                serverId: serverId
-                                            )
-                                        }
+                                        // Delete using service (handles both local and server deletion)
+                                        try await effectiveViewModel.momentService.deleteMoment(
+                                            clientId: momentId,
+                                            serverId: serverId
+                                        )
+                                        logger.info("Moment deleted successfully")
 
                                         // Show undo toast with restore capability
-                                        ToastService.shared.showDeleted("Moment", undoAction: {
+                                        ToastService.shared.showDeleted("Moment", undoAction: { [weak viewModel = effectiveViewModel] in
                                             guard let serverId = serverId else {
-                                                print("⚠️ Cannot undo: moment not synced to server")
+                                                logger.warning("Cannot undo: moment not synced to server")
                                                 ToastService.shared.showError("Cannot undo unsynced moment")
+                                                return
+                                            }
+
+                                            guard let viewModel = viewModel else {
+                                                logger.warning("ViewModel deallocated, cannot restore")
                                                 return
                                             }
 
                                             Task { @MainActor in
                                                 do {
-                                                    print("♻️ Restoring moment: \(serverId)")
-                                                    _ = try await effectiveViewModel.momentService.restoreMoment(serverId: serverId)
+                                                    logger.info("Restoring moment: \(serverId)")
+                                                    _ = try await viewModel.momentService.restoreMoment(serverId: serverId)
 
                                                     // Refresh the list to show the restored moment immediately
-                                                    await effectiveViewModel.refresh()
+                                                    await viewModel.refresh()
 
                                                     ToastService.shared.showSuccess("Moment restored")
                                                 } catch {
-                                                    print("❌ Restore failed: \(error)")
+                                                    logger.error("Restore failed: \(error.localizedDescription)")
                                                     ToastService.shared.showError("Failed to restore moment")
                                                 }
                                             }
                                         })
 
                                         // Dismiss sheet after short delay
-                                        try? await Task.sleep(nanoseconds: 100_000_000)
+                                        try await Task.sleep(nanoseconds: dismissDelayNanoseconds)
                                         dismiss()
                                     } catch {
-                                        print("❌ Delete failed: \(error)")
+                                        logger.error("Delete failed: \(error.localizedDescription)")
                                         deletingMomentId = nil
                                         ToastService.shared.showError("Failed to delete moment")
                                     }
