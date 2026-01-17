@@ -110,7 +110,7 @@ struct FilteredMomentsListView: View {
                         showMomentDetail = true
                     }
                     .transition(.asymmetric(
-                        insertion: .opacity.combined(with: .scale(scale: 0.95)),
+                        insertion: .move(edge: .leading).combined(with: .opacity),
                         removal: .move(edge: .leading).combined(with: .opacity)
                     ))
                 }

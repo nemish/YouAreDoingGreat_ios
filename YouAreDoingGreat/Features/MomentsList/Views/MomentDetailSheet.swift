@@ -122,7 +122,7 @@ struct MomentDetailSheet: View {
                                 Task { await effectiveViewModel.toggleFavorite(moment) }
                             },
                             onDelete: {
-                                // Delete immediately with undo toast (direct SwiftData access)
+                                // Delete with undo support
                                 print("🗑️ Delete button tapped")
                                 guard let moment = currentMoment else {
                                     print("❌ No current moment to delete")
@@ -139,18 +139,41 @@ struct MomentDetailSheet: View {
 
                                 Task { @MainActor in
                                     do {
-                                        // Delete directly from modelContext (simplified!)
+                                        // Delete locally
                                         modelContext.delete(moment)
                                         try modelContext.save()
                                         print("✅ Moment deleted from SwiftData")
 
-                                        // TODO: Add server-side deletion (optional for Phase 1)
-                                        // Background sync will handle server cleanup
+                                        // Delete from server if synced
+                                        if let serverId = serverId {
+                                            try? await effectiveViewModel.momentService.deleteMoment(
+                                                clientId: momentId,
+                                                serverId: serverId
+                                            )
+                                        }
 
-                                        // Show undo toast
+                                        // Show undo toast with restore capability
                                         ToastService.shared.showDeleted("Moment", undoAction: {
-                                            print("⚠️ Undo tapped but restoration not yet implemented")
-                                            // TODO: Implement moment restoration
+                                            guard let serverId = serverId else {
+                                                print("⚠️ Cannot undo: moment not synced to server")
+                                                ToastService.shared.showError("Cannot undo unsynced moment")
+                                                return
+                                            }
+
+                                            Task { @MainActor in
+                                                do {
+                                                    print("♻️ Restoring moment: \(serverId)")
+                                                    _ = try await effectiveViewModel.momentService.restoreMoment(serverId: serverId)
+
+                                                    // Refresh the list to show the restored moment immediately
+                                                    await effectiveViewModel.refresh()
+
+                                                    ToastService.shared.showSuccess("Moment restored")
+                                                } catch {
+                                                    print("❌ Restore failed: \(error)")
+                                                    ToastService.shared.showError("Failed to restore moment")
+                                                }
+                                            }
                                         })
 
                                         // Dismiss sheet after short delay

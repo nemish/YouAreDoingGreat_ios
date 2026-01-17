@@ -13,7 +13,7 @@ private let logger = Logger(subsystem: "ee.required.you-are-doing-great", catego
 final class MomentsListViewModel {
     // MARK: - Dependencies
 
-    private let momentService: MomentService
+    let momentService: MomentService
     let repository: MomentRepository
     private var loadTask: Task<Void, Never>?
     private var syncMonitorTask: Task<Void, Never>?

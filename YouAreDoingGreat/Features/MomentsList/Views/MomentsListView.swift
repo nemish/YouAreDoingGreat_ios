@@ -103,7 +103,7 @@ struct MomentsListView: View {
                         viewModel.showDetail(for: moment)
                     }
                     .transition(.asymmetric(
-                        insertion: .opacity.combined(with: .scale(scale: 0.95)),
+                        insertion: .move(edge: .leading).combined(with: .opacity),
                         removal: .move(edge: .leading).combined(with: .opacity)
                     ))
                 }
