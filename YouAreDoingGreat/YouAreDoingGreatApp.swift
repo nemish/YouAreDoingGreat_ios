@@ -8,6 +8,7 @@
 import SwiftUI
 import SwiftData
 import RevenueCat
+import OSLog
 
 @main
 struct YouAreDoingGreatApp: App {
@@ -67,7 +68,7 @@ struct YouAreDoingGreatApp: App {
                 try await HapticManager.shared.start()
             } catch {
                 // Non-critical failure - app continues without haptics
-                print("⚠️ Failed to initialize haptic engine: \(error.localizedDescription)")
+                Logger.app.warning("Failed to initialize haptic engine: \(error.localizedDescription)")
             }
         }
     }

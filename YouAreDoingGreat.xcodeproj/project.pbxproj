@@ -36,7 +36,7 @@
 
 /* Begin PBXFileReference section */
 		9F80B2442F24F24D0084ADF5 /* YouAreDoingGreatDev.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = YouAreDoingGreatDev.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		9F80B2462F24F24D0084ADF5 /* YouAreDoingGreat copy-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = "YouAreDoingGreat copy-Info.plist"; path = "/Users/yara5000/projects/my/you_are_doing_great/YouAreDoingGreat_ios/YouAreDoingGreat copy-Info.plist"; sourceTree = "<absolute>"; };
+		9F80B2462F24F24D0084ADF5 /* YouAreDoingGreatDev-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "YouAreDoingGreatDev-Info.plist"; sourceTree = "<group>"; };
 		9F85065B2ECBC90C000A97E7 /* YouAreDoingGreat.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = YouAreDoingGreat.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		9FAC13002EF61EAC002F2549 /* yadg.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = yadg.icon; sourceTree = "<group>"; };
 		9FAC13B62EFACB61002F2549 /* yadg2.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = yadg2.icon; sourceTree = "<group>"; };
@@ -65,8 +65,6 @@
 			membershipExceptions = (
 				Info.plist,
 			);
-			
-			
 			target = 9F80B2382F24F24D0084ADF5 /* YouAreDoingGreatDev */;
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -125,7 +123,7 @@
 				9F8DBA322EDFA56A00EE086B /* Frameworks */,
 				9F85065C2ECBC90C000A97E7 /* Products */,
 				9FAC13B62EFACB61002F2549 /* yadg2.icon */,
-				9F80B2462F24F24D0084ADF5 /* YouAreDoingGreat copy-Info.plist */,
+				9F80B2462F24F24D0084ADF5 /* YouAreDoingGreatDev-Info.plist */,
 			);
 			sourceTree = "<group>";
 		};
@@ -406,7 +404,7 @@
 				DEVELOPMENT_TEAM = W3U75T8JTH;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = "YouAreDoingGreat copy-Info.plist";
+				INFOPLIST_FILE = "YouAreDoingGreatDev-Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = "Doing Great Dev";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.healthcare-fitness";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -446,7 +444,7 @@
 				DEVELOPMENT_TEAM = W3U75T8JTH;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = "YouAreDoingGreat copy-Info.plist";
+				INFOPLIST_FILE = "YouAreDoingGreatDev-Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = "Doing Great Dev";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.healthcare-fitness";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;

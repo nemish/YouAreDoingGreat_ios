@@ -41,6 +41,9 @@ final class HapticManager {
     private var lastHapticTime: Date = .distantPast
     private let minimumInterval: TimeInterval = 0.1 // 100ms rate limiting
 
+    // Task management for fallback haptics
+    private var fallbackTasks: [Task<Void, Never>] = []
+
     // Fallback for unsupported devices
     private let lightFeedback = UIImpactFeedbackGenerator(style: .light)
     private let mediumFeedback = UIImpactFeedbackGenerator(style: .medium)
@@ -106,6 +109,10 @@ final class HapticManager {
 
     /// Stop the haptic engine
     func stop() async {
+        // Cancel all pending fallback tasks
+        fallbackTasks.forEach { $0.cancel() }
+        fallbackTasks.removeAll()
+
         do {
             try await engine?.stop()
             logger.info("🛑 Haptic engine stopped")
@@ -185,13 +192,13 @@ final class HapticManager {
                 // Engine not initialized, try to start it
                 logger.warning("⚠️ Engine not initialized, attempting to start")
                 try? await start()
-                guard let engine = engine else {
+                guard let startedEngine = self.engine else {
                     playFallbackHaptic(pattern)
                     return
                 }
                 // Continue with newly started engine
                 let hapticPattern = try createHapticPattern(for: pattern)
-                let player = try engine.makePlayer(with: hapticPattern)
+                let player = try startedEngine.makePlayer(with: hapticPattern)
                 try player.start(atTime: CHHapticTimeImmediate)
                 return
             }
@@ -220,6 +227,9 @@ final class HapticManager {
 
     /// Play haptic using UIImpactFeedbackGenerator (fallback)
     private func playFallbackHaptic(_ pattern: HapticPattern) {
+        // Clean up completed tasks
+        fallbackTasks.removeAll(where: { $0.isCancelled })
+
         switch pattern {
         case .gentleTap:
             lightFeedback.impactOccurred(intensity: CGFloat(intensity))
@@ -227,10 +237,12 @@ final class HapticManager {
         case .confidentPress:
             // Longer press: medium impact + delayed light tap
             mediumFeedback.impactOccurred(intensity: CGFloat(intensity * 0.9))
-            Task {
+            let task = Task {
                 try? await Task.sleep(nanoseconds: 150_000_000) // 150ms
+                guard !Task.isCancelled else { return }
                 self.lightFeedback.impactOccurred(intensity: CGFloat(self.intensity * 0.5))
             }
+            fallbackTasks.append(task)
 
         case .softPulse:
             // Approximate with light impact
@@ -239,22 +251,28 @@ final class HapticManager {
         case .warmArrival:
             // Beautiful multi-tap sequence: gentle → warm → sparkle
             lightFeedback.impactOccurred(intensity: CGFloat(intensity * 0.6))
-            Task {
+            let task = Task {
                 try? await Task.sleep(nanoseconds: 200_000_000) // 200ms - warm presence
+                guard !Task.isCancelled else { return }
                 self.mediumFeedback.impactOccurred(intensity: CGFloat(self.intensity * 0.65))
                 try? await Task.sleep(nanoseconds: 100_000_000) // 100ms - sparkle
+                guard !Task.isCancelled else { return }
                 self.lightFeedback.impactOccurred(intensity: CGFloat(self.intensity * 0.5))
             }
+            fallbackTasks.append(task)
 
         case .celebrationBurst:
             // Triple tap sequence
             lightFeedback.impactOccurred(intensity: CGFloat(intensity))
-            Task {
+            let task = Task {
                 try? await Task.sleep(nanoseconds: 80_000_000) // 80ms
+                guard !Task.isCancelled else { return }
                 self.lightFeedback.impactOccurred(intensity: CGFloat(self.intensity))
                 try? await Task.sleep(nanoseconds: 100_000_000) // 100ms
+                guard !Task.isCancelled else { return }
                 self.lightFeedback.impactOccurred(intensity: CGFloat(self.intensity))
             }
+            fallbackTasks.append(task)
 
         case .gentleHeartbeat:
             // Single light pulse (reserved for v2 repeating implementation)

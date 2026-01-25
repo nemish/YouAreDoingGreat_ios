@@ -1,6 +1,7 @@
 import Foundation
 import UIKit
 import RevenueCat
+import OSLog
 
 // MARK: - Profile ViewModel
 // State management and business logic for ProfileView
@@ -36,17 +37,21 @@ final class ProfileViewModel {
     var isResettingJourney = false
 
     // Haptic preferences
+    private var isSyncingFromServer = false
+
     var hapticsEnabled: Bool {
         didSet {
             HapticManager.shared.setEnabled(hapticsEnabled)
+
+            // Skip cloud sync when restoring from server to avoid sync loop
+            guard !isSyncingFromServer else { return }
 
             // Sync to backend immediately
             Task {
                 do {
                     _ = try await userService.updateHapticPreference(enabled: hapticsEnabled)
                 } catch {
-                    // Keep local setting even if sync fails
-                    // User can try again when connection is restored
+                    Logger.app.error("Failed to sync haptic preference: \(error.localizedDescription)")
                 }
             }
         }
@@ -99,10 +104,11 @@ final class ProfileViewModel {
             userProfile = try await profile
             userStats = try await stats
 
-            // Restore haptic preference from server
+            // Restore haptic preference from server (without triggering sync back)
             if let hapticsEnabled = userProfile?.hapticsEnabled {
+                isSyncingFromServer = true
                 self.hapticsEnabled = hapticsEnabled
-                HapticManager.shared.setEnabled(hapticsEnabled)
+                isSyncingFromServer = false
             }
         } catch {
             handleError(error)
