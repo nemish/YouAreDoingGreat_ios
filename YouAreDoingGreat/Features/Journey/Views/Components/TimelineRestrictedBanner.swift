@@ -53,7 +53,7 @@ struct TimelineRestrictedBanner: View {
 
             // CTA Button
             Button {
-                UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                Task { await HapticManager.shared.play(.confidentPress) }
                 onUpgradeTapped()
             } label: {
                 HStack(spacing: 8) {

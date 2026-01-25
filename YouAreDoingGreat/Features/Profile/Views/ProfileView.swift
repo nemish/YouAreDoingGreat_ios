@@ -48,6 +48,9 @@ struct ProfileView: View {
                         // Subscription Section
                         subscriptionSection
 
+                        // Haptic Settings Section
+                        hapticSettingsSection
+
                         // Help & Support Section
                         helpSection
 
@@ -359,6 +362,78 @@ struct ProfileView: View {
         }
     }
 
+    // MARK: - Haptic Settings Section
+
+    private var hapticSettingsSection: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("Haptic Feedback")
+                .font(.appHeadline)
+                .foregroundStyle(.textSecondary)
+
+            VStack(spacing: 12) {
+                // Enable/Disable Toggle
+                HStack(spacing: 16) {
+                    Image(systemName: "waveform")
+                        .font(.system(size: 24))
+                        .foregroundStyle(.appPrimary)
+                        .frame(width: 40)
+
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Haptic Feedback")
+                            .font(.appHeadline)
+                            .foregroundStyle(.textPrimary)
+
+                        Text("Feel encouragement through vibrations")
+                            .font(.appFootnote)
+                            .foregroundStyle(.textSecondary)
+                    }
+
+                    Spacer()
+
+                    Toggle("", isOn: $viewModel.hapticsEnabled)
+                        .labelsHidden()
+                }
+                .padding(16)
+                .background(
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(Color.white.opacity(0.08))
+                )
+
+                // Intensity Slider (only shown when enabled)
+                if viewModel.hapticsEnabled {
+                    VStack(alignment: .leading, spacing: 12) {
+                        HStack {
+                            Text("Intensity")
+                                .font(.appHeadline)
+                                .foregroundStyle(.textPrimary)
+
+                            Spacer()
+
+                            Text("\(Int(viewModel.hapticIntensity * 100))%")
+                                .font(.appFootnote)
+                                .foregroundStyle(.textSecondary)
+                        }
+
+                        Slider(value: $viewModel.hapticIntensity, in: 0.5...1.0)
+                            .tint(.appPrimary)
+                            .onChange(of: viewModel.hapticIntensity) { _, _ in
+                                Task {
+                                    await HapticManager.shared.play(.gentleTap)
+                                }
+                            }
+                    }
+                    .padding(16)
+                    .background(
+                        RoundedRectangle(cornerRadius: 12)
+                            .fill(Color.white.opacity(0.08))
+                    )
+                    .transition(.opacity.combined(with: .move(edge: .top)))
+                }
+            }
+        }
+        .animation(.easeInOut(duration: 0.3), value: viewModel.hapticsEnabled)
+    }
+
     // MARK: - Help & Support Section
 
     private var helpSection: some View {
@@ -537,7 +612,8 @@ private func makePreviewViewModel() -> ProfileViewModel {
     viewModel.userProfile = UserDTO(
         id: "123",
         userId: "user_1234567890abcdef",
-        status: .free
+        status: .free,
+        hapticsEnabled: true
     )
     viewModel.userStats = UserStatsDTO(
         totalMoments: 127,

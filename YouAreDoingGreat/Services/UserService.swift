@@ -39,4 +39,13 @@ final class UserService {
             body: UserFeedbackRequest(title: title, text: text)
         )
     }
+
+    func updateHapticPreference(enabled: Bool) async throws -> UserDTO {
+        let response: UserResponse = try await apiClient.request(
+            endpoint: .userProfile,
+            method: .patch,
+            body: UpdateUserPreferencesRequest(hapticsEnabled: enabled)
+        )
+        return response.item
+    }
 }

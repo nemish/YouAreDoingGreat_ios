@@ -13,9 +13,6 @@ struct HugButton: View {
     @State private var glowOpacity: Double = 0.0
     @State private var animationTask: Task<Void, Never>?
 
-    // Haptic feedback
-    private let impactFeedback = UIImpactFeedbackGenerator(style: .light)
-
     var body: some View {
         Button(action: handleTap) {
             ZStack {
@@ -46,7 +43,7 @@ struct HugButton: View {
     }
 
     private func handleTap() {
-        impactFeedback.impactOccurred()
+        Task { await HapticManager.shared.play(.gentleTap) }
 
         // Cancel any in-flight animation
         animationTask?.cancel()

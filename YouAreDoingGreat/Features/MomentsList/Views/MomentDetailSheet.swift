@@ -120,7 +120,7 @@ struct MomentDetailSheet: View {
                             isHugged: currentMoment?.isFavorite ?? false,
                             showDelete: true,
                             onPrimary: {
-                                UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                                Task { await HapticManager.shared.play(.gentleTap) }
                                 dismiss()
                             },
                             onHug: {
@@ -214,7 +214,7 @@ struct MomentDetailSheet: View {
             .toolbarBackground(.hidden, for: .navigationBar)
             .onChange(of: currentMomentId) { oldValue, newValue in
                 // Haptic feedback on swipe
-                UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                Task { await HapticManager.shared.play(.gentleTap) }
             }
         }
     }
@@ -416,7 +416,7 @@ private struct MomentDetailContent: View {
             HStack(spacing: 8) {
                 ForEach(Array(moment.tags.enumerated()), id: \.offset) { index, tag in
                     Button {
-                        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                        Task { await HapticManager.shared.play(.gentleTap) }
                         selectedTag = IdentifiableTag(value: tag)
                     } label: {
                         Text("#\(tag.replacingOccurrences(of: "_", with: " "))")

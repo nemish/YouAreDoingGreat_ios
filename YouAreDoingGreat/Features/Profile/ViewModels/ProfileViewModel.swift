@@ -1,6 +1,7 @@
 import Foundation
 import UIKit
 import RevenueCat
+import OSLog
 
 // MARK: - Profile ViewModel
 // State management and business logic for ProfileView
@@ -35,6 +36,33 @@ final class ProfileViewModel {
     var showResetJourneyConfirmation = false
     var isResettingJourney = false
 
+    // Haptic preferences
+    private var isSyncingFromServer = false
+
+    var hapticsEnabled: Bool {
+        didSet {
+            HapticManager.shared.setEnabled(hapticsEnabled)
+
+            // Skip cloud sync when restoring from server to avoid sync loop
+            guard !isSyncingFromServer else { return }
+
+            // Sync to backend immediately
+            Task {
+                do {
+                    _ = try await userService.updateHapticPreference(enabled: hapticsEnabled)
+                } catch {
+                    Logger.app.error("Failed to sync haptic preference: \(error.localizedDescription)")
+                }
+            }
+        }
+    }
+
+    var hapticIntensity: Float {
+        didSet {
+            HapticManager.shared.setIntensity(hapticIntensity)
+        }
+    }
+
     // MARK: - Computed Properties
 
     var maskedUserID: String {
@@ -59,6 +87,10 @@ final class ProfileViewModel {
     init(userService: UserService, momentRepository: MomentRepository? = nil) {
         self.userService = userService
         self.momentRepository = momentRepository
+
+        // Initialize haptic preferences from HapticManager
+        self.hapticsEnabled = HapticManager.shared.isEnabled
+        self.hapticIntensity = HapticManager.shared.intensity
     }
 
     // MARK: - Public Methods
@@ -71,6 +103,13 @@ final class ProfileViewModel {
 
             userProfile = try await profile
             userStats = try await stats
+
+            // Restore haptic preference from server (without triggering sync back)
+            if let hapticsEnabled = userProfile?.hapticsEnabled {
+                isSyncingFromServer = true
+                self.hapticsEnabled = hapticsEnabled
+                isSyncingFromServer = false
+            }
         } catch {
             handleError(error)
         }
@@ -80,7 +119,7 @@ final class ProfileViewModel {
     func copyUserID() {
         guard let userId = userProfile?.userId else { return }
         UIPasteboard.general.string = userId
-        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+        Task { await HapticManager.shared.play(.gentleTap) }
     }
 
     func submitFeedback() async {
@@ -132,7 +171,7 @@ final class ProfileViewModel {
 
     func resetDailyLimit() {
         paywallService.resetDailyLimit()
-        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+        Task { await HapticManager.shared.play(.gentleTap) }
     }
 
     /// Resets the entire user journey - clears all data and generates new user ID
@@ -173,7 +212,7 @@ final class ProfileViewModel {
             // 8. Trigger onboarding reset (this will navigate to WelcomeView)
             onComplete()
 
-            UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+            await HapticManager.shared.play(.confidentPress)
         } catch {
             handleError(error)
         }

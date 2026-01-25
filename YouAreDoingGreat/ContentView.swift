@@ -21,9 +21,6 @@ struct ContentView: View {
     @State private var paywallViewModel: PaywallViewModel?
     @State private var animatePremiumBadge = false
 
-    // Haptic feedback for tab switch
-    private let tabFeedback = UIImpactFeedbackGenerator(style: .light)
-
     // ViewModel factory for dependency injection
     private var viewModelFactory: ViewModelFactory {
         ViewModelFactory(modelContext: modelContext)
@@ -88,7 +85,7 @@ struct ContentView: View {
         }
         .tint(Color.appPrimary)
         .onChange(of: selectedTab) { _, _ in
-            tabFeedback.impactOccurred()
+            Task { await HapticManager.shared.play(.gentleTap) }
         }
         .onChange(of: scenePhase) { oldPhase, newPhase in
             if newPhase == .active {

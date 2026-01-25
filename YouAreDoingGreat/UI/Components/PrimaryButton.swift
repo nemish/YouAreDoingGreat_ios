@@ -8,9 +8,6 @@ struct PrimaryButton: View {
     var showGlow: Bool = false
     let action: () -> Void
 
-    // Haptic feedback
-    private let impactFeedback = UIImpactFeedbackGenerator(style: .light)
-
     var body: some View {
         Button(action: handleTap) {
             Text(title)
@@ -42,7 +39,7 @@ struct PrimaryButton: View {
 
     private func handleTap() {
         // Haptic feedback
-        impactFeedback.impactOccurred()
+        Task { await HapticManager.shared.play(.gentleTap) }
         // Execute action
         action()
     }

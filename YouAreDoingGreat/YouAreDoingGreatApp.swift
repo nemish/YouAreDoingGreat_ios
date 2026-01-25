@@ -8,6 +8,7 @@
 import SwiftUI
 import SwiftData
 import RevenueCat
+import OSLog
 
 @main
 struct YouAreDoingGreatApp: App {
@@ -59,6 +60,16 @@ struct YouAreDoingGreatApp: App {
         // Refresh subscription status (also ensures correct user ID)
         Task { @MainActor in
             await SubscriptionService.shared.refreshSubscriptionStatus()
+        }
+
+        // Initialize haptic engine (warm-up to avoid first-haptic delay)
+        Task { @MainActor in
+            do {
+                try await HapticManager.shared.start()
+            } catch {
+                // Non-critical failure - app continues without haptics
+                Logger.app.warning("Failed to initialize haptic engine: \(error.localizedDescription)")
+            }
         }
     }
 }

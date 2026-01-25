@@ -127,6 +127,79 @@
                         }
                     }
                 }
+            },
+            "patch": {
+                "summary": "Update user preferences",
+                "description": "Update user preference settings such as haptic feedback. Preferences are synced\nacross devices and persisted in the cloud.\n",
+                "operationId": "updateUserPreferences",
+                "security": [
+                    {
+                        "appToken": [],
+                        "userAuth": []
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/UpdateUserPreferencesRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "User preferences updated successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/UserResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request (invalid input)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - Invalid or missing app token (INVALID_APP_TOKEN) or user ID (RESTRICTED_ACCESS)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "User not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                }
             }
         },
         "/user/stats": {
@@ -299,6 +372,117 @@
                     },
                     "401": {
                         "description": "Unauthorized - Invalid or missing app token (INVALID_APP_TOKEN) or user ID (RESTRICTED_ACCESS)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/debug/user-prompt": {
+            "get": {
+                "summary": "Get AI prompt context for debugging",
+                "description": "Debug endpoint that returns the exact prompt/context that would be sent to OpenAI's\npraise generation API for a specific user and date. This is useful for testing different\nmodels and prompt versions in AI Studio without making actual API calls.\n\n**Note:** This endpoint does NOT call the OpenAI API - it only returns the formatted\nprompt text. The temporary moment is created in-memory and not saved to the database.\n",
+                "operationId": "getDebugUserPrompt",
+                "security": [
+                    {
+                        "appToken": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "userId",
+                        "in": "query",
+                        "description": "User ID to generate prompt for (must be a valid MongoDB ObjectId)",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^[0-9a-fA-F]{24}$",
+                            "example": "507f1f77bcf86cd799439011"
+                        }
+                    },
+                    {
+                        "name": "date",
+                        "in": "query",
+                        "description": "Date/time when the moment happened (ISO 8601 format)",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "date-time",
+                            "example": "2026-01-15T10:00:00Z"
+                        }
+                    },
+                    {
+                        "name": "momentText",
+                        "in": "query",
+                        "description": "The moment text to include in the prompt",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 1000,
+                            "example": "went for a run"
+                        }
+                    },
+                    {
+                        "name": "tz",
+                        "in": "query",
+                        "description": "Timezone for formatting times in the prompt",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "default": "UTC",
+                            "example": "America/New_York"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully generated prompt context",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "prompt"
+                                    ],
+                                    "properties": {
+                                        "prompt": {
+                                            "type": "string",
+                                            "description": "The formatted prompt text that would be sent to OpenAI",
+                                            "example": "Current Action: went for a run - 10:00\nMemory Stream:\nToday: strength training - 08:30\nYesterday: meditation - 07:00, healthy meal - 12:30\nLast 7 days: strength_training, cardio_workout, mindful_eating\nLast 30 days: strength_training (12x), cardio_workout (8x), mindful_eating (15x)\nLast year: strength_training (45x), cardio_workout (30x), mindful_eating (60x)\n"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request - Invalid query parameters",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - Invalid or missing app token",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -1078,7 +1262,8 @@
                 "required": [
                     "id",
                     "userId",
-                    "status"
+                    "status",
+                    "hapticsEnabled"
                 ],
                 "properties": {
                     "id": {
@@ -1099,6 +1284,11 @@
                         ],
                         "description": "User subscription status",
                         "example": "free"
+                    },
+                    "hapticsEnabled": {
+                        "type": "boolean",
+                        "description": "User preference for haptic feedback (vibration). Syncs across devices.",
+                        "example": true
                     }
                 }
             },
@@ -1580,6 +1770,19 @@
                 "properties": {
                     "item": {
                         "$ref": "#/components/schemas/UserFeedback"
+                    }
+                }
+            },
+            "UpdateUserPreferencesRequest": {
+                "type": "object",
+                "required": [
+                    "hapticsEnabled"
+                ],
+                "properties": {
+                    "hapticsEnabled": {
+                        "type": "boolean",
+                        "description": "User preference for haptic feedback (vibration)",
+                        "example": true
                     }
                 }
             },

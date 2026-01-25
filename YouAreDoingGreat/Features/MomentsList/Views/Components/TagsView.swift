@@ -46,7 +46,7 @@ private struct TagPill: View {
 
         if let onTap = onTap {
             Button {
-                UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                Task { await HapticManager.shared.play(.gentleTap) }
                 onTap(tag)
             } label: {
                 content

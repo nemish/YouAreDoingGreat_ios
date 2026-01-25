@@ -80,9 +80,6 @@ struct HomeView: View {
     @State private var currentPhrase: String = ""
     @State private var currentPhraseIndex: Int = 0
 
-    // Haptic feedback for phrase tap
-    private let lightFeedback = UIImpactFeedbackGenerator(style: .light)
-
     var body: some View {
         NavigationStack {
             ZStack {
@@ -277,7 +274,7 @@ struct HomeView: View {
     }
 
     private func cycleToNextPhrase() {
-        lightFeedback.impactOccurred()
+        Task { await HapticManager.shared.play(.gentleTap) }
 
         withAnimation(.easeInOut(duration: 0.3)) {
             currentPhraseIndex = (currentPhraseIndex + 1) % titlePhrases.count

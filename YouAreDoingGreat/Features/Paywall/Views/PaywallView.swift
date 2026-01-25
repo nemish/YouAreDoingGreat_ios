@@ -59,7 +59,7 @@ struct PaywallView: View {
                 HStack {
                     Spacer()
                     Button {
-                        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                        Task { await HapticManager.shared.play(.gentleTap) }
                         dismiss()
                         onDismiss()
                     } label: {
@@ -136,7 +136,7 @@ struct PaywallView: View {
                         title: viewModel.isPurchasing ? "Processing..." : "Start 3-Day Free Trial",
                         showGlow: !viewModel.isPurchasing && pulseAnimation
                     ) {
-                        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                        Task { await HapticManager.shared.play(.confidentPress) }
                         handleUpgrade()
                     }
                     .disabled(viewModel.isPurchasing || viewModel.isRestoring || !viewModel.hasOfferings)
@@ -167,7 +167,7 @@ struct PaywallView: View {
                         }
 
                         Button(viewModel.isRestoring ? "Restoring..." : "Restore purchases") {
-                            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                            Task { await HapticManager.shared.play(.gentleTap) }
                             handleRestorePurchases()
                         }
                         .font(.appFootnote)
@@ -424,7 +424,7 @@ struct PaywallView: View {
 
     private func packageOption(package: Package, isSelected: Bool) -> some View {
         Button {
-            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+            Task { await HapticManager.shared.play(.gentleTap) }
             viewModel.selectPackage(package)
         } label: {
             HStack {
