@@ -10,6 +10,7 @@ struct UserDTO: Decodable {
     let id: String
     let userId: String
     let status: UserStatus
+    let hapticsEnabled: Bool
 }
 
 // MARK: - User Status
@@ -17,6 +18,12 @@ struct UserDTO: Decodable {
 enum UserStatus: String, Decodable {
     case free
     case premium
+}
+
+// MARK: - User Preferences Update
+
+struct UpdateUserPreferencesRequest: Encodable {
+    let hapticsEnabled: Bool
 }
 
 // MARK: - User Stats Response

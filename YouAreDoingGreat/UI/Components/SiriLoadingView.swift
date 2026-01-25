@@ -72,7 +72,7 @@ struct AnimatedBlobOrb: View {
         }
 
         // Add haptic feedback
-        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+        Task { await HapticManager.shared.play(.gentleTap) }
     }
 
     // MARK: - Mesh Gradient Orb

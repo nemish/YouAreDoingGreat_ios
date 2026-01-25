@@ -35,6 +35,29 @@ final class ProfileViewModel {
     var showResetJourneyConfirmation = false
     var isResettingJourney = false
 
+    // Haptic preferences
+    var hapticsEnabled: Bool {
+        didSet {
+            HapticManager.shared.setEnabled(hapticsEnabled)
+
+            // Sync to backend immediately
+            Task {
+                do {
+                    _ = try await userService.updateHapticPreference(enabled: hapticsEnabled)
+                } catch {
+                    // Keep local setting even if sync fails
+                    // User can try again when connection is restored
+                }
+            }
+        }
+    }
+
+    var hapticIntensity: Float {
+        didSet {
+            HapticManager.shared.setIntensity(hapticIntensity)
+        }
+    }
+
     // MARK: - Computed Properties
 
     var maskedUserID: String {
@@ -59,6 +82,10 @@ final class ProfileViewModel {
     init(userService: UserService, momentRepository: MomentRepository? = nil) {
         self.userService = userService
         self.momentRepository = momentRepository
+
+        // Initialize haptic preferences from HapticManager
+        self.hapticsEnabled = HapticManager.shared.isEnabled
+        self.hapticIntensity = HapticManager.shared.intensity
     }
 
     // MARK: - Public Methods
@@ -71,6 +98,12 @@ final class ProfileViewModel {
 
             userProfile = try await profile
             userStats = try await stats
+
+            // Restore haptic preference from server
+            if let hapticsEnabled = userProfile?.hapticsEnabled {
+                self.hapticsEnabled = hapticsEnabled
+                HapticManager.shared.setEnabled(hapticsEnabled)
+            }
         } catch {
             handleError(error)
         }
@@ -80,7 +113,7 @@ final class ProfileViewModel {
     func copyUserID() {
         guard let userId = userProfile?.userId else { return }
         UIPasteboard.general.string = userId
-        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+        Task { await HapticManager.shared.play(.gentleTap) }
     }
 
     func submitFeedback() async {
@@ -132,7 +165,7 @@ final class ProfileViewModel {
 
     func resetDailyLimit() {
         paywallService.resetDailyLimit()
-        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+        Task { await HapticManager.shared.play(.gentleTap) }
     }
 
     /// Resets the entire user journey - clears all data and generates new user ID
@@ -173,7 +206,7 @@ final class ProfileViewModel {
             // 8. Trigger onboarding reset (this will navigate to WelcomeView)
             onComplete()
 
-            UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+            await HapticManager.shared.play(.confidentPress)
         } catch {
             handleError(error)
         }

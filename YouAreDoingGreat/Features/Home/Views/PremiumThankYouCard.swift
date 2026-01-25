@@ -19,9 +19,6 @@ struct PremiumThankYouCard: View {
     @State private var showDismissButton = false
     @State private var iconGlow: CGFloat = 0
 
-    // Haptic feedback
-    private let lightFeedback = UIImpactFeedbackGenerator(style: .light)
-
     // Benefits list
     private let benefits = [
         "up to 10 moments a day",
@@ -140,7 +137,7 @@ struct PremiumThankYouCard: View {
             HStack {
                 Spacer()
                 Button {
-                    lightFeedback.impactOccurred()
+                    Task { await HapticManager.shared.play(.gentleTap) }
                     onDismiss()
                 } label: {
                     Text(NSLocalizedString("premium_thank_you_dismiss", comment: ""))

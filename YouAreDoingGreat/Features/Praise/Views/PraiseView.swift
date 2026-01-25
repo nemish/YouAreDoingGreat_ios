@@ -171,7 +171,7 @@ struct PraiseContentView<ViewModel: PraiseViewModelProtocol>: View {
                 isHugged: viewModel.isHugged,
                 showDelete: false,
                 onPrimary: {
-                    UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                    Task { await HapticManager.shared.play(.gentleTap) }
 
                     // Highlight the newly created moment
                     highlightService.highlightMoment(viewModel.clientId)

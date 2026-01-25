@@ -190,6 +190,8 @@ final class PraiseViewModel: PraiseViewModelProtocol {
         withAnimation(.easeOut(duration: 0.4)) {
             showPraise = true
         }
+        // Soft Pulse haptic after offline praise appears
+        await HapticManager.shared.play(.softPulse)
 
         try? await Task.sleep(nanoseconds: 300_000_000)
         withAnimation(.easeOut(duration: 0.3)) {
@@ -471,6 +473,9 @@ final class PraiseViewModel: PraiseViewModelProtocol {
     private func updateWithServerResponse(_ response: MomentResponse) async {
         await MainActor.run {
             if let praise = response.praise, !praise.isEmpty {
+                // Play Warm Arrival haptic BEFORE animation starts
+                Task { await HapticManager.shared.play(.warmArrival) }
+
                 withAnimation(.easeInOut(duration: 0.35)) {
                     aiPraise = praise
                 }
@@ -483,6 +488,14 @@ final class PraiseViewModel: PraiseViewModelProtocol {
                     try? await Task.sleep(nanoseconds: 500_000_000)
                     withAnimation(.easeOut(duration: 0.3)) {
                         showTags = true
+                    }
+
+                    // Staggered haptic for each tag (100ms intervals)
+                    for index in tags.indices {
+                        Task {
+                            try? await Task.sleep(nanoseconds: UInt64(index * 100_000_000))
+                            await HapticManager.shared.play(.gentleTap)
+                        }
                     }
                 }
             }

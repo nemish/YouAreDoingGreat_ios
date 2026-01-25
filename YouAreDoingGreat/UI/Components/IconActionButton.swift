@@ -10,9 +10,6 @@ struct IconActionButton: View {
     var backgroundColor: Color = .white.opacity(0.08)
     let action: () -> Void
 
-    // Haptic feedback
-    private let impactFeedback = UIImpactFeedbackGenerator(style: .light)
-
     var body: some View {
         Button(action: handleTap) {
             Image(systemName: icon)
@@ -26,7 +23,7 @@ struct IconActionButton: View {
     }
 
     private func handleTap() {
-        impactFeedback.impactOccurred()
+        Task { await HapticManager.shared.play(.gentleTap) }
         action()
     }
 }

@@ -10,9 +10,6 @@ struct LogMomentView: View {
     @State private var viewModel: LogMomentViewModel
     @FocusState private var isTextFieldFocused: Bool
 
-    // Haptic feedback
-    private let mediumFeedback = UIImpactFeedbackGenerator(style: .medium)
-
     // Praise state (inline, not separate sheet)
     @State private var showPraise = false
     @State private var praiseViewModel: PraiseViewModel?
@@ -307,7 +304,7 @@ struct LogMomentView: View {
         PrimaryButton(title: saveButtonTitle) {
             // Check if daily limit is reached before proceeding
             if PaywallService.shared.shouldBlockMomentCreation() {
-                UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                Task { await HapticManager.shared.play(.gentleTap) }
                 showPaywall = true
                 return
             }
@@ -316,7 +313,7 @@ struct LogMomentView: View {
                 isTextFieldFocused = false
                 let success = await viewModel.submit()
                 if success {
-                    mediumFeedback.impactOccurred()
+                    await HapticManager.shared.play(.confidentPress)
                     // Create praise view model with submitted data
                     let text = viewModel.momentText.trimmingCharacters(in: .whitespacesAndNewlines)
                     let momentText = text.isEmpty ? "Secret" : text
