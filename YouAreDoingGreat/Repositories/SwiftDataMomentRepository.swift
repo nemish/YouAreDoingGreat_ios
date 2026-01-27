@@ -101,4 +101,22 @@ final class SwiftDataMomentRepository: MomentRepository {
         logger.info("Fetched \(moments.count) moments with tag: \(tag)")
         return moments
     }
+
+    func fetchByDate(_ date: Date) async throws -> [Moment] {
+        let calendar = Calendar.current
+        let startOfDay = calendar.startOfDay(for: date)
+        guard let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay) else {
+            return []
+        }
+
+        let descriptor = FetchDescriptor<Moment>(
+            predicate: #Predicate<Moment> { moment in
+                moment.happenedAt >= startOfDay && moment.happenedAt < endOfDay && !moment.isDeleted
+            },
+            sortBy: [SortDescriptor(\.happenedAt, order: .reverse)]
+        )
+        let moments = try modelContext.fetch(descriptor)
+        logger.info("Fetched \(moments.count) moments for date: \(startOfDay)")
+        return moments
+    }
 }

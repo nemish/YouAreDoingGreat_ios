@@ -1,15 +1,41 @@
 import SwiftUI
 import SwiftData
 
+// MARK: - Filter Type
+// Defines the type of filter to apply to moments
+
+enum MomentsFilter {
+    case tag(String)
+    case date(Date, daySummary: DaySummaryDTO?)
+
+    var title: String {
+        switch self {
+        case .tag(let tag):
+            return "#\(tag.replacingOccurrences(of: "_", with: " "))"
+        case .date(let date, _):
+            let formatter = DateFormatter()
+            formatter.dateFormat = "EEEE, MMMM d"
+            return formatter.string(from: date)
+        }
+    }
+
+    var daySummary: DaySummaryDTO? {
+        if case .date(_, let summary) = self {
+            return summary
+        }
+        return nil
+    }
+}
+
 // MARK: - Filtered Moments List View
-// Shows a list of moments filtered by a specific tag
+// Shows a list of moments filtered by tag or date
 // Simple, idiomatic SwiftUI with @Query
 
 struct FilteredMomentsListView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
 
-    let tag: String
+    let filter: MomentsFilter
     let viewModel: MomentsListViewModel?
 
     // Query all moments, sorted by date
@@ -18,15 +44,64 @@ struct FilteredMomentsListView: View {
 
     @State private var selectedMomentId: UUID?
     @State private var showMomentDetail = false
+    @State private var scrollOffset: CGFloat = 0
+    @State private var isPanelCollapsed = false
+    @State private var selectedTag: IdentifiableTag? = nil
+
+    // Wrapper to make tag identifiable for sheet presentation
+    private struct IdentifiableTag: Identifiable {
+        let id = UUID()
+        let value: String
+    }
 
     init(tag: String, viewModel: MomentsListViewModel? = nil) {
-        self.tag = tag
+        self.filter = .tag(tag)
         self.viewModel = viewModel
     }
 
-    // Filter moments by tag
+    init(date: Date, daySummary: DaySummaryDTO? = nil, viewModel: MomentsListViewModel? = nil) {
+        self.filter = .date(date, daySummary: daySummary)
+        self.viewModel = viewModel
+    }
+
+    init(filter: MomentsFilter, viewModel: MomentsListViewModel? = nil) {
+        self.filter = filter
+        self.viewModel = viewModel
+    }
+
+    // Filter moments by tag or date
     private var filteredMoments: [Moment] {
-        allMoments.filter { !$0.isDeleted && $0.tags.contains(tag) }
+        switch filter {
+        case .tag(let tag):
+            return allMoments.filter { !$0.isDeleted && $0.tags.contains(tag) }
+        case .date(let date, _):
+            let calendar = Calendar.current
+            let startOfDay = calendar.startOfDay(for: date)
+            guard let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay) else {
+                return []
+            }
+            return allMoments.filter { moment in
+                !moment.isDeleted &&
+                moment.happenedAt >= startOfDay &&
+                moment.happenedAt < endOfDay
+            }
+        }
+    }
+
+    // Show info panel only for date filters
+    private var showInfoPanel: Bool {
+        if case .date = filter {
+            return filter.daySummary != nil
+        }
+        return false
+    }
+
+    // Get tag for detail sheet (if filtering by tag)
+    private var filterTag: String? {
+        if case .tag(let tag) = filter {
+            return tag
+        }
+        return nil
     }
 
     // Get or create viewModel for detail sheet
@@ -55,7 +130,7 @@ struct FilteredMomentsListView: View {
                         momentsList
                     }
                 }
-                .navigationTitle("#\(tag.replacingOccurrences(of: "_", with: " "))")
+                .navigationTitle(filter.title)
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
                     ToolbarItem(placement: .navigationBarTrailing) {
@@ -73,7 +148,7 @@ struct FilteredMomentsListView: View {
                     if let momentId = selectedMomentId {
                         MomentDetailSheet(
                             initialMomentId: momentId,
-                            filterTag: tag,
+                            filterTag: filterTag,
                             viewModel: effectiveViewModel
                         )
                         .toastContainer()  // Add toast support to detail sheet
@@ -98,25 +173,75 @@ struct FilteredMomentsListView: View {
 
     private var momentsList: some View {
         ScrollView {
-            VStack(spacing: 12) {
-                ForEach(filteredMoments) { moment in
-                    MomentCard(
-                        moment: moment,
-                        isHighlighted: false,
-                        viewModel: effectiveViewModel
+            VStack(spacing: 0) {
+                // Info panel for date filters
+                if showInfoPanel, let daySummary = filter.daySummary {
+                    DayInfoPanel(
+                        daySummary: daySummary,
+                        isCollapsed: isPanelCollapsed,
+                        onTagTap: { tag in
+                            selectedTag = IdentifiableTag(value: tag)
+                        }
                     )
-                    .onTapGesture {
-                        selectedMomentId = moment.clientId
-                        showMomentDetail = true
-                    }
-                    .transition(.asymmetric(
-                        insertion: .move(edge: .leading).combined(with: .opacity),
-                        removal: .move(edge: .leading).combined(with: .opacity)
-                    ))
+                    .animation(.spring(response: 0.3, dampingFraction: 0.8), value: isPanelCollapsed)
+                    .padding(.bottom, 12)
                 }
+
+                // Moments list
+                VStack(spacing: 12) {
+                    ForEach(filteredMoments) { moment in
+                        MomentCard(
+                            moment: moment,
+                            isHighlighted: false,
+                            viewModel: effectiveViewModel
+                        )
+                        .onTapGesture {
+                            selectedMomentId = moment.clientId
+                            showMomentDetail = true
+                        }
+                        .transition(.asymmetric(
+                            insertion: .move(edge: .leading).combined(with: .opacity),
+                            removal: .move(edge: .leading).combined(with: .opacity)
+                        ))
+                    }
+                }
+                .padding()
+                .animation(.spring(response: 0.35, dampingFraction: 0.75), value: filteredMoments.map { $0.id })
             }
-            .padding()
-            .animation(.spring(response: 0.35, dampingFraction: 0.75), value: filteredMoments.map { $0.id })
+            .background(
+                GeometryReader { geometry in
+                    Color.clear
+                        .preference(
+                            key: ScrollOffsetPreferenceKey.self,
+                            value: geometry.frame(in: .named("scroll")).minY
+                        )
+                }
+            )
+        }
+        .coordinateSpace(name: "scroll")
+        .onPreferenceChange(ScrollOffsetPreferenceKey.self) { value in
+            scrollOffset = value
+            // Collapse when scrolled down more than 50pt
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                isPanelCollapsed = value < -50
+            }
+        }
+        .sheet(item: $selectedTag) { identifiableTag in
+            // Open filtered list view for the tapped tag (across all dates)
+            FilteredMomentsListView(
+                tag: identifiableTag.value,
+                viewModel: effectiveViewModel
+            )
+        }
+    }
+
+    // MARK: - Scroll Offset Preference Key
+
+    private struct ScrollOffsetPreferenceKey: PreferenceKey {
+        static var defaultValue: CGFloat = 0
+
+        static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+            value = nextValue()
         }
     }
 }
