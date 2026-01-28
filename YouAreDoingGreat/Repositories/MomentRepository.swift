@@ -32,4 +32,7 @@ protocol MomentRepository {
 
     /// Fetch moments filtered by a specific tag
     func fetchByTag(_ tag: String) async throws -> [Moment]
+
+    /// Fetch moments for a specific date (all moments where happenedAt is on the given day)
+    func fetchByDate(_ date: Date) async throws -> [Moment]
 }

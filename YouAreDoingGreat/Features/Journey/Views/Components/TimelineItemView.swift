@@ -12,6 +12,7 @@ struct TimelineItemView: View {
 
     @State private var appear = false
     @State private var selectedTag: IdentifiableTag? = nil
+    @State private var showFilteredMoments = false
 
     // Wrapper to make tag identifiable for sheet presentation
     private struct IdentifiableTag: Identifiable {
@@ -140,8 +141,9 @@ struct TimelineItemView: View {
         }
     }
 
+    @ViewBuilder
     private var todayCard: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        let cardContent = VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 12) {
                 Image(systemName: "location.fill")
                     .font(.system(size: 16))
@@ -162,6 +164,11 @@ struct TimelineItemView: View {
                         Text("\(item.momentsCount)")
                             .font(.appFootnote)
                             .fontWeight(.semibold)
+
+                        // Chevron indicator for tappability
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 10, weight: .semibold))
+                            .opacity(0.6)
                     }
                     .foregroundStyle(.appPrimary.opacity(0.8))
                     .padding(.horizontal, 10)
@@ -189,6 +196,26 @@ struct TimelineItemView: View {
             RoundedRectangle(cornerRadius: 12)
                 .strokeBorder(Color.appPrimary.opacity(0.4), lineWidth: 1)
         )
+
+        if item.momentsCount > 0 {
+            Button {
+                Task { await HapticManager.shared.play(.gentleTap) }
+                showFilteredMoments = true
+            } label: {
+                cardContent
+            }
+            .buttonStyle(.plain)
+            .sheet(isPresented: $showFilteredMoments) {
+                // Open filtered list view for the date with day summary
+                FilteredMomentsListView(
+                    date: date,
+                    daySummary: item,
+                    viewModel: nil  // Will create temporary viewModel
+                )
+            }
+        } else {
+            cardContent
+        }
     }
 
     private var beginningCard: some View {
@@ -216,8 +243,9 @@ struct TimelineItemView: View {
 
     // MARK: - Content Card
 
+    @ViewBuilder
     private var contentCard: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        let cardContent = VStack(alignment: .leading, spacing: 12) {
             // Header: Moments count and time of day icons
             HStack {
                 // Moments count badge
@@ -229,6 +257,11 @@ struct TimelineItemView: View {
                         Text("\(item.momentsCount)")
                             .font(.appFootnote)
                             .fontWeight(.semibold)
+
+                        // Chevron indicator for tappability
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 10, weight: .semibold))
+                            .opacity(0.5)
                     }
                     .foregroundStyle(.textSecondary)
                     .padding(.horizontal, 10)
@@ -279,12 +312,39 @@ struct TimelineItemView: View {
             RoundedRectangle(cornerRadius: 12)
                 .fill(Color.white.opacity(0.08))
         )
-        .sheet(item: $selectedTag) { identifiableTag in
-            // Open filtered list view for the tapped tag
-            FilteredMomentsListView(
-                tag: identifiableTag.value,
-                viewModel: nil  // Will create temporary viewModel
-            )
+
+        if item.momentsCount > 0 {
+            Button {
+                Task { await HapticManager.shared.play(.gentleTap) }
+                showFilteredMoments = true
+            } label: {
+                cardContent
+            }
+            .buttonStyle(.plain)
+            .sheet(item: $selectedTag) { identifiableTag in
+                // Open filtered list view for the tapped tag
+                FilteredMomentsListView(
+                    tag: identifiableTag.value,
+                    viewModel: nil  // Will create temporary viewModel
+                )
+            }
+            .sheet(isPresented: $showFilteredMoments) {
+                // Open filtered list view for the date with day summary
+                FilteredMomentsListView(
+                    date: date,
+                    daySummary: item,
+                    viewModel: nil  // Will create temporary viewModel
+                )
+            }
+        } else {
+            cardContent
+                .sheet(item: $selectedTag) { identifiableTag in
+                    // Open filtered list view for the tapped tag
+                    FilteredMomentsListView(
+                        tag: identifiableTag.value,
+                        viewModel: nil  // Will create temporary viewModel
+                    )
+                }
         }
     }
 }

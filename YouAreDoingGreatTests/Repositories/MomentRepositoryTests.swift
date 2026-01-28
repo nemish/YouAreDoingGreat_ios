@@ -282,4 +282,162 @@ struct MomentRepositoryTests {
         #expect(favorites.count == 2)
         #expect(favorites.allSatisfy { $0.isFavorite })
     }
+
+    // MARK: - Fetch by Date Tests
+
+    @Test("Fetch moments by date returns correct moments")
+    func fetchMomentsByDate() async throws {
+        let calendar = Calendar.current
+        let now = Date()
+
+        // Create a specific date (today at noon)
+        let targetDate = calendar.date(bySettingHour: 12, minute: 0, second: 0, of: now)!
+
+        // Create moments for the target date
+        let morningMoment = MomentFixtures.moment(
+            text: "Morning moment",
+            happenedAt: calendar.date(bySettingHour: 9, minute: 0, second: 0, of: targetDate)!
+        )
+        let afternoonMoment = MomentFixtures.moment(
+            text: "Afternoon moment",
+            happenedAt: calendar.date(bySettingHour: 15, minute: 0, second: 0, of: targetDate)!
+        )
+        let eveningMoment = MomentFixtures.moment(
+            text: "Evening moment",
+            happenedAt: calendar.date(bySettingHour: 20, minute: 0, second: 0, of: targetDate)!
+        )
+
+        try await repository.save(morningMoment)
+        try await repository.save(afternoonMoment)
+        try await repository.save(eveningMoment)
+
+        let fetchedMoments = try await repository.fetchByDate(targetDate)
+
+        #expect(fetchedMoments.count == 3)
+        #expect(fetchedMoments.contains { $0.text == "Morning moment" })
+        #expect(fetchedMoments.contains { $0.text == "Afternoon moment" })
+        #expect(fetchedMoments.contains { $0.text == "Evening moment" })
+    }
+
+    @Test("Fetch moments by date excludes other days")
+    func fetchMomentsByDateExcludesOtherDays() async throws {
+        let calendar = Calendar.current
+        let now = Date()
+
+        // Create dates for today, yesterday, and tomorrow
+        let today = calendar.startOfDay(for: now)
+        let yesterday = calendar.date(byAdding: .day, value: -1, to: today)!
+        let tomorrow = calendar.date(byAdding: .day, value: 1, to: today)!
+
+        // Create moments for each day
+        let todayMoment = MomentFixtures.moment(
+            text: "Today",
+            happenedAt: calendar.date(bySettingHour: 12, minute: 0, second: 0, of: today)!
+        )
+        let yesterdayMoment = MomentFixtures.moment(
+            text: "Yesterday",
+            happenedAt: calendar.date(bySettingHour: 12, minute: 0, second: 0, of: yesterday)!
+        )
+        let tomorrowMoment = MomentFixtures.moment(
+            text: "Tomorrow",
+            happenedAt: calendar.date(bySettingHour: 12, minute: 0, second: 0, of: tomorrow)!
+        )
+
+        try await repository.save(todayMoment)
+        try await repository.save(yesterdayMoment)
+        try await repository.save(tomorrowMoment)
+
+        let fetchedMoments = try await repository.fetchByDate(today)
+
+        #expect(fetchedMoments.count == 1)
+        #expect(fetchedMoments.first?.text == "Today")
+    }
+
+    @Test("Fetch moments by date handles day boundaries")
+    func fetchMomentsByDateHandlesBoundaries() async throws {
+        let calendar = Calendar.current
+        let now = Date()
+        let today = calendar.startOfDay(for: now)
+
+        // Create moments at the very start and end of the day
+        let startOfDayMoment = MomentFixtures.moment(
+            text: "Start of day",
+            happenedAt: today
+        )
+        let endOfDayMoment = MomentFixtures.moment(
+            text: "End of day",
+            happenedAt: calendar.date(byAdding: .second, value: 86399, to: today)! // 23:59:59
+        )
+
+        // Create a moment just after midnight (next day)
+        let nextDayMoment = MomentFixtures.moment(
+            text: "Next day",
+            happenedAt: calendar.date(byAdding: .day, value: 1, to: today)!
+        )
+
+        try await repository.save(startOfDayMoment)
+        try await repository.save(endOfDayMoment)
+        try await repository.save(nextDayMoment)
+
+        let fetchedMoments = try await repository.fetchByDate(today)
+
+        #expect(fetchedMoments.count == 2)
+        #expect(fetchedMoments.contains { $0.text == "Start of day" })
+        #expect(fetchedMoments.contains { $0.text == "End of day" })
+        #expect(!fetchedMoments.contains { $0.text == "Next day" })
+    }
+
+    @Test("Fetch moments by date returns empty for date with no moments")
+    func fetchMomentsByDateReturnsEmpty() async throws {
+        let calendar = Calendar.current
+        let now = Date()
+
+        // Create moments for today
+        let today = calendar.startOfDay(for: now)
+        let todayMoment = MomentFixtures.moment(
+            text: "Today",
+            happenedAt: today
+        )
+
+        try await repository.save(todayMoment)
+
+        // Try to fetch moments from a week ago (should be empty)
+        let weekAgo = calendar.date(byAdding: .day, value: -7, to: today)!
+        let fetchedMoments = try await repository.fetchByDate(weekAgo)
+
+        #expect(fetchedMoments.isEmpty)
+    }
+
+    @Test("Fetch moments by date sorted by happened at")
+    func fetchMomentsByDateSorted() async throws {
+        let calendar = Calendar.current
+        let now = Date()
+        let today = calendar.startOfDay(for: now)
+
+        // Create moments in random order
+        let moment3 = MomentFixtures.moment(
+            text: "Latest",
+            happenedAt: calendar.date(bySettingHour: 20, minute: 0, second: 0, of: today)!
+        )
+        let moment1 = MomentFixtures.moment(
+            text: "Earliest",
+            happenedAt: calendar.date(bySettingHour: 8, minute: 0, second: 0, of: today)!
+        )
+        let moment2 = MomentFixtures.moment(
+            text: "Middle",
+            happenedAt: calendar.date(bySettingHour: 14, minute: 0, second: 0, of: today)!
+        )
+
+        try await repository.save(moment3)
+        try await repository.save(moment1)
+        try await repository.save(moment2)
+
+        let fetchedMoments = try await repository.fetchByDate(today)
+
+        #expect(fetchedMoments.count == 3)
+        // Should be sorted by happenedAt in reverse order (latest first)
+        #expect(fetchedMoments[0].text == "Latest")
+        #expect(fetchedMoments[1].text == "Middle")
+        #expect(fetchedMoments[2].text == "Earliest")
+    }
 }

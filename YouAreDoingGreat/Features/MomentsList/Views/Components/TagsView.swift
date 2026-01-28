@@ -25,39 +25,6 @@ struct TagsView: View {
     }
 }
 
-// MARK: - Tag Pill Component
-
-private struct TagPill: View {
-    let tag: String
-    var onTap: ((String) -> Void)? = nil
-
-    var body: some View {
-        let content = Text("#\(tag.replacingOccurrences(of: "_", with: " "))")
-            .font(.appCaption)
-            .foregroundStyle(.appSecondary)
-            .lineLimit(1)
-            .fixedSize(horizontal: true, vertical: false)
-            .padding(.horizontal, 8)
-            .padding(.vertical, 4)
-            .background(
-                Capsule()
-                    .fill(Color.appSecondary.opacity(0.2))
-            )
-
-        if let onTap = onTap {
-            Button {
-                Task { await HapticManager.shared.play(.gentleTap) }
-                onTap(tag)
-            } label: {
-                content
-            }
-            .buttonStyle(.plain)
-        } else {
-            content
-        }
-    }
-}
-
 // MARK: - Flow Layout
 // A custom layout that wraps content to the next line when it exceeds available width
 
