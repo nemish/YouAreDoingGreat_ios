@@ -1,6 +1,10 @@
 import SwiftUI
 import SwiftData
 
+// MARK: - Constants
+
+private let scrollCollapseThreshold: CGFloat = -50
+
 // MARK: - Filter Type
 // Defines the type of filter to apply to moments
 
@@ -73,7 +77,7 @@ struct FilteredMomentsListView: View {
     private var filteredMoments: [Moment] {
         switch filter {
         case .tag(let tag):
-            return allMoments.filter { !$0.isDeleted && $0.tags.contains(tag) }
+            return allMoments.filter { $0.tags.contains(tag) }
         case .date(let date, _):
             let calendar = Calendar.current
             let startOfDay = calendar.startOfDay(for: date)
@@ -81,7 +85,6 @@ struct FilteredMomentsListView: View {
                 return []
             }
             return allMoments.filter { moment in
-                !moment.isDeleted &&
                 moment.happenedAt >= startOfDay &&
                 moment.happenedAt < endOfDay
             }
@@ -221,9 +224,9 @@ struct FilteredMomentsListView: View {
         .coordinateSpace(name: "scroll")
         .onPreferenceChange(ScrollOffsetPreferenceKey.self) { value in
             scrollOffset = value
-            // Collapse when scrolled down more than 50pt
+            // Collapse when scroll offset exceeds threshold
             withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
-                isPanelCollapsed = value < -50
+                isPanelCollapsed = value < scrollCollapseThreshold
             }
         }
         .sheet(item: $selectedTag) { identifiableTag in

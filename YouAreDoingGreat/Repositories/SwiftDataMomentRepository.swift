@@ -111,7 +111,7 @@ final class SwiftDataMomentRepository: MomentRepository {
 
         let descriptor = FetchDescriptor<Moment>(
             predicate: #Predicate<Moment> { moment in
-                moment.happenedAt >= startOfDay && moment.happenedAt < endOfDay && !moment.isDeleted
+                moment.happenedAt >= startOfDay && moment.happenedAt < endOfDay
             },
             sortBy: [SortDescriptor(\.happenedAt, order: .reverse)]
         )

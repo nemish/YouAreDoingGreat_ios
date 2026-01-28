@@ -73,13 +73,18 @@ struct DayInfoPanel: View {
                         Image(systemName: icon.iconName)
                             .font(.system(size: 16))
                             .foregroundStyle(icon.color)
+                            .accessibilityLabel(accessibilityLabel(for: icon.iconName))
                     }
                 }
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel(timeOfDayIconsAccessibilityLabel)
             }
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 12)
         .background(.ultraThinMaterial)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Day summary header, collapsed")
     }
 
     // MARK: - Expanded Hero Panel
@@ -93,8 +98,11 @@ struct DayInfoPanel: View {
                         Image(systemName: icon.iconName)
                             .font(.system(size: 36))
                             .foregroundStyle(icon.color)
+                            .accessibilityLabel(accessibilityLabel(for: icon.iconName))
                     }
                 }
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel(timeOfDayIconsAccessibilityLabel)
             }
 
             // Day summary text
@@ -105,6 +113,7 @@ struct DayInfoPanel: View {
                     .lineSpacing(4)
                     .multilineTextAlignment(.center)
                     .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityLabel("Day summary: \(summaryText)")
             }
 
             // Tags section
@@ -114,6 +123,8 @@ struct DayInfoPanel: View {
                         TagPill(tag: tag, onTap: onTagTap)
                     }
                 }
+                .accessibilityElement(children: .contain)
+                .accessibilityLabel("Tags for this day")
             }
         }
         .padding(20)
@@ -123,6 +134,8 @@ struct DayInfoPanel: View {
         )
         .padding(.horizontal, 16)
         .padding(.top, 8)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Day summary panel, expanded")
     }
 
     // MARK: - Helpers
@@ -136,37 +149,35 @@ struct DayInfoPanel: View {
         formatter.dateFormat = "EEEE, MMMM d"
         return formatter.string(from: date)
     }
-}
 
-// MARK: - Tag Pill Component (reused from TagsView)
+    // MARK: - Accessibility Helpers
 
-private struct TagPill: View {
-    let tag: String
-    var onTap: ((String) -> Void)? = nil
+    private func accessibilityLabel(for iconName: String) -> String {
+        switch iconName {
+        case "sunrise.fill":
+            return "Early morning"
+        case "cloud.sun.fill":
+            return "Morning"
+        case "sun.max.fill":
+            return "Afternoon"
+        case "sunset.fill":
+            return "Evening"
+        case "moon.stars.fill":
+            return "Night"
+        default:
+            return "Time of day"
+        }
+    }
 
-    var body: some View {
-        let content = Text("#\(tag.replacingOccurrences(of: "_", with: " "))")
-            .font(.appCaption)
-            .foregroundStyle(.appSecondary)
-            .lineLimit(1)
-            .fixedSize(horizontal: true, vertical: false)
-            .padding(.horizontal, 8)
-            .padding(.vertical, 4)
-            .background(
-                Capsule()
-                    .fill(Color.appSecondary.opacity(0.2))
-            )
-
-        if let onTap = onTap {
-            Button {
-                Task { await HapticManager.shared.play(.gentleTap) }
-                onTap(tag)
-            } label: {
-                content
-            }
-            .buttonStyle(.plain)
+    private var timeOfDayIconsAccessibilityLabel: String {
+        let labels = timeOfDayIcons.map { accessibilityLabel(for: $0.iconName) }
+        if labels.isEmpty {
+            return ""
+        } else if labels.count == 1 {
+            return "Activity during \(labels[0].lowercased())"
         } else {
-            content
+            let joined = labels.joined(separator: ", ")
+            return "Activities during \(joined.lowercased())"
         }
     }
 }

@@ -61,12 +61,10 @@ struct MomentDetailSheet: View {
 
     // Filter moments by tag if provided
     private var displayMoments: [Moment] {
-        let moments = allMoments.filter { !$0.isDeleted }
-
         if let tag = filterTag {
-            return moments.filter { $0.tags.contains(tag) }
+            return allMoments.filter { $0.tags.contains(tag) }
         }
-        return moments
+        return allMoments
     }
 
     // Current moment based on selected ID
