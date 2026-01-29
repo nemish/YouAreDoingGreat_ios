@@ -84,6 +84,7 @@ struct ContentView: View {
             .tag(3)
         }
         .tint(Color.appPrimary)
+        .swipeableTab(selectedTab: $selectedTab, totalTabs: 4)
         .onChange(of: selectedTab) { _, _ in
             Task { await HapticManager.shared.play(.gentleTap) }
         }
