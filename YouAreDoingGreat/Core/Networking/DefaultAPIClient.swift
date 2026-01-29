@@ -36,6 +36,11 @@ final class DefaultAPIClient: APIClient, @unchecked Sendable {
         // Add app token header for API access validation
         request.setValue(AppConfig.appToken, forHTTPHeaderField: AppConfig.appTokenHeaderKey)
 
+        // Add app version header
+        let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0"
+        let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "1"
+        request.setValue("\(version) (\(build))", forHTTPHeaderField: "x-app-version")
+
         // Add request body if provided
         if let body = body {
             request.httpBody = try jsonEncoder.encode(body)

@@ -60,6 +60,9 @@ struct ProfileView: View {
                         // Legal Links
                         legalSection
 
+                        // Version Info
+                        versionInfo
+
                         Spacer(minLength: 40)
                     }
                     .padding(24)
@@ -565,6 +568,24 @@ struct ProfileView: View {
             }
             .buttonStyle(.plain)
         }
+    }
+
+    // MARK: - Version Info
+
+    private var versionInfo: some View {
+        HStack {
+            Spacer()
+            Text(versionString)
+                .font(.system(size: 11))
+                .foregroundStyle(.textTertiary.opacity(0.5))
+            Spacer()
+        }
+    }
+
+    private var versionString: String {
+        let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0"
+        let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "1"
+        return "v\(version) (\(build))"
     }
 
     // MARK: - Settings Row
