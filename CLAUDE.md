@@ -159,11 +159,13 @@ Always warm and supportive. Examples:
 
 Never judgmental or pressure-inducing.
 
-## v1 Scope
+## Current Phase: Post-v1 Iteration
 
-**In**: Home, LogMoment, Praise, MomentsList, Journey, Settings, Paywall, offline praise, AI integration
+**v1 Delivered**: Home, LogMoment, Praise, MomentsList, Journey, Settings, Paywall, offline praise, AI integration
 
-**Out**: Themes, notifications, social features, iCloud sync, widgets
+**Now Iterating On**: Push notifications, day summaries, enhanced features
+
+**Future Backlog**: Themes, social features, iCloud sync, widgets
 
 ## Linear Issues
 
@@ -173,6 +175,8 @@ Never judgmental or pressure-inducing.
 - **Requirements & Definition of Done** - Solution + checklist to verify completion
 - **Technical** - Implementation details, architecture decisions
 - **Extra Sources** - Links to Figma, docs, related PRs (optional)
+
+**Workflow**: When starting work on an issue, update its status to "In Progress" using the Linear API.
 
 ## Git Workflow
 
