@@ -66,5 +66,12 @@ final class ViewModelFactory {
     func makePaywallViewModel() -> PaywallViewModel {
         PaywallViewModel(subscriptionService: SubscriptionService.shared)
     }
+
+    // MARK: - Galaxy ViewModel
+
+    func makeGalaxyViewModel(screenSize: CGSize) -> GalaxyViewModel {
+        let repository = SwiftDataMomentRepository(modelContext: modelContext)
+        return GalaxyViewModel(repository: repository, screenSize: screenSize)
+    }
 }
 
