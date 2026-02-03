@@ -50,6 +50,10 @@ struct HomeView: View {
     // Navigation state
     @State private var showLogMoment = false
 
+    // Auto-cycle timer task
+    @State private var autoCycleTask: Task<Void, Never>?
+    private let autoCycleInterval: TimeInterval = 10.0
+
     // Premium thank-you card
     @State private var showPremiumThankYou = false
 
@@ -97,6 +101,8 @@ struct HomeView: View {
                         .opacity(breathingOpacity)
                         .onTapGesture {
                             cycleToNextPhrase()
+                            // Reset auto-cycle timer on manual tap
+                            startAutoCycleTimer()
                         }
 
                     Spacer()
@@ -147,6 +153,10 @@ struct HomeView: View {
                 selectRandomPhrase()
                 startBreathingAnimation()
                 loadTimerData()
+                startAutoCycleTimer()
+            }
+            .onDisappear {
+                stopAutoCycleTimer()
             }
             .onChange(of: animatePremiumBadge) { _, newValue in
                 if newValue && isPremium {
@@ -158,9 +168,13 @@ struct HomeView: View {
                 }
             }
             .onChange(of: showLogMoment) { _, isShowing in
-                // Refresh timer when returning from LogMomentView
-                if !isShowing {
+                if isShowing {
+                    // Pause auto-cycle when presenting LogMoment sheet
+                    stopAutoCycleTimer()
+                } else {
+                    // Refresh timer and resume auto-cycle when returning
                     loadTimerData()
+                    startAutoCycleTimer()
                 }
             }
         }
@@ -273,13 +287,31 @@ struct HomeView: View {
         currentPhrase = titlePhrases[currentPhraseIndex]
     }
 
-    private func cycleToNextPhrase() {
-        Task { await HapticManager.shared.play(.gentleTap) }
+    private func cycleToNextPhrase(playHaptic: Bool = true) {
+        if playHaptic {
+            Task { await HapticManager.shared.play(.gentleTap) }
+        }
 
         withAnimation(.easeInOut(duration: 0.3)) {
             currentPhraseIndex = (currentPhraseIndex + 1) % titlePhrases.count
             currentPhrase = titlePhrases[currentPhraseIndex]
         }
+    }
+
+    private func startAutoCycleTimer() {
+        stopAutoCycleTimer()
+        autoCycleTask = Task { @MainActor in
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(autoCycleInterval))
+                guard !Task.isCancelled else { break }
+                cycleToNextPhrase(playHaptic: false)
+            }
+        }
+    }
+
+    private func stopAutoCycleTimer() {
+        autoCycleTask?.cancel()
+        autoCycleTask = nil
     }
 
     private func startBreathingAnimation() {
