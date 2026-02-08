@@ -51,6 +51,9 @@ struct ProfileView: View {
                         // Haptic Settings Section
                         hapticSettingsSection
 
+                        // Praise Style Section
+                        praiseStyleSection
+
                         // Help & Support Section
                         helpSection
 
@@ -437,6 +440,46 @@ struct ProfileView: View {
         .animation(.easeInOut(duration: 0.3), value: viewModel.hapticsEnabled)
     }
 
+    // MARK: - Praise Style Section
+
+    private var praiseStyleSection: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("Praise Style")
+                .font(.appHeadline)
+                .foregroundStyle(.textSecondary)
+
+            HStack(spacing: 16) {
+                Image(systemName: "rectangle.stack.fill")
+                    .font(.system(size: 24))
+                    .foregroundStyle(.appPrimary)
+                    .frame(width: 40)
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Enriched Praise Cards")
+                        .font(.appHeadline)
+                        .foregroundStyle(.textPrimary)
+
+                    Text("Card-based praise with highlights")
+                        .font(.appFootnote)
+                        .foregroundStyle(.textSecondary)
+                }
+
+                Spacer()
+
+                Toggle("", isOn: Binding(
+                    get: { AppConfig.isEnrichedPraiseCardsEnabled },
+                    set: { AppConfig.isEnrichedPraiseCardsEnabled = $0 }
+                ))
+                .labelsHidden()
+            }
+            .padding(16)
+            .background(
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(Color.white.opacity(0.08))
+            )
+        }
+    }
+
     // MARK: - Help & Support Section
 
     private var helpSection: some View {
@@ -467,37 +510,6 @@ struct ProfileView: View {
                 Text("Developer")
                     .font(.appHeadline)
                     .foregroundStyle(.textSecondary)
-
-                // Enriched Praise Cards Toggle
-                HStack(spacing: 16) {
-                    Image(systemName: "rectangle.stack.fill")
-                        .font(.system(size: 24))
-                        .foregroundStyle(.appPrimary)
-                        .frame(width: 40)
-
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Enriched Praise Cards")
-                            .font(.appHeadline)
-                            .foregroundStyle(.textPrimary)
-
-                        Text("New card-based praise UI with highlights")
-                            .font(.appFootnote)
-                            .foregroundStyle(.textSecondary)
-                    }
-
-                    Spacer()
-
-                    Toggle("", isOn: Binding(
-                        get: { AppConfig.isEnrichedPraiseCardsEnabled },
-                        set: { AppConfig.isEnrichedPraiseCardsEnabled = $0 }
-                    ))
-                    .labelsHidden()
-                }
-                .padding(16)
-                .background(
-                    RoundedRectangle(cornerRadius: 12)
-                        .fill(Color.white.opacity(0.08))
-                )
 
                 Button {
                     viewModel.resetDailyLimit()

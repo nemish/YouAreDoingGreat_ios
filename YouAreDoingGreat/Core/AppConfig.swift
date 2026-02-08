@@ -76,14 +76,20 @@ enum AppConfig {
     /// Enable offline mode testing
     static let offlineModeEnabled = false
 
-    // MARK: - Debug Feature Flags (stored in UserDefaults)
+    // MARK: - User Preferences (stored in UserDefaults)
 
-    /// Key for enriched praise cards feature flag
-    static let enrichedPraiseCardsKey = "debug_enrichedPraiseCardsEnabled"
+    /// Key for enriched praise cards preference
+    static let enrichedPraiseCardsKey = "enrichedPraiseCardsEnabled"
 
-    /// Whether enriched praise cards UI is enabled (toggleable in debug menu)
+    /// Whether enriched praise cards UI is enabled (card-based praise with highlights)
+    /// Defaults to true for new users
     static var isEnrichedPraiseCardsEnabled: Bool {
-        get { UserDefaults.standard.bool(forKey: enrichedPraiseCardsKey) }
+        get {
+            if UserDefaults.standard.object(forKey: enrichedPraiseCardsKey) == nil {
+                return true
+            }
+            return UserDefaults.standard.bool(forKey: enrichedPraiseCardsKey)
+        }
         set { UserDefaults.standard.set(newValue, forKey: enrichedPraiseCardsKey) }
     }
 
