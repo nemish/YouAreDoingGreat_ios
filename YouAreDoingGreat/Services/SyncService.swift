@@ -135,6 +135,7 @@ final class SyncService {
             if let praise = momentResponse.praise, !praise.isEmpty {
                 // Moment has all data - sync it
                 moment.praise = praise
+                moment.praiseEnriched = momentResponse.praiseEnriched
                 moment.action = momentResponse.action
                 moment.tags = momentResponse.tags ?? []
                 moment.isSynced = true
@@ -182,6 +183,7 @@ final class SyncService {
             // Update with any data from server (including praise if already generated)
             if let praise = momentResponse.praise, !praise.isEmpty {
                 moment.praise = praise
+                moment.praiseEnriched = momentResponse.praiseEnriched
                 moment.action = momentResponse.action
                 moment.tags = momentResponse.tags ?? []
                 moment.isSynced = true
@@ -246,6 +248,7 @@ final class SyncService {
                 logger.info("📝 Action: \(enriched.action ?? "nil")")
 
                 moment.praise = praise
+                moment.praiseEnriched = enriched.praiseEnriched
                 moment.action = enriched.action
                 moment.tags = enriched.tags ?? []
                 moment.isSynced = true
@@ -280,6 +283,7 @@ final class SyncService {
             // Check if enriched
             if let praise = momentResponse.praise, !praise.isEmpty {
                 moment.praise = praise
+                moment.praiseEnriched = momentResponse.praiseEnriched
                 moment.action = momentResponse.action
                 moment.tags = momentResponse.tags ?? []
                 moment.isSynced = true
@@ -345,6 +349,7 @@ struct MomentResponse: Decodable {
     let tz: String
     let timeAgo: Int?
     let praise: String?
+    let praiseEnriched: EnrichedPraise?
     let action: String?
     let tags: [String]?
     let isFavorite: Bool?

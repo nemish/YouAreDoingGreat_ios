@@ -8,6 +8,7 @@ protocol PraiseViewModelProtocol: AnyObject, Observable {
     var timeAgoSeconds: Int? { get }
     var offlinePraise: String { get }
     var aiPraise: String? { get set }
+    var praiseEnriched: EnrichedPraise? { get set }
     var tags: [String] { get set }
     var isLoadingAIPraise: Bool { get set }
     var syncError: String? { get set }
@@ -87,8 +88,15 @@ struct PraiseContentView<ViewModel: PraiseViewModelProtocol>: View {
                                 .transition(.opacity.combined(with: .scale(scale: 0.8)))
                         }
 
-                        // AI praise text with smooth word-by-word animation (no layout jumps)
-                        if let aiPraise = viewModel.aiPraise, !aiPraise.isEmpty {
+                        // AI praise - enriched cards OR fallback plain text
+                        if AppConfig.isEnrichedPraiseCardsEnabled,
+                           let enrichedPraise = viewModel.praiseEnriched,
+                           !enrichedPraise.cards.isEmpty {
+                            // New enriched cards UI with highlights
+                            EnrichedPraiseCardsView(enrichedPraise: enrichedPraise)
+                                .transition(.opacity)
+                        } else if let aiPraise = viewModel.aiPraise, !aiPraise.isEmpty {
+                            // Fallback: existing smooth word-by-word animation (no layout jumps)
                             SmoothAnimatedTextView(
                                 text: aiPraise,
                                 font: .appBody,
@@ -282,6 +290,54 @@ struct PraiseContentView<ViewModel: PraiseViewModelProtocol>: View {
     .preferredColorScheme(.dark)
 }
 
+#Preview("Praise Content - Enriched Cards") {
+    ZStack {
+        LinearGradient.cosmic
+            .ignoresSafeArea()
+
+        PraiseContentView(
+            viewModel: {
+                // Enable enriched cards for preview
+                AppConfig.isEnrichedPraiseCardsEnabled = true
+
+                let vm = MockPraiseViewModel(
+                    momentText: "I finally cleaned my desk after three weeks",
+                    timeAgoSeconds: nil
+                )
+                vm.showContent = true
+                vm.showPraise = true
+                vm.showButton = true
+                vm.aiPraise = "You're doing amazing! Your consistent effort over these past 3 days shows real dedication."
+                vm.praiseEnriched = EnrichedPraise(
+                    version: 1,
+                    cards: [
+                        PraiseCard(
+                            text: "You're doing amazing!",
+                            highlights: [
+                                PraiseHighlight(start: 0, end: 21, type: .action, emphasis: .primary)
+                            ]
+                        ),
+                        PraiseCard(
+                            text: "Your consistent effort over these past 3 days shows real dedication.",
+                            highlights: [
+                                PraiseHighlight(start: 0, end: 22, type: .action, emphasis: .primary),
+                                PraiseHighlight(start: 39, end: 45, type: .number, emphasis: .secondary)
+                            ]
+                        )
+                    ]
+                )
+                vm.tags = ["self_care", "productivity"]
+                vm.showTags = true
+                return vm
+            }(),
+            selectedTab: .constant(0)
+        ) {
+            print("Dismissed")
+        }
+    }
+    .preferredColorScheme(.dark)
+}
+
 // MARK: - Mock ViewModel for Previews
 
 @MainActor
@@ -298,6 +354,7 @@ private final class MockPraiseViewModel: PraiseViewModelProtocol {
     // Praise state
     var offlinePraise: String
     var aiPraise: String?
+    var praiseEnriched: EnrichedPraise?
     var tags: [String] = []
     var isLoadingAIPraise: Bool = false
     var syncError: String?

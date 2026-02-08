@@ -36,9 +36,46 @@ struct MomentDTO: Decodable {
     let tz: String
     let timeAgo: Int?
     let praise: String?
+    let praiseEnriched: EnrichedPraise?
     let action: String?
     let tags: [String]?
     let isFavorite: Bool?
+}
+
+// MARK: - Enriched Praise Models
+
+/// Structured praise with cards and highlights for enhanced UI rendering
+struct EnrichedPraise: Codable, Equatable {
+    let version: Int
+    let cards: [PraiseCard]
+}
+
+/// A text card containing a portion of praise with optional highlights
+struct PraiseCard: Codable, Equatable, Identifiable {
+    var id: String { text }
+    let text: String
+    let highlights: [PraiseHighlight]
+}
+
+/// A highlight span within card text, marking important words/phrases
+struct PraiseHighlight: Codable, Equatable {
+    let start: Int
+    let end: Int
+    let type: HighlightType
+    let emphasis: EmphasisLevel
+
+    /// Type of highlighted content
+    enum HighlightType: String, Codable {
+        case positive  // Encouraging words ("amazing", "incredible")
+        case action    // User-referencing ("you did", "your effort")
+        case number    // Quantified achievements ("3 days", "5th time")
+    }
+
+    /// Visual emphasis level
+    enum EmphasisLevel: String, Codable {
+        case primary   // Bold + accent color (warm gold)
+        case secondary // Bold only
+    }
 }
 
 struct UpdateMomentResponse: Decodable {

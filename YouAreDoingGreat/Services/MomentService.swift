@@ -59,6 +59,7 @@ final class MomentService {
             existing.timezone = dto.tz
             existing.timeAgo = dto.timeAgo
             existing.praise = dto.praise
+            existing.praiseEnriched = dto.praiseEnriched
             existing.action = dto.action
             existing.tags = dto.tags ?? []
             existing.isFavorite = dto.isFavorite ?? false
@@ -82,6 +83,7 @@ final class MomentService {
 
             newMoment.serverId = dto.id
             newMoment.praise = dto.praise
+            newMoment.praiseEnriched = dto.praiseEnriched
             newMoment.action = dto.action
             newMoment.tags = dto.tags ?? []
             newMoment.isFavorite = dto.isFavorite ?? false
@@ -262,6 +264,7 @@ final class MomentService {
             tz: response.item.tz,
             timeAgo: response.item.timeAgo,
             praise: response.item.praise,
+            praiseEnriched: response.item.praiseEnriched,
             action: response.item.action,
             tags: response.item.tags,
             isFavorite: response.item.isFavorite
