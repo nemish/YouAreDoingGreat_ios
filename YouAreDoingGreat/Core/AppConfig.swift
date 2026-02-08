@@ -76,6 +76,17 @@ enum AppConfig {
     /// Enable offline mode testing
     static let offlineModeEnabled = false
 
+    // MARK: - Debug Feature Flags (stored in UserDefaults)
+
+    /// Key for enriched praise cards feature flag
+    static let enrichedPraiseCardsKey = "debug_enrichedPraiseCardsEnabled"
+
+    /// Whether enriched praise cards UI is enabled (toggleable in debug menu)
+    static var isEnrichedPraiseCardsEnabled: Bool {
+        get { UserDefaults.standard.bool(forKey: enrichedPraiseCardsKey) }
+        set { UserDefaults.standard.set(newValue, forKey: enrichedPraiseCardsKey) }
+    }
+
     // MARK: - Development Mode
 
     /// Returns true if running in DEBUG build configuration

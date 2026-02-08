@@ -23,9 +23,21 @@ final class Moment {
     // MARK: - Server-Enriched Data
 
     var praise: String?
+    var praiseEnrichedData: Data?  // JSON storage for SwiftData compatibility
     var action: String?
     var tags: [String]
     var isFavorite: Bool
+
+    // Computed accessor for praiseEnriched (non-persisted)
+    @Transient var praiseEnriched: EnrichedPraise? {
+        get {
+            guard let data = praiseEnrichedData else { return nil }
+            return try? JSONDecoder().decode(EnrichedPraise.self, from: data)
+        }
+        set {
+            praiseEnrichedData = try? JSONEncoder().encode(newValue)
+        }
+    }
 
     // MARK: - Local-Only Metadata
 

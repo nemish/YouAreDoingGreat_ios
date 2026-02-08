@@ -35,6 +35,11 @@ final class MomentDetailViewModel: PraiseViewModelProtocol {
         set { }  // No-op for detail view
     }
 
+    var praiseEnriched: EnrichedPraise? {
+        get { moment.praiseEnriched }
+        set { }  // No-op for detail view
+    }
+
     var tags: [String] {
         get { moment.tags }
         set { }  // No-op for detail view

@@ -468,6 +468,37 @@ struct ProfileView: View {
                     .font(.appHeadline)
                     .foregroundStyle(.textSecondary)
 
+                // Enriched Praise Cards Toggle
+                HStack(spacing: 16) {
+                    Image(systemName: "rectangle.stack.fill")
+                        .font(.system(size: 24))
+                        .foregroundStyle(.appPrimary)
+                        .frame(width: 40)
+
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Enriched Praise Cards")
+                            .font(.appHeadline)
+                            .foregroundStyle(.textPrimary)
+
+                        Text("New card-based praise UI with highlights")
+                            .font(.appFootnote)
+                            .foregroundStyle(.textSecondary)
+                    }
+
+                    Spacer()
+
+                    Toggle("", isOn: Binding(
+                        get: { AppConfig.isEnrichedPraiseCardsEnabled },
+                        set: { AppConfig.isEnrichedPraiseCardsEnabled = $0 }
+                    ))
+                    .labelsHidden()
+                }
+                .padding(16)
+                .background(
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(Color.white.opacity(0.08))
+                )
+
                 Button {
                     viewModel.resetDailyLimit()
                 } label: {

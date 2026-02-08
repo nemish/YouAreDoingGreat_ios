@@ -175,6 +175,7 @@ extension MomentFixtures {
         tz: String = "UTC",
         timeAgo: Int? = nil,
         praise: String? = "Great job!",
+        praiseEnriched: EnrichedPraise? = nil,
         action: String? = "Keep going",
         tags: [String]? = ["achievement"],
         isFavorite: Bool? = false
@@ -188,6 +189,7 @@ extension MomentFixtures {
             tz: tz,
             timeAgo: timeAgo,
             praise: praise,
+            praiseEnriched: praiseEnriched,
             action: action,
             tags: tags,
             isFavorite: isFavorite

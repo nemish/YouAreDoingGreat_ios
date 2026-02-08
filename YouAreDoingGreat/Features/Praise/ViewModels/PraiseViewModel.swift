@@ -38,6 +38,7 @@ final class PraiseViewModel: PraiseViewModelProtocol {
     // Praise state
     var offlinePraise: String
     var aiPraise: String?
+    var praiseEnriched: EnrichedPraise?
     var tags: [String] = []
     var isLoadingAIPraise: Bool = false
     var syncError: String?
@@ -425,6 +426,7 @@ final class PraiseViewModel: PraiseViewModelProtocol {
                 tz: "",
                 timeAgo: nil,
                 praise: nil,
+                praiseEnriched: nil,
                 action: nil,
                 tags: nil,
                 isFavorite: nil
@@ -474,10 +476,14 @@ final class PraiseViewModel: PraiseViewModelProtocol {
         await MainActor.run {
             if let praise = response.praise, !praise.isEmpty {
                 // Play Warm Arrival haptic BEFORE animation starts
-                Task { await HapticManager.shared.play(.warmArrival) }
+                // (only if not using enriched cards, which handle their own haptics)
+                if response.praiseEnriched == nil || !AppConfig.isEnrichedPraiseCardsEnabled {
+                    Task { await HapticManager.shared.play(.warmArrival) }
+                }
 
                 withAnimation(.easeInOut(duration: 0.35)) {
                     aiPraise = praise
+                    praiseEnriched = response.praiseEnriched
                 }
             }
 
@@ -506,6 +512,7 @@ final class PraiseViewModel: PraiseViewModelProtocol {
 
         moment.serverId = response.id
         moment.praise = response.praise
+        moment.praiseEnriched = response.praiseEnriched
         moment.action = response.action
         moment.tags = response.tags ?? []
         moment.isSynced = true

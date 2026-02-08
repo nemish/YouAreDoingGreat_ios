@@ -308,8 +308,14 @@ private struct MomentDetailContent: View {
                                     ))
                             }
 
-                            // AI praise (shown when available)
-                            if let aiPraise = moment.praise, !aiPraise.isEmpty {
+                            // AI praise - enriched cards OR fallback plain text
+                            if AppConfig.isEnrichedPraiseCardsEnabled,
+                               let enrichedPraise = moment.praiseEnriched,
+                               !enrichedPraise.cards.isEmpty {
+                                // Enriched cards UI (fast animation for detail view)
+                                EnrichedPraiseCardsView(enrichedPraise: enrichedPraise, fastAnimation: true)
+                            } else if let aiPraise = moment.praise, !aiPraise.isEmpty {
+                                // Fallback: plain text
                                 Text(aiPraise)
                                     .font(.appBody)
                                     .foregroundStyle(.textSecondary)
