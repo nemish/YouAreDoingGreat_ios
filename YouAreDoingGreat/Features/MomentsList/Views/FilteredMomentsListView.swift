@@ -78,15 +78,31 @@ struct FilteredMomentsListView: View {
         switch filter {
         case .tag(let tag):
             return allMoments.filter { $0.tags.contains(tag) }
-        case .date(let date, _):
-            let calendar = Calendar.current
-            let startOfDay = calendar.startOfDay(for: date)
-            guard let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay) else {
-                return []
-            }
-            return allMoments.filter { moment in
-                moment.happenedAt >= startOfDay &&
-                moment.happenedAt < endOfDay
+        case .date(let date, let daySummary):
+            if let daySummary = daySummary,
+               let utcDate = DateFormatters.parseISO8601(daySummary.date) {
+                // API groups days by UTC — use the actual API date for UTC boundaries
+                var utcCalendar = Calendar.current
+                utcCalendar.timeZone = TimeZone(identifier: "UTC")!
+                let startOfDay = utcCalendar.startOfDay(for: utcDate)
+                guard let endOfDay = utcCalendar.date(byAdding: .day, value: 1, to: startOfDay) else {
+                    return []
+                }
+                return allMoments.filter { moment in
+                    moment.happenedAt >= startOfDay &&
+                    moment.happenedAt < endOfDay
+                }
+            } else {
+                // No daySummary — use local timezone (e.g., when called from other views)
+                let calendar = Calendar.current
+                let startOfDay = calendar.startOfDay(for: date)
+                guard let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay) else {
+                    return []
+                }
+                return allMoments.filter { moment in
+                    moment.happenedAt >= startOfDay &&
+                    moment.happenedAt < endOfDay
+                }
             }
         }
     }

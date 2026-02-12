@@ -32,6 +32,29 @@ final class JourneyViewModel {
         nextCursor != nil
     }
 
+    // MARK: - Computed Properties for Month View
+
+    /// Earliest date with moments (for month navigation boundary)
+    var earliestDate: Date? {
+        guard let lastItem = items.last else { return nil }
+        return DateFormatters.calendarDay(from: lastItem.date)
+    }
+
+    /// Dictionary mapping dates to day summaries for O(1) lookup
+    var itemsByDate: [Date: DaySummaryDTO] {
+        Dictionary(uniqueKeysWithValues: items.compactMap { item in
+            guard let date = DateFormatters.calendarDay(from: item.date) else { return nil }
+            return (date, item)
+        })
+    }
+
+    /// Get day summary for a specific date
+    func daySummary(for date: Date) -> DaySummaryDTO? {
+        let calendar = Calendar.current
+        let startOfDay = calendar.startOfDay(for: date)
+        return itemsByDate[startOfDay]
+    }
+
     // MARK: - Initialization
 
     init(apiClient: APIClient) {

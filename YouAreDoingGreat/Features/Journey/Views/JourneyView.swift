@@ -5,6 +5,7 @@ import SwiftUI
 
 struct JourneyView: View {
     @State private var viewModel: JourneyViewModel
+    @State private var viewMode: JourneyViewMode = .timeline
     private var subscriptionService = SubscriptionService.shared
 
     init(viewModel: JourneyViewModel) {
@@ -138,11 +139,24 @@ struct JourneyView: View {
                 } else if viewModel.items.isEmpty {
                     emptyStateView
                 } else {
-                    timelineList
+                    switch viewMode {
+                    case .timeline:
+                        timelineList
+                    case .month:
+                        MonthNavigationView(
+                            timelineItems: viewModel.items,
+                            earliestDate: viewModel.earliestDate
+                        )
+                    }
                 }
             }
-            .navigationTitle("Journey")
-            .navigationBarTitleDisplayMode(.large)
+            .navigationTitle(viewMode == .timeline ? "Journey" : "")
+            .navigationBarTitleDisplayMode(viewMode == .timeline ? .large : .inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    JourneyViewModeToggle(selectedMode: $viewMode)
+                }
+            }
             .toolbarBackground(.hidden, for: .navigationBar)
             .toolbarColorScheme(.dark, for: .navigationBar)
             .task {
@@ -167,6 +181,16 @@ struct JourneyView: View {
                 Button(NSLocalizedString("timeline_restriction_alert_cancel_button", comment: ""), role: .cancel) { }
             } message: {
                 Text(NSLocalizedString("timeline_restriction_alert_message_journey", comment: ""))
+            }
+            .onChange(of: viewMode) { _, newMode in
+                TabSwipeControl.shared.isSwipeDisabled = (newMode == .month)
+            }
+            .onAppear {
+                // Restore flag when returning to Journey (e.g., after switching tabs)
+                TabSwipeControl.shared.isSwipeDisabled = (viewMode == .month)
+            }
+            .onDisappear {
+                TabSwipeControl.shared.isSwipeDisabled = false
             }
         }
     }

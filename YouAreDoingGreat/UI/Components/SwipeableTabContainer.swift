@@ -21,6 +21,11 @@ struct SwipeableTabModifier: ViewModifier {
             .simultaneousGesture(
                 DragGesture(minimumDistance: 20, coordinateSpace: .local)
                     .onEnded { value in
+                        // Check if tab swiping is disabled (e.g., month view is active)
+                        guard !TabSwipeControl.shared.isSwipeDisabled else {
+                            return
+                        }
+
                         let horizontalAmount = value.translation.width
                         let verticalAmount = abs(value.translation.height)
                         let velocity = value.predictedEndTranslation.width - value.translation.width
