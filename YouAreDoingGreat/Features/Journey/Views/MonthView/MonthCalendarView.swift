@@ -166,7 +166,7 @@ struct MonthCalendarView: View {
         let target = localCalendar.dateComponents([.year, .month, .day], from: date)
 
         var utcCalendar = Calendar.current
-        utcCalendar.timeZone = TimeZone(identifier: "UTC")!
+        utcCalendar.timeZone = TimeZone(identifier: "UTC") ?? .gmt
 
         for item in timelineItems {
             if let itemDate = DateFormatters.parseISO8601(item.date) {

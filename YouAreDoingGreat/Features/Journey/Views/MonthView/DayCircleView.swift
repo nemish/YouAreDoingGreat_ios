@@ -10,6 +10,11 @@ enum DayState: Equatable {
     case today
     case todayWithMoments(count: Int, daySummary: DaySummaryDTO)
 
+    /// Compares by state kind and moment count only; `daySummary` is intentionally
+    /// excluded because it doesn't affect the visual rendering of the circle
+    /// (heat intensity and orbit dots depend solely on `count` and `timesOfDay`,
+    /// which are derived from `count`). This avoids unnecessary SwiftUI diffing
+    /// when the summary object changes but the visual output stays the same.
     static func == (lhs: DayState, rhs: DayState) -> Bool {
         switch (lhs, rhs) {
         case (.pastEmpty, .pastEmpty), (.future, .future), (.today, .today):

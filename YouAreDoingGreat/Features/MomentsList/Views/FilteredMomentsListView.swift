@@ -83,7 +83,7 @@ struct FilteredMomentsListView: View {
                let utcDate = DateFormatters.parseISO8601(daySummary.date) {
                 // API groups days by UTC — use the actual API date for UTC boundaries
                 var utcCalendar = Calendar.current
-                utcCalendar.timeZone = TimeZone(identifier: "UTC")!
+                utcCalendar.timeZone = TimeZone(identifier: "UTC") ?? .gmt
                 let startOfDay = utcCalendar.startOfDay(for: utcDate)
                 guard let endOfDay = utcCalendar.date(byAdding: .day, value: 1, to: startOfDay) else {
                     return []
