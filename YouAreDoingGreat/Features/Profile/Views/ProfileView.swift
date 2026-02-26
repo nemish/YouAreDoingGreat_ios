@@ -685,7 +685,14 @@ private func makePreviewViewModel() -> ProfileViewModel {
         momentsYesterday: 5,
         currentStreak: 7,
         longestStreak: 14,
-        lastMomentDate: "2025-11-28"
+        lastMomentDate: "2025-11-28",
+        totalSparks: 4250,
+        chapter: 12,
+        chapterName: "Chapter 12",
+        nextChapterCost: 200,
+        nextChapterThreshold: 4500,
+        sparksToNextChapter: 250,
+        sparksInCurrentChapter: 120
     )
 
     return viewModel

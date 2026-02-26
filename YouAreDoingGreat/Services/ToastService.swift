@@ -8,6 +8,7 @@ struct ToastMessage: Equatable {
         case deleted
         case error
         case info
+        case sparks
 
         var icon: String {
             switch self {
@@ -15,6 +16,7 @@ struct ToastMessage: Equatable {
             case .deleted: return "trash.fill"
             case .error: return "exclamationmark.triangle.fill"
             case .info: return "info.circle.fill"
+            case .sparks: return "sparkle"
             }
         }
 
@@ -24,6 +26,7 @@ struct ToastMessage: Equatable {
             case .deleted: return .textSecondary
             case .error: return .orange
             case .info: return .textSecondary
+            case .sparks: return .appPrimary
             }
         }
     }
@@ -33,13 +36,15 @@ struct ToastMessage: Equatable {
     let style: Style
     let duration: TimeInterval
     let undoAction: (() -> Void)?
+    let onTapAction: (() -> Void)?
 
-    init(message: String, style: Style = .info, duration: TimeInterval = 3.0, undoAction: (() -> Void)? = nil) {
+    init(message: String, style: Style = .info, duration: TimeInterval = 3.0, undoAction: (() -> Void)? = nil, onTapAction: (() -> Void)? = nil) {
         self.id = UUID()
         self.message = message
         self.style = style
         self.duration = duration
         self.undoAction = undoAction
+        self.onTapAction = onTapAction
     }
 
     static func == (lhs: ToastMessage, rhs: ToastMessage) -> Bool {
@@ -63,13 +68,13 @@ final class ToastService {
     // MARK: - Public Methods
 
     /// Show a toast with custom message and style
-    func show(_ message: String, style: ToastMessage.Style = .info, duration: TimeInterval = 3.0, undoAction: (() -> Void)? = nil) {
+    func show(_ message: String, style: ToastMessage.Style = .info, duration: TimeInterval = 3.0, undoAction: (() -> Void)? = nil, onTapAction: (() -> Void)? = nil) {
         // Cancel any pending dismiss
         dismissTask?.cancel()
 
         // Show new toast
         withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
-            currentToast = ToastMessage(message: message, style: style, duration: duration, undoAction: undoAction)
+            currentToast = ToastMessage(message: message, style: style, duration: duration, undoAction: undoAction, onTapAction: onTapAction)
         }
 
         // Schedule auto-dismiss
@@ -89,6 +94,11 @@ final class ToastService {
     /// Convenience method for error messages
     func showError(_ message: String) {
         show(message, style: .error, duration: 4.0)
+    }
+
+    /// Convenience method for sparks earned toast
+    func showSparksEarned(_ count: Int, onTap: @escaping () -> Void) {
+        show("+\(count) sparks earned", style: .sparks, duration: 4.0, onTapAction: onTap)
     }
 
     /// Manually dismiss the current toast

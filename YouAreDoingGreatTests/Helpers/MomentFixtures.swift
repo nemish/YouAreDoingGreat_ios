@@ -178,7 +178,8 @@ extension MomentFixtures {
         praiseEnriched: EnrichedPraise? = nil,
         action: String? = "Keep going",
         tags: [String]? = ["achievement"],
-        isFavorite: Bool? = false
+        isFavorite: Bool? = false,
+        sparksAwarded: Int? = nil
     ) -> MomentResponse {
         return MomentResponse(
             id: id,
@@ -192,7 +193,8 @@ extension MomentFixtures {
             praiseEnriched: praiseEnriched,
             action: action,
             tags: tags,
-            isFavorite: isFavorite
+            isFavorite: isFavorite,
+            sparksAwarded: sparksAwarded
         )
     }
 }

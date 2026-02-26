@@ -39,6 +39,11 @@ final class Moment {
         }
     }
 
+    // MARK: - Sparks
+
+    var sparksAwarded: Int?
+    var isSparksCollected: Bool = false
+
     // MARK: - Local-Only Metadata
 
     var offlinePraise: String
@@ -65,6 +70,7 @@ final class Moment {
         self.offlinePraise = offlinePraise
         self.tags = []
         self.isFavorite = false
+        self.isSparksCollected = false
         self.isSynced = false
     }
 

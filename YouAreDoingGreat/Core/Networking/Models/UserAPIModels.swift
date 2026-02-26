@@ -39,6 +39,13 @@ struct UserStatsDTO: Decodable {
     let currentStreak: Int
     let longestStreak: Int
     let lastMomentDate: String?
+    let totalSparks: Int?
+    let chapter: Int?
+    let chapterName: String?
+    let nextChapterCost: Int?
+    let nextChapterThreshold: Int?
+    let sparksToNextChapter: Int?
+    let sparksInCurrentChapter: Int?
 }
 
 // MARK: - Feedback Request/Response

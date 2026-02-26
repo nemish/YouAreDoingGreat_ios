@@ -44,6 +44,7 @@ struct EnrichedPraiseCardsView: View {
                 }
             }
         }
+        .padding(.top, 16)
         .task {
             await revealCardsSequentially()
         }

@@ -65,6 +65,14 @@ final class PraiseViewModel: PraiseViewModelProtocol {
     }
     private var _isLimitBlocked: Bool = false
 
+    // Sparks state
+    var sparksAwarded: Int?
+    var sparksResult: SparksResult?
+    var isSparksCollected: Bool = false
+    var showSparksUI: Bool = false
+    var showChapterProgress: Bool = false
+    var isNewChapter: Bool = false
+
     // Animation state
     var showContent: Bool = false
     var showPraise: Bool = false
@@ -397,12 +405,25 @@ final class PraiseViewModel: PraiseViewModelProtocol {
             timeAgo: timeAgoSeconds
         )
 
-        let response: CreateMomentResponseWrapper = try await apiClient.request(
+        let wrapper: CreateMomentResponseWrapper = try await apiClient.request(
             endpoint: .createMoment,
             method: .post,
             body: body
         )
-        return response.item
+
+        // Capture sparks data from Phase 1
+        if let sparks = wrapper.sparks {
+            sparksAwarded = sparks.awarded
+            sparksResult = sparks
+            isNewChapter = sparks.isNewChapter
+            SparksProgressService.shared.updateFromSparksResult(sparks)
+        }
+        if let moment = localMoment {
+            moment.sparksAwarded = wrapper.item.sparksAwarded
+            try? await repository.update(moment)
+        }
+
+        return wrapper.item
     }
 
     private func enrichMomentOnServer(serverId: String) async throws -> MomentResponse {
@@ -429,7 +450,8 @@ final class PraiseViewModel: PraiseViewModelProtocol {
                 praiseEnriched: nil,
                 action: nil,
                 tags: nil,
-                isFavorite: nil
+                isFavorite: nil,
+                sparksAwarded: nil
             )
         }
     }
@@ -507,6 +529,17 @@ final class PraiseViewModel: PraiseViewModelProtocol {
             }
         }
 
+        // Reveal sparks UI after tags have appeared (tags delay 500ms + animation 300ms + buffer)
+        if sparksAwarded != nil && !isSparksCollected {
+            Task {
+                try? await Task.sleep(nanoseconds: 1_200_000_000)
+                withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {
+                    showSparksUI = true
+                }
+                await HapticManager.shared.play(.softPulse)
+            }
+        }
+
         // Update local moment with server data
         guard let moment = localMoment else { return }
 
@@ -522,6 +555,23 @@ final class PraiseViewModel: PraiseViewModelProtocol {
             logger.info("Updated local moment with server data: \(self.clientId.uuidString)")
         } catch {
             logger.error("Failed to update local moment: \(error.localizedDescription)")
+        }
+    }
+
+    // MARK: - Sparks Collection
+
+    func collectSparks() async {
+        guard let moment = localMoment else { return }
+        isSparksCollected = true
+        moment.isSparksCollected = true
+        try? await repository.update(moment)
+
+        await HapticManager.shared.play(.warmArrival)
+
+        // After sparks disappear, show progress bar
+        try? await Task.sleep(nanoseconds: 400_000_000)
+        withAnimation(.spring(response: 0.5, dampingFraction: 0.8)) {
+            showChapterProgress = true
         }
     }
 

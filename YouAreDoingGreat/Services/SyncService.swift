@@ -131,6 +131,9 @@ final class SyncService {
                 logger.info("✅ Found moment on server with serverId \(serverId)")
             }
 
+            // Store sparks data from server
+            moment.sparksAwarded = momentResponse.sparksAwarded ?? moment.sparksAwarded
+
             // Check if moment has complete data (praise, tags, action)
             if let praise = momentResponse.praise, !praise.isEmpty {
                 // Moment has all data - sync it
@@ -178,6 +181,12 @@ final class SyncService {
             if let serverId = momentResponse.id {
                 moment.serverId = serverId
                 logger.info("✅ Created moment on server with serverId \(serverId)")
+            }
+
+            // Store sparks data
+            moment.sparksAwarded = momentResponse.sparksAwarded
+            if let sparks = response.sparks {
+                SparksProgressService.shared.updateFromSparksResult(sparks)
             }
 
             // Update with any data from server (including praise if already generated)
@@ -280,6 +289,9 @@ final class SyncService {
             )
             let momentResponse = response.item
 
+            // Store sparks data
+            moment.sparksAwarded = momentResponse.sparksAwarded ?? moment.sparksAwarded
+
             // Check if enriched
             if let praise = momentResponse.praise, !praise.isEmpty {
                 moment.praise = praise
@@ -326,6 +338,7 @@ struct CreateMomentRequest: Encodable {
 
 struct CreateMomentResponseWrapper: Decodable {
     let item: MomentResponse
+    let sparks: SparksResult?
 }
 
 struct GetMomentResponseWrapper: Decodable {
@@ -353,6 +366,7 @@ struct MomentResponse: Decodable {
     let action: String?
     let tags: [String]?
     let isFavorite: Bool?
+    let sparksAwarded: Int?
 }
 
 /// Empty body for requests that don't need a body

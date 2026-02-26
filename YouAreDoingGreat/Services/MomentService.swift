@@ -63,6 +63,8 @@ final class MomentService {
             existing.action = dto.action
             existing.tags = dto.tags ?? []
             existing.isFavorite = dto.isFavorite ?? false
+            existing.sparksAwarded = dto.sparksAwarded ?? existing.sparksAwarded
+            // Don't overwrite isSparksCollected - it's local-only
             // Only mark as synced if enrichment is complete (has praise)
             existing.isSynced = dto.praise != nil && !(dto.praise?.isEmpty ?? true)
             try await repository.update(existing)
@@ -87,6 +89,7 @@ final class MomentService {
             newMoment.action = dto.action
             newMoment.tags = dto.tags ?? []
             newMoment.isFavorite = dto.isFavorite ?? false
+            newMoment.sparksAwarded = dto.sparksAwarded
             // Only mark as synced if enrichment is complete (has praise)
             newMoment.isSynced = dto.praise != nil && !(dto.praise?.isEmpty ?? true)
             try await repository.save(newMoment)
@@ -267,7 +270,8 @@ final class MomentService {
             praiseEnriched: response.item.praiseEnriched,
             action: response.item.action,
             tags: response.item.tags,
-            isFavorite: response.item.isFavorite
+            isFavorite: response.item.isFavorite,
+            sparksAwarded: response.item.sparksAwarded
         )
 
         // Sync the restored moment back to local storage
