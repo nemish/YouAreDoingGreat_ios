@@ -151,56 +151,23 @@ struct SparksDisplayView: View {
         .accessibilityHint("Long press to collect sparks")
     }
 
-    // MARK: - Ambient Halo (Layered Orb)
+    // MARK: - Ambient Halo (Subtle Vignette)
 
     private var ambientHalo: some View {
-        ZStack {
-            // Outer halo
-            Circle()
-                .fill(
-                    RadialGradient(
-                        colors: [
-                            Color.appPrimary.opacity(currentGlowOpacity * 0.3),
-                            Color.appPrimary.opacity(0)
-                        ],
-                        center: .center,
-                        startRadius: 10,
-                        endRadius: 80
-                    )
+        Circle()
+            .fill(
+                RadialGradient(
+                    colors: [
+                        Color.appPrimary.opacity(currentGlowOpacity * 0.12),
+                        Color.appPrimary.opacity(currentGlowOpacity * 0.04),
+                        Color.clear
+                    ],
+                    center: .center,
+                    startRadius: 5,
+                    endRadius: 70
                 )
-                .frame(width: SparksConstants.orbSize, height: SparksConstants.orbSize)
-
-            // Middle ring
-            Circle()
-                .fill(
-                    RadialGradient(
-                        colors: [
-                            Color.appPrimary.opacity(currentGlowOpacity * 0.5),
-                            Color.appPrimary.opacity(0)
-                        ],
-                        center: .center,
-                        startRadius: 5,
-                        endRadius: 55
-                    )
-                )
-                .frame(width: 110, height: 110)
-
-            // Inner core
-            Circle()
-                .fill(
-                    RadialGradient(
-                        colors: [
-                            Color.appPrimary.opacity(currentGlowOpacity * 0.8),
-                            Color.appPrimary.opacity(currentGlowOpacity * 0.2),
-                            Color.appPrimary.opacity(0)
-                        ],
-                        center: .center,
-                        startRadius: 0,
-                        endRadius: 35
-                    )
-                )
-                .frame(width: 70, height: 70)
-        }
+            )
+            .frame(width: SparksConstants.orbSize, height: SparksConstants.orbSize)
     }
 
     // MARK: - Orbiting Particles
@@ -474,12 +441,12 @@ struct SparksDisplayView: View {
 
 // MARK: - Previews
 
-#Preview("Sparks Display - Idle") {
+#Preview("Sparks Display") {
     ZStack {
         LinearGradient.cosmic
             .ignoresSafeArea()
 
-        SparksDisplayView(sparksAwarded: 51) {
+        SparksDisplayView(sparksAwarded: 88) {
             print("Collected!")
         }
     }
@@ -492,18 +459,6 @@ struct SparksDisplayView: View {
             .ignoresSafeArea()
 
         SparksDisplayView(sparksAwarded: 128) {
-            print("Collected!")
-        }
-    }
-    .preferredColorScheme(.dark)
-}
-
-#Preview("Sparks Display - Single Spark") {
-    ZStack {
-        LinearGradient.cosmic
-            .ignoresSafeArea()
-
-        SparksDisplayView(sparksAwarded: 1) {
             print("Collected!")
         }
     }
