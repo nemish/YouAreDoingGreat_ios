@@ -34,6 +34,7 @@ protocol PraiseViewModelProtocol: AnyObject, Observable {
     var showSparksUI: Bool { get set }
     var showChapterProgress: Bool { get set }
     var isNewChapter: Bool { get }
+    var preAwardChapterProgress: Double { get }
 
     func cancelPolling()
     func startEntranceAnimation() async
@@ -179,7 +180,8 @@ struct PraiseContentView<ViewModel: PraiseViewModelProtocol>: View {
                     }
 
                     // Sparks / Progress bar section (fixed-height container to prevent content jumping)
-                    if viewModel.showSparksUI,
+                    if AppConfig.isSparksChaptersEnabled,
+                       viewModel.showSparksUI,
                        let sparks = viewModel.sparksAwarded, sparks > 0 {
                         ZStack {
                             // Invisible placeholder reserving space for the taller view (SparksDisplayView)
@@ -201,12 +203,14 @@ struct PraiseContentView<ViewModel: PraiseViewModelProtocol>: View {
 
                             if viewModel.isSparksCollected,
                                viewModel.showChapterProgress,
-                               let result = viewModel.sparksResult {
+                               viewModel.sparksResult != nil {
                                 ChapterProgressBar(
                                     currentSparks: SparksProgressService.shared.sparksInCurrentChapter,
                                     chapterThreshold: SparksProgressService.shared.nextChapterCost,
-                                    chapterName: result.chapterName,
-                                    animateFromProgress: max(0, Double(SparksProgressService.shared.sparksInCurrentChapter - sparks) / Double(SparksProgressService.shared.nextChapterCost)),
+                                    chapterName: SparksProgressService.shared.chapterName.isEmpty
+                                        ? "Prologue"
+                                        : SparksProgressService.shared.chapterName,
+                                    animateFromProgress: viewModel.preAwardChapterProgress,
                                     isPulsing: false
                                 )
                                 .padding(.horizontal, 8)
@@ -218,9 +222,13 @@ struct PraiseContentView<ViewModel: PraiseViewModelProtocol>: View {
 
                         if viewModel.isSparksCollected,
                            viewModel.showChapterProgress,
-                           viewModel.isNewChapter,
-                           let result = viewModel.sparksResult {
-                            ChapterUnlockedOverlay(chapterName: result.chapterName, chapter: result.chapter)
+                           viewModel.isNewChapter {
+                            ChapterUnlockedOverlay(
+                                chapterName: SparksProgressService.shared.chapterName.isEmpty
+                                    ? "Prologue"
+                                    : SparksProgressService.shared.chapterName,
+                                chapter: SparksProgressService.shared.chapter
+                            )
                         }
                     }
                 }
@@ -236,7 +244,8 @@ struct PraiseContentView<ViewModel: PraiseViewModelProtocol>: View {
                     Task { await HapticManager.shared.play(.gentleTap) }
 
                     // If sparks exist but not collected, queue toast for after dismiss
-                    if let sparks = viewModel.sparksAwarded, sparks > 0, !viewModel.isSparksCollected {
+                    if AppConfig.isSparksChaptersEnabled,
+                       let sparks = viewModel.sparksAwarded, sparks > 0, !viewModel.isSparksCollected {
                         SparksProgressService.shared.pendingSparksToast = PendingSparksToast(
                             clientId: viewModel.clientId,
                             sparksAwarded: sparks,
@@ -457,6 +466,7 @@ private final class MockPraiseViewModel: PraiseViewModelProtocol {
     var showSparksUI: Bool = false
     var showChapterProgress: Bool = false
     var isNewChapter: Bool = false
+    var preAwardChapterProgress: Double = 0
 
     var timeDisplayText: String {
         guard let seconds = timeAgoSeconds, seconds > 0 else {

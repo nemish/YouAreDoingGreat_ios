@@ -128,7 +128,8 @@ struct HomeView: View {
                         }
 
                         // Chapter progress bar
-                        if SparksProgressService.shared.isLoaded {
+                        if AppConfig.isSparksChaptersEnabled,
+                           SparksProgressService.shared.isLoaded {
                             ChapterProgressBar(
                                 currentSparks: SparksProgressService.shared.sparksInCurrentChapter,
                                 chapterThreshold: SparksProgressService.shared.nextChapterCost,
@@ -167,7 +168,8 @@ struct HomeView: View {
                 loadTimerData()
                 startAutoCycleTimer()
                 // Load sparks progress if not yet loaded
-                if !SparksProgressService.shared.isLoaded {
+                if AppConfig.isSparksChaptersEnabled,
+                   !SparksProgressService.shared.isLoaded {
                     Task { await SparksProgressService.shared.refresh() }
                 }
             }
@@ -193,7 +195,8 @@ struct HomeView: View {
                     startAutoCycleTimer()
 
                     // Show sparks toast if praise was dismissed before collection
-                    if let pending = SparksProgressService.shared.pendingSparksToast {
+                    if AppConfig.isSparksChaptersEnabled,
+                       let pending = SparksProgressService.shared.pendingSparksToast {
                         let sparks = pending.sparksAwarded
                         let clientId = pending.clientId
                         SparksProgressService.shared.pendingSparksToast = nil

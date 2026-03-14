@@ -376,7 +376,8 @@ private struct MomentDetailContent: View {
                         }
 
                         // Sparks section (below tags)
-                        if let sparks = moment.sparksAwarded, sparks > 0 {
+                        if AppConfig.isSparksChaptersEnabled,
+                           let sparks = moment.sparksAwarded, sparks > 0 {
                             if moment.isSparksCollected {
                                 // Already collected — show amount
                                 HStack(spacing: 14) {
