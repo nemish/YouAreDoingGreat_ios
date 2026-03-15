@@ -106,6 +106,7 @@ final class MomentDetailViewModel: PraiseViewModelProtocol {
         set { }
     }
     var isNewChapter: Bool { false }
+    var preAwardChapterProgress: Double { 0 }
 
     // MARK: - Initialization
 
