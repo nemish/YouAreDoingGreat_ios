@@ -414,9 +414,15 @@ private struct MomentDetailContent: View {
                             } else {
                                 // Deferred collection
                                 SparksDisplayView(sparksAwarded: sparks) {
-                                    moment.isSparksCollected = true
-                                    try? moment.modelContext?.save()
-                                    Task { await HapticManager.shared.play(.warmArrival) }
+                                    Task { @MainActor in
+                                        moment.isSparksCollected = true
+                                        do {
+                                            try await viewModel.repository.update(moment)
+                                        } catch {
+                                            logger.error("Failed to persist sparks collection: \(String(describing: error))")
+                                        }
+                                        await HapticManager.shared.play(.warmArrival)
+                                    }
                                 }
                                 .padding(.top, 8)
                                 .opacity(showTags ? 1 : 0)

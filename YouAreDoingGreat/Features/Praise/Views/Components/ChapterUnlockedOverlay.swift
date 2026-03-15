@@ -10,6 +10,7 @@ struct ChapterUnlockedOverlay: View {
     @State private var isVisible = false
     @State private var particleScale: CGFloat = 0.5
     @State private var particleOpacity: Double = 1.0
+    @State private var animationTasks: [Task<Void, Never>] = []
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -24,6 +25,10 @@ struct ChapterUnlockedOverlay: View {
         .opacity(isVisible ? 1 : 0)
         .onAppear {
             startAnimations()
+        }
+        .onDisappear {
+            animationTasks.forEach { $0.cancel() }
+            animationTasks.removeAll()
         }
         .accessibilityElement(children: .combine)
         .accessibilityLabel("New chapter unlocked: \(chapterName), Chapter \(chapter)")
@@ -96,15 +101,17 @@ struct ChapterUnlockedOverlay: View {
         }
 
         // Haptic
-        Task { await HapticManager.shared.play(.warmArrival) }
+        let hapticTask = Task { await HapticManager.shared.play(.warmArrival) }
+        animationTasks.append(hapticTask)
 
         // Auto-dismiss after 3 seconds
-        Task {
+        let dismissTask = Task { @MainActor in
             try? await Task.sleep(nanoseconds: 3_000_000_000)
             withAnimation(.easeOut(duration: 0.3)) {
                 isVisible = false
             }
         }
+        animationTasks.append(dismissTask)
     }
 }
 

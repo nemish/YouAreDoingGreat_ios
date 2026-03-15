@@ -1,5 +1,4 @@
 import SwiftUI
-import UIKit
 
 // MARK: - Particle Models
 
@@ -82,6 +81,7 @@ struct SparksDisplayView: View {
     @State private var burstStartTime: Date?
     @State private var cancelStartTime: Date?
     @State private var cancelFromProgress: Double = 0
+    @State private var collectionTasks: [Task<Void, Never>] = []
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -137,6 +137,10 @@ struct SparksDisplayView: View {
         .scaleEffect(isRevealed ? 1 : 0.8)
         .opacity(isRevealed ? 1 : 0)
         .onAppear { startEntrance() }
+        .onDisappear {
+            collectionTasks.forEach { $0.cancel() }
+            collectionTasks.removeAll()
+        }
         .onLongPressGesture(minimumDuration: SparksConstants.pressDuration) {
             // Gesture recognized — but we handle completion via timer
         } onPressingChanged: { pressing in
@@ -365,9 +369,8 @@ struct SparksDisplayView: View {
         for threshold in SparksConstants.hapticThresholds {
             if newProgress >= threshold && lastHapticThreshold < threshold {
                 lastHapticThreshold = threshold
-                let style: UIImpactFeedbackGenerator.FeedbackStyle = threshold >= 1.0 ? .medium : .light
-                let generator = UIImpactFeedbackGenerator(style: style)
-                generator.impactOccurred()
+                let haptic: HapticPattern = threshold >= 1.0 ? .softPulse : .gentleTap
+                Task { await HapticManager.shared.play(haptic) }
             }
         }
 
@@ -388,34 +391,37 @@ struct SparksDisplayView: View {
         withAnimation(.easeOut(duration: 0.08)) {
             flashOpacity = 0.6
         }
-        Task { @MainActor in
+        let flashTask = Task { @MainActor in
             try? await Task.sleep(nanoseconds: 80_000_000)
             withAnimation(.easeOut(duration: 0.07)) {
                 flashOpacity = 0
             }
         }
+        collectionTasks.append(flashTask)
 
         // Number punch
         withAnimation(.spring(response: 0.3, dampingFraction: 0.5)) {
             numberScale = 1.2
         }
-        Task { @MainActor in
+        let punchTask = Task { @MainActor in
             try? await Task.sleep(nanoseconds: 150_000_000)
             withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
                 numberScale = 1.0
                 numberWhiteFlash = 0
             }
         }
+        collectionTasks.append(punchTask)
         numberWhiteFlash = 1.0
 
         // Spawn burst particles
         spawnBurstParticles()
 
         // Fire callback after 0.3s delay
-        Task { @MainActor in
+        let callbackTask = Task { @MainActor in
             try? await Task.sleep(nanoseconds: 300_000_000)
             onCollect()
         }
+        collectionTasks.append(callbackTask)
     }
 
     private func spawnBurstParticles() {
@@ -426,16 +432,17 @@ struct SparksDisplayView: View {
                 angle: Double.random(in: 0...(2 * .pi)),
                 speed: CGFloat.random(in: 250...500),
                 size: CGFloat.random(in: 2...4),
-                color: [Color.appPrimary, .white, Color.appPrimary.opacity(0.6)].randomElement()!
+                color: [Color.appPrimary, .white, Color.appPrimary.opacity(0.6)].randomElement() ?? .appPrimary
             )
         }
 
         // Clean up burst after animation completes
-        Task { @MainActor in
+        let cleanupTask = Task { @MainActor in
             try? await Task.sleep(nanoseconds: 700_000_000)
             burstStartTime = nil
             burstParticles = []
         }
+        collectionTasks.append(cleanupTask)
     }
 }
 

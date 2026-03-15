@@ -1,4 +1,7 @@
 import SwiftUI
+import OSLog
+
+private let logger = Logger(subsystem: "ee.required.you-are-doing-great", category: "chapter-progress")
 
 // MARK: - Chapter Progress Bar
 // Reusable progress bar showing sparks progress toward next chapter
@@ -16,6 +19,7 @@ struct ChapterProgressBar: View {
     @State private var pulseScale: CGFloat = 1.0
     @State private var glowOpacity: Double = 0.2
     @State private var hasAnimated = false
+    @State private var shimmerTask: Task<Void, Never>?
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -77,8 +81,11 @@ struct ChapterProgressBar: View {
             guard !hasAnimated else { return }
             hasAnimated = true
 
+            logger.info("ChapterProgressBar.onAppear — currentSparks=\(currentSparks), threshold=\(chapterThreshold), animateFrom=\(animateFromProgress.map { "\($0)" } ?? "nil"), targetProgress=\(targetProgress)")
+
             if let fromProgress = animateFromProgress {
                 displayProgress = max(0, fromProgress)
+                logger.info("  → starting displayProgress=\(displayProgress), will animate to \(targetProgress)")
             }
 
             // Animate fill
@@ -110,6 +117,10 @@ struct ChapterProgressBar: View {
                 displayProgress = targetProgress
             }
         }
+        .onDisappear {
+            shimmerTask?.cancel()
+            shimmerTask = nil
+        }
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(chapterName), \(currentSparks) of \(chapterThreshold) sparks")
         .accessibilityValue("\(Int(targetProgress * 100)) percent")
@@ -124,7 +135,7 @@ struct ChapterProgressBar: View {
                     colors: [
                         Color.appPrimary,
                         Color.appPrimary.opacity(0.8),
-                        Color(red: 0.25, green: 0.3, blue: 0.55)
+                        Color.appSecondary
                     ],
                     startPoint: .leading,
                     endPoint: .trailing
@@ -155,7 +166,7 @@ struct ChapterProgressBar: View {
     // MARK: - Animations
 
     private func startPeriodicShimmer(delay: Double) {
-        Task { @MainActor in
+        shimmerTask = Task { @MainActor in
             try? await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
             while !Task.isCancelled {
                 shimmerOffset = -0.4

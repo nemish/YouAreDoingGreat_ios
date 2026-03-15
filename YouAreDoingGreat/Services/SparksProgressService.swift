@@ -39,6 +39,7 @@ final class SparksProgressService {
     // MARK: - Dependencies
 
     private let apiClient: APIClient
+    private var isRefreshing = false
 
     private init(apiClient: APIClient = DefaultAPIClient()) {
         self.apiClient = apiClient
@@ -70,6 +71,8 @@ final class SparksProgressService {
 
     /// Load state from GET /user/stats response
     func loadFromStats(_ stats: UserStatsDTO) {
+        logger.debug("loadFromStats — raw values: totalSparks=\(stats.totalSparks.map(String.init) ?? "nil"), sparksInCurrentChapter=\(stats.sparksInCurrentChapter.map(String.init) ?? "nil"), nextChapterCost=\(stats.nextChapterCost.map(String.init) ?? "nil"), chapter=\(stats.chapter.map(String.init) ?? "nil")")
+
         if let sparks = stats.totalSparks {
             totalSparks = sparks
         }
@@ -89,9 +92,15 @@ final class SparksProgressService {
             sparksToNextChapter = remaining
         }
         if let inChapter = stats.sparksInCurrentChapter {
-            sparksInCurrentChapter = inChapter
+            // Don't overwrite locally-computed sparks with server-returned 0
+            // (server may not have updated stats yet after POST /moments)
+            if inChapter > 0 || sparksInCurrentChapter == 0 {
+                sparksInCurrentChapter = inChapter
+            }
         }
         isLoaded = true
+
+        logger.info("loadFromStats — set values: sparksInCurrentChapter=\(self.sparksInCurrentChapter), nextChapterCost=\(self.nextChapterCost), chapterProgress=\(self.chapterProgress)")
     }
 
     /// Reset all state (called during user journey reset)
@@ -109,6 +118,14 @@ final class SparksProgressService {
 
     /// Refresh from server via GET /user/stats
     func refresh() async {
+        guard !isRefreshing else {
+            logger.debug("refresh() — skipping, already in-flight")
+            return
+        }
+        isRefreshing = true
+        defer { isRefreshing = false }
+
+        logger.debug("refresh() — starting GET /user/stats")
         do {
             let response: UserStatsResponse = try await apiClient.request(
                 endpoint: .userStats,
@@ -116,9 +133,9 @@ final class SparksProgressService {
                 body: nil as String?
             )
             loadFromStats(response.item)
-            logger.info("Refreshed sparks progress: \(self.totalSparks) total, chapter \(self.chapter)")
+            logger.info("refresh() — success: totalSparks=\(self.totalSparks), chapter=\(self.chapter), sparksInChapter=\(self.sparksInCurrentChapter)/\(self.nextChapterCost)")
         } catch {
-            logger.error("Failed to refresh sparks progress: \(error.localizedDescription)")
+            logger.error("refresh() — FAILED: \(String(describing: error))")
         }
     }
 }
