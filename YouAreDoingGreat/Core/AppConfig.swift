@@ -76,6 +76,9 @@ enum AppConfig {
     /// Enable offline mode testing
     static let offlineModeEnabled = false
 
+    /// Enable sparks & chapters progression UI
+    static let isSparksChaptersEnabled = false
+
     // MARK: - User Preferences (stored in UserDefaults)
 
     /// Key for enriched praise cards preference

@@ -127,6 +127,19 @@ struct HomeView: View {
                             LastMomentTimerView(timeValue: timerTimeValue, phrase: timerPhrase)
                         }
 
+                        // Chapter progress bar
+                        if AppConfig.isSparksChaptersEnabled,
+                           SparksProgressService.shared.isLoaded {
+                            ChapterProgressBar(
+                                currentSparks: SparksProgressService.shared.sparksInCurrentChapter,
+                                chapterThreshold: SparksProgressService.shared.nextChapterCost,
+                                chapterName: SparksProgressService.shared.chapterName,
+                                animateFromProgress: nil,
+                                isPulsing: true
+                            )
+                            .padding(.horizontal, 8)
+                        }
+
                         PrimaryButton(title: "I Did a Thing") {
                             showLogMoment = true
                         }
@@ -154,6 +167,11 @@ struct HomeView: View {
                 startBreathingAnimation()
                 loadTimerData()
                 startAutoCycleTimer()
+                // Load sparks progress if not yet loaded
+                if AppConfig.isSparksChaptersEnabled,
+                   !SparksProgressService.shared.isLoaded {
+                    Task { await SparksProgressService.shared.refresh() }
+                }
             }
             .onDisappear {
                 stopAutoCycleTimer()
@@ -175,6 +193,19 @@ struct HomeView: View {
                     // Refresh timer and resume auto-cycle when returning
                     loadTimerData()
                     startAutoCycleTimer()
+
+                    // Show sparks toast if praise was dismissed before collection
+                    if AppConfig.isSparksChaptersEnabled,
+                       let pending = SparksProgressService.shared.pendingSparksToast {
+                        let sparks = pending.sparksAwarded
+                        let clientId = pending.clientId
+                        SparksProgressService.shared.pendingSparksToast = nil
+                        ToastService.shared.showSparksEarned(sparks) {
+                            // Navigate to moments list and highlight the moment
+                            selectedTab = 1
+                            HighlightService.shared.highlightMoment(clientId)
+                        }
+                    }
                 }
             }
         }

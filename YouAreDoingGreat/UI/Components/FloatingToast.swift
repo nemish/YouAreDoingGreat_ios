@@ -93,6 +93,9 @@ struct ToastContainerModifier: ViewModifier {
                         .padding(.bottom, 70) // Above tab bar
                         .padding(.horizontal, 24)
                         .onTapGesture {
+                            if let onTap = toast.onTapAction {
+                                onTap()
+                            }
                             toastService.dismiss()
                         }
                         .gesture(

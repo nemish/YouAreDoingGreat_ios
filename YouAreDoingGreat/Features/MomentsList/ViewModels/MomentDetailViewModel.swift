@@ -93,6 +93,20 @@ final class MomentDetailViewModel: PraiseViewModelProtocol {
         moment.isFavorite
     }
 
+    // Sparks state - derived from moment data
+    var sparksAwarded: Int? { moment.sparksAwarded }
+    var sparksResult: SparksResult? { nil }
+    var isSparksCollected: Bool { moment.isSparksCollected }
+    var showSparksUI: Bool {
+        get { false }
+        set { }
+    }
+    var showChapterProgress: Bool {
+        get { false }
+        set { }
+    }
+    var isNewChapter: Bool { false }
+
     // MARK: - Initialization
 
     init(
@@ -143,6 +157,10 @@ final class MomentDetailViewModel: PraiseViewModelProtocol {
         } catch {
             logger.error("Failed to clear sync error: \(error.localizedDescription)")
         }
+    }
+
+    func collectSparks() async {
+        // Deferred collection handled in MomentDetailSheet directly
     }
 
     // MARK: - Action Handlers

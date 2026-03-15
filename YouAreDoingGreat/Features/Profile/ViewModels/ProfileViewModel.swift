@@ -205,6 +205,7 @@ final class ProfileViewModel {
             // 6. Clear cached profile/stats
             userProfile = nil
             userStats = nil
+            SparksProgressService.shared.reset()
 
             // 7. Reset first log hint so it shows again
             UserDefaults.standard.removeObject(forKey: "hasCompletedFirstLog")

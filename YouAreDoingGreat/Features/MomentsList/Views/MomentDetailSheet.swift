@@ -374,6 +374,60 @@ private struct MomentDetailContent: View {
                             tagsSection
                                 .opacity(showTags ? 1 : 0)
                         }
+
+                        // Sparks section (below tags)
+                        if AppConfig.isSparksChaptersEnabled,
+                           let sparks = moment.sparksAwarded, sparks > 0 {
+                            if moment.isSparksCollected {
+                                // Already collected — show amount
+                                HStack(spacing: 14) {
+                                    HStack(spacing: 8) {
+                                        Image(systemName: "sparkles")
+                                            .font(.system(size: 27))
+                                            .foregroundStyle(.appPrimary)
+                                        Text("+\(sparks)")
+                                            .font(.system(size: 28, weight: .regular, design: .rounded))
+                                            .foregroundStyle(.appPrimary)
+                                    }
+
+                                    VStack(alignment: .leading, spacing: 1) {
+                                        Text("sparks")
+                                            .font(.appBody)
+                                            .foregroundStyle(.textTertiary)
+                                        Text("collected")
+                                            .font(.appBody)
+                                            .foregroundStyle(.textTertiary)
+                                    }
+                                }
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 20)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 16)
+                                        .fill(Color.white.opacity(0.04))
+                                        .overlay(
+                                            RoundedRectangle(cornerRadius: 16)
+                                                .strokeBorder(Color.appPrimary.opacity(0.15), style: StrokeStyle(lineWidth: 1, dash: [6, 4]))
+                                        )
+                                )
+                                .padding(.top, 8)
+                                .opacity(showTags ? 1 : 0)
+                            } else {
+                                // Deferred collection
+                                SparksDisplayView(sparksAwarded: sparks) {
+                                    Task { @MainActor in
+                                        moment.isSparksCollected = true
+                                        do {
+                                            try await viewModel.repository.update(moment)
+                                        } catch {
+                                            logger.error("Failed to persist sparks collection: \(String(describing: error))")
+                                        }
+                                        await HapticManager.shared.play(.warmArrival)
+                                    }
+                                }
+                                .padding(.top, 8)
+                                .opacity(showTags ? 1 : 0)
+                            }
+                        }
                     }
                     .padding(.horizontal, 32)
                     .padding(.bottom, 120) // Add space for fixed action buttons
@@ -424,7 +478,7 @@ private struct MomentDetailContent: View {
                         selectedTag = IdentifiableTag(value: tag)
                     } label: {
                         Text("#\(tag.replacingOccurrences(of: "_", with: " "))")
-                            .font(.appCaption)
+                            .font(.appFootnote)
                             .foregroundStyle(.white)
                             .padding(.horizontal, 12)
                             .padding(.vertical, 6)

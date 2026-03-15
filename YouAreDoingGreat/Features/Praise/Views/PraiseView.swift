@@ -27,11 +27,21 @@ protocol PraiseViewModelProtocol: AnyObject, Observable {
     // Hug state (maps to isFavorite)
     var isHugged: Bool { get }
 
+    // Sparks state
+    var sparksAwarded: Int? { get }
+    var sparksResult: SparksResult? { get }
+    var isSparksCollected: Bool { get }
+    var showSparksUI: Bool { get set }
+    var showChapterProgress: Bool { get set }
+    var isNewChapter: Bool { get }
+    var preAwardChapterProgress: Double { get }
+
     func cancelPolling()
     func startEntranceAnimation() async
     func syncMomentAndFetchPraise() async
     func retrySyncMoment() async
     func toggleHug() async
+    func collectSparks() async
 }
 
 // MARK: - Praise Content View
@@ -167,7 +177,59 @@ struct PraiseContentView<ViewModel: PraiseViewModelProtocol>: View {
                         tagsSection
                             .opacity(viewModel.showTags ? 1 : 0)
                             .offset(y: viewModel.showTags ? 0 : 10)
-                            .padding(.bottom, 24)
+                    }
+
+                    // Sparks / Progress bar section (fixed-height container to prevent content jumping)
+                    if AppConfig.isSparksChaptersEnabled,
+                       viewModel.showSparksUI,
+                       let sparks = viewModel.sparksAwarded, sparks > 0 {
+                        ZStack {
+                            // Invisible placeholder reserving space for the taller view (SparksDisplayView)
+                            Color.clear
+                                .frame(height: 200)
+
+                            if !viewModel.isSparksCollected {
+                                SparksDisplayView(
+                                    sparksAwarded: sparks,
+                                    onCollect: {
+                                        Task { await viewModel.collectSparks() }
+                                    }
+                                )
+                                .transition(.asymmetric(
+                                    insertion: .opacity.combined(with: .scale(scale: 0.8)),
+                                    removal: .opacity.combined(with: .scale(scale: 1.1))
+                                ))
+                            }
+
+                            if viewModel.isSparksCollected,
+                               viewModel.showChapterProgress,
+                               viewModel.sparksResult != nil {
+                                ChapterProgressBar(
+                                    currentSparks: SparksProgressService.shared.sparksInCurrentChapter,
+                                    chapterThreshold: SparksProgressService.shared.nextChapterCost,
+                                    chapterName: SparksProgressService.shared.chapterName.isEmpty
+                                        ? "Prologue"
+                                        : SparksProgressService.shared.chapterName,
+                                    animateFromProgress: viewModel.preAwardChapterProgress,
+                                    isPulsing: false
+                                )
+                                .padding(.horizontal, 8)
+                                .transition(.opacity.combined(with: .move(edge: .bottom)))
+                            }
+                        }
+                        .animation(.easeInOut(duration: 0.5), value: viewModel.isSparksCollected)
+                        .animation(.easeInOut(duration: 0.5), value: viewModel.showChapterProgress)
+
+                        if viewModel.isSparksCollected,
+                           viewModel.showChapterProgress,
+                           viewModel.isNewChapter {
+                            ChapterUnlockedOverlay(
+                                chapterName: SparksProgressService.shared.chapterName.isEmpty
+                                    ? "Prologue"
+                                    : SparksProgressService.shared.chapterName,
+                                chapter: SparksProgressService.shared.chapter
+                            )
+                        }
                     }
                 }
                 .padding(.horizontal, 32)
@@ -180,6 +242,16 @@ struct PraiseContentView<ViewModel: PraiseViewModelProtocol>: View {
                 showDelete: false,
                 onPrimary: {
                     Task { await HapticManager.shared.play(.gentleTap) }
+
+                    // If sparks exist but not collected, queue toast for after dismiss
+                    if AppConfig.isSparksChaptersEnabled,
+                       let sparks = viewModel.sparksAwarded, sparks > 0, !viewModel.isSparksCollected {
+                        SparksProgressService.shared.pendingSparksToast = PendingSparksToast(
+                            clientId: viewModel.clientId,
+                            sparksAwarded: sparks,
+                            chapterName: viewModel.sparksResult?.chapterName ?? ""
+                        )
+                    }
 
                     // Highlight the newly created moment
                     highlightService.highlightMoment(viewModel.clientId)
@@ -216,7 +288,7 @@ struct PraiseContentView<ViewModel: PraiseViewModelProtocol>: View {
             HStack(spacing: 8) {
                 ForEach(Array(viewModel.tags.enumerated()), id: \.offset) { index, tag in
                     Text("#\(tag.replacingOccurrences(of: "_", with: " "))")
-                        .font(.appCaption)
+                        .font(.appFootnote)
                         .foregroundStyle(.white)
                         .padding(.horizontal, 12)
                         .padding(.vertical, 6)
@@ -387,6 +459,15 @@ private final class MockPraiseViewModel: PraiseViewModelProtocol {
     // Hug state
     var isHugged: Bool = false
 
+    // Sparks state
+    var sparksAwarded: Int? = nil
+    var sparksResult: SparksResult? = nil
+    var isSparksCollected: Bool = false
+    var showSparksUI: Bool = false
+    var showChapterProgress: Bool = false
+    var isNewChapter: Bool = false
+    var preAwardChapterProgress: Double = 0
+
     var timeDisplayText: String {
         guard let seconds = timeAgoSeconds, seconds > 0 else {
             return "Just now"
@@ -440,5 +521,9 @@ private final class MockPraiseViewModel: PraiseViewModelProtocol {
 
     func toggleHug() async {
         isHugged.toggle()
+    }
+
+    func collectSparks() async {
+        isSparksCollected = true
     }
 }

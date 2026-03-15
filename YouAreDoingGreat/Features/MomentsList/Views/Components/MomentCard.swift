@@ -87,6 +87,14 @@ struct MomentCard: View {
                         }
                     }
 
+                    // Sparks indicator (uncollected only)
+                    if let sparks = moment.sparksAwarded, sparks > 0, !moment.isSparksCollected {
+                        Image(systemName: "bolt.fill")
+                            .font(.system(size: 10))
+                            .foregroundStyle(.appPrimary)
+                            .symbolEffect(.pulse, options: .repeating.speed(0.5))
+                    }
+
                     if moment.isFavorite {
                         Image(systemName: "sparkle")
                             .font(.system(size: 14))

@@ -65,6 +65,17 @@ final class PraiseViewModel: PraiseViewModelProtocol {
     }
     private var _isLimitBlocked: Bool = false
 
+    // Sparks state
+    var sparksAwarded: Int?
+    var sparksResult: SparksResult?
+    var isSparksCollected: Bool = false
+    var showSparksUI: Bool = false
+    var showChapterProgress: Bool = false
+    var isNewChapter: Bool = false
+    /// Pre-award chapter progress (captured after refresh, before collection)
+    /// Used for reliable animateFromProgress in ChapterProgressBar
+    var preAwardChapterProgress: Double = 0
+
     // Animation state
     var showContent: Bool = false
     var showPraise: Bool = false
@@ -397,12 +408,38 @@ final class PraiseViewModel: PraiseViewModelProtocol {
             timeAgo: timeAgoSeconds
         )
 
-        let response: CreateMomentResponseWrapper = try await apiClient.request(
+        let wrapper: CreateMomentResponseWrapper = try await apiClient.request(
             endpoint: .createMoment,
             method: .post,
             body: body
         )
-        return response.item
+
+        // Capture sparks data from Phase 1
+        if let sparks = wrapper.sparks {
+            sparksAwarded = sparks.awarded
+            sparksResult = sparks
+            isNewChapter = sparks.isNewChapter
+            SparksProgressService.shared.updateFromSparksResult(sparks)
+        } else if let awarded = wrapper.item.sparksAwarded, awarded > 0 {
+            // Fallback: top-level sparks object missing but moment has sparksAwarded
+            sparksAwarded = awarded
+            // Build minimal SparksResult from service state + refresh for accurate data
+            let service = SparksProgressService.shared
+            sparksResult = SparksResult(
+                awarded: awarded,
+                totalSparks: service.totalSparks + awarded,
+                chapter: service.chapter,
+                chapterName: service.chapterName.isEmpty ? "Chapter \(service.chapter)" : service.chapterName,
+                isNewChapter: false
+            )
+            // refresh() will be awaited before sparks UI is shown
+        }
+        if let moment = localMoment {
+            moment.sparksAwarded = wrapper.item.sparksAwarded
+            try? await repository.update(moment)
+        }
+
+        return wrapper.item
     }
 
     private func enrichMomentOnServer(serverId: String) async throws -> MomentResponse {
@@ -429,7 +466,8 @@ final class PraiseViewModel: PraiseViewModelProtocol {
                 praiseEnriched: nil,
                 action: nil,
                 tags: nil,
-                isFavorite: nil
+                isFavorite: nil,
+                sparksAwarded: nil
             )
         }
     }
@@ -507,6 +545,42 @@ final class PraiseViewModel: PraiseViewModelProtocol {
             }
         }
 
+        // Reveal sparks UI after tags have appeared (tags delay 500ms + animation 300ms + buffer)
+        if let awarded = sparksAwarded, awarded > 0, !isSparksCollected {
+            Task {
+                // Ensure SparksProgressService has chapter data (sparksInCurrentChapter, nextChapterCost)
+                // before allowing collection — these only come from GET /user/stats
+                await SparksProgressService.shared.refresh()
+
+                let service = SparksProgressService.shared
+                var currentInChapter = service.sparksInCurrentChapter
+                var cost = service.nextChapterCost
+
+                // If server stats don't reflect new sparks (e.g., server hasn't returned
+                // the top-level sparks object or hasn't updated stats yet), compute locally
+                if currentInChapter == 0 && awarded > 0 {
+                    logger.warning("Sparks reveal — server stats show 0 sparksInChapter despite awarding \(awarded). Using local calculation.")
+                    // Use awarded as the post-moment sparksInCurrentChapter
+                    currentInChapter = awarded
+                    service.sparksInCurrentChapter = awarded
+                    if cost <= 0 { cost = 50 }  // Ensure valid threshold
+                }
+
+                // Capture pre-award progress for reliable animation
+                // currentInChapter includes the new sparks — subtract to get "before"
+                if cost > 0 {
+                    preAwardChapterProgress = max(0, Double(currentInChapter - awarded) / Double(cost))
+                }
+                logger.info("Sparks reveal — awarded=\(awarded), sparksInChapter=\(currentInChapter), nextChapterCost=\(cost), preAwardProgress=\(self.preAwardChapterProgress)")
+
+                try? await Task.sleep(nanoseconds: 600_000_000)
+                withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {
+                    showSparksUI = true
+                }
+                await HapticManager.shared.play(.softPulse)
+            }
+        }
+
         // Update local moment with server data
         guard let moment = localMoment else { return }
 
@@ -522,6 +596,30 @@ final class PraiseViewModel: PraiseViewModelProtocol {
             logger.info("Updated local moment with server data: \(self.clientId.uuidString)")
         } catch {
             logger.error("Failed to update local moment: \(error.localizedDescription)")
+        }
+    }
+
+    // MARK: - Sparks Collection
+
+    func collectSparks() async {
+        guard let moment = localMoment else { return }
+        isSparksCollected = true
+        moment.isSparksCollected = true
+        do {
+            try await repository.update(moment)
+        } catch {
+            logger.error("Failed to persist sparks collection: \(String(describing: error))")
+        }
+
+        await HapticManager.shared.play(.warmArrival)
+
+        let service = SparksProgressService.shared
+        logger.info("collectSparks — awarded=\(self.sparksAwarded ?? 0), preAwardProgress=\(self.preAwardChapterProgress), sparksInChapter=\(service.sparksInCurrentChapter), nextChapterCost=\(service.nextChapterCost), targetProgress=\(service.chapterProgress)")
+
+        // After sparks disappear, show progress bar
+        try? await Task.sleep(nanoseconds: 400_000_000)
+        withAnimation(.spring(response: 0.5, dampingFraction: 0.8)) {
+            showChapterProgress = true
         }
     }
 

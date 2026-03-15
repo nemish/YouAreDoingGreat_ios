@@ -40,6 +40,7 @@ struct MomentDTO: Decodable {
     let action: String?
     let tags: [String]?
     let isFavorite: Bool?
+    let sparksAwarded: Int?
 }
 
 // MARK: - Enriched Praise Models
