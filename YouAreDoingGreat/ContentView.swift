@@ -14,6 +14,7 @@ struct ContentView: View {
     @State private var selectedTab = 0
     @State private var momentsViewModel: MomentsListViewModel?
     @State private var journeyViewModel: JourneyViewModel?
+    @State private var galaxyViewModel: GalaxyViewModel?
     @State private var profileViewModel: ProfileViewModel?
 
     // Paywall presentation
@@ -68,6 +69,30 @@ struct ContentView: View {
             .tag(2)
 
             Group {
+                if let galaxyVM = galaxyViewModel,
+                   let momentsVM = momentsViewModel {
+                    GalaxyView(
+                        viewModel: galaxyVM,
+                        momentsListViewModel: momentsVM
+                    )
+                } else {
+                    Color.clear
+                        .onAppear {
+                            if momentsViewModel != nil {
+                                galaxyViewModel = viewModelFactory.makeGalaxyViewModel(
+                                    screenSize: UIScreen.main.bounds.size
+                                )
+                            }
+                        }
+                }
+            }
+            .toolbarBackground(.visible, for: .tabBar)
+            .tabItem {
+                Label("Galaxy", systemImage: "sparkles")
+            }
+            .tag(3)
+
+            Group {
                 if let viewModel = profileViewModel {
                     ProfileView(viewModel: viewModel)
                 } else {
@@ -81,10 +106,11 @@ struct ContentView: View {
             .tabItem {
                 Label("Profile", systemImage: "person.fill")
             }
-            .tag(3)
+            .tag(4)
         }
         .tint(Color.appPrimary)
-        .swipeableTab(selectedTab: $selectedTab, totalTabs: 4)
+        // Disable swipe on Galaxy tab (tag 3) to avoid conflicts with pan gesture
+        .modifier(ConditionalSwipeableTabModifier(selectedTab: $selectedTab, totalTabs: 5))
         .onChange(of: selectedTab) { _, _ in
             Task { await HapticManager.shared.play(.gentleTap) }
         }
@@ -102,6 +128,11 @@ struct ContentView: View {
             }
             if journeyViewModel == nil {
                 journeyViewModel = viewModelFactory.makeJourneyViewModel()
+            }
+            if galaxyViewModel == nil, momentsViewModel != nil {
+                galaxyViewModel = viewModelFactory.makeGalaxyViewModel(
+                    screenSize: UIScreen.main.bounds.size
+                )
             }
             if profileViewModel == nil {
                 profileViewModel = viewModelFactory.makeProfileViewModel()
@@ -127,6 +158,23 @@ struct ContentView: View {
             }
         }
         .toastContainer()
+    }
+}
+
+// MARK: - Conditional Swipeable Tab Modifier
+// Disables tab swipe on Galaxy tab to prevent conflicts with pan gesture
+struct ConditionalSwipeableTabModifier: ViewModifier {
+    @Binding var selectedTab: Int
+    let totalTabs: Int
+
+    func body(content: Content) -> some View {
+        if selectedTab == 3 {
+            // Galaxy tab - disable swipe
+            content
+        } else {
+            // Other tabs - enable swipe
+            content.swipeableTab(selectedTab: $selectedTab, totalTabs: totalTabs)
+        }
     }
 }
 
